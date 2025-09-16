@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motore AI di Analisi e Previsione Scommesse v2.8</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #2563eb; 
+            color: white; 
+            border: 1px solid transparent;
+        }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-secondary {
+            background-color: #ffffff; 
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .btn-secondary:hover { background-color: #f9fafb; }
+        .file-input-label {
+            display: block; padding: 0.75rem 1.25rem; background-color: #f9fafb;
+            color: #6b7280; border: 2px dashed #d1d5db; border-radius: 0.5rem;
+            cursor: pointer; text-align: center; transition: all 0.2s;
+        }
+        .file-input-label:hover { background-color: #f3f4f6; border-color: #9ca3af; }
+        input[type="file"] { display: none; }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background-color: #f9fafb; font-weight: 600; color: #4b5563; text-transform: uppercase; font-size: 0.75rem; }
+        tbody tr:hover { background-color: #f3f4f6; }
+        #loader {
+            display: none; border: 4px solid #e5e7eb; border-top: 4px solid #2563eb;
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin: 2rem auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .mode-selection-btn {
+            padding: 2rem; font-size: 1.25rem; text-align: center;
+            border: 2px solid #e5e7eb; transition: all 0.3s;
+        }
+        .mode-selection-btn:hover { border-color: #3b82f6; background-color: #eff6ff; }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+
+    <div class="max-w-7xl mx-auto space-y-8">
+        
+        <div class="text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v2.8 (Regole Strategiche)</h1>
+            <p class="mt-2 text-lg text-gray-600">Scegli il tuo motore di analisi per iniziare.</p>
+        </div>
+
+        <div id="mode-selection" class="card">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button id="select-mpetaz" class="mode-selection-btn rounded-lg">
+                    <div class="text-2xl mb-2">🤖</div>
+                    <h2 class="font-bold text-xl text-gray-800">Selezione Mpetaz</h2>
+                    <p class="text-sm text-gray-500">Usa il tuo algoritmo potenziato con punteggi dinamici basati su performance storiche.</p>
+                </button>
+                <button id="select-gemini" class="mode-selection-btn rounded-lg">
+                    <div class="text-2xl mb-2">🧠</div>
+                    <h2 class="font-bold text-xl text-gray-800">Selezione Gemini</h2>
+                    <p class="text-sm text-gray-500">Usa l'analisi avanzata a cascata basata su tassi di successo e "value score".</p>
+                </button>
+            </div>
+        </div>
+
+        <div id="control-panel" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                 <h2 id="panel-title" class="text-2xl font-bold text-gray-900"></h2>
+                 <button id="back-to-selection" class="btn btn-secondary text-sm">Cambia Metodo</button>
+            </div>
+            <div class="card">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-gray-700" for="historical-file">1. Carica Statistiche Storiche</label>
+                        <label for="historical-file" class="file-input-label" id="historical-label"><span>Seleziona file storico</span></label>
+                        <input type="file" id="historical-file" accept=".csv">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-gray-700" for="today-file">2. Carica Partite di Oggi</label>
+                        <label for="today-file" class="file-input-label" id="today-label"><span>Seleziona file di oggi</span></label>
+                        <input type="file" id="today-file" accept=".csv">
+                    </div>
+                    <div>
+                        <label for="desired-odds" class="block text-sm font-medium mb-2 text-gray-700">3. Quota Multipla Desiderata</label>
+                        <input type="number" id="desired-odds" value="2.0" step="0.1" min="1.1" class="w-full bg-white border border-gray-300 rounded-md p-2.5 text-gray-800 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <button id="analyze-btn" class="btn btn-primary w-full">Analizza</button>
+                    </div>
+                </div>
+                <div id="error-message" class="mt-4 text-center text-red-600 font-semibold"></div>
+            </div>
+        </div>
+
+        <div id="results-section" class="space-y-8" style="display: none;">
+            <div id="loader"></div>
+            <div id="top-10-container" class="card"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div id="safe-bet-container" class="card"></div>
+                <div id="value-bet-container" class="card"></div>
+            </div>
+            <div id="no-multiples-message" class="card text-center text-yellow-600 bg-yellow-50 border-yellow-200 font-semibold" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+    let historicalData = [], todayData = [], currentMode = '';
+
+    const modeSelection = document.getElementById('mode-selection');
+    const selectMpetazBtn = document.getElementById('select-mpetaz');
+    const selectGeminiBtn = document.getElementById('select-gemini');
+    const controlPanel = document.getElementById('control-panel');
+    const panelTitle = document.getElementById('panel-title');
+    const backToSelectionBtn = document.getElementById('back-to-selection');
+    const historicalFileInput = document.getElementById('historical-file');
+    const todayFileInput = document.getElementById('today-file');
+    const historicalLabel = document.getElementById('historical-label');
+    const todayLabel = document.getElementById('today-label');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const desiredOddsInput = document.getElementById('desired-odds');
+    const resultsSection = document.getElementById('results-section');
+    const loader = document.getElementById('loader');
+    const errorMessage = document.getElementById('error-message');
+    const top10Container = document.getElementById('top-10-container');
+    const safeBetContainer = document.getElementById('safe-bet-container');
+    const valueBetContainer = document.getElementById('value-bet-container');
+    const noMultiplesMessage = document.getElementById('no-multiples-message');
+
+    const showControlPanel = (mode) => {
+        currentMode = mode;
+        modeSelection.classList.add('hidden');
+        controlPanel.classList.remove('hidden');
+        resultsSection.style.display = 'none';
+        panelTitle.textContent = `Modalità: ${mode}`;
+    };
+
+    selectMpetazBtn.addEventListener('click', () => showControlPanel('Mpetaz'));
+    selectGeminiBtn.addEventListener('click', () => showControlPanel('Gemini'));
+
+    backToSelectionBtn.addEventListener('click', () => {
+        currentMode = '';
+        modeSelection.classList.remove('hidden');
+        controlPanel.classList.add('hidden');
+        resultsSection.style.display = 'none';
+        historicalFileInput.value = '';
+        todayFileInput.value = '';
+        historicalLabel.querySelector('span').textContent = 'Seleziona file storico';
+        todayLabel.querySelector('span').textContent = 'Seleziona file di oggi';
+    });
+
+    const parseCSV = (text) => {
+        const lines = text.trim().replace(/\r/g, "").split('\n');
+        const headerMap = {
+            'data': 'Data', 'lega': 'Lega', 'partita': 'Partita', 'risultato': 'Risultato', 
+            'probabilità': 'Probabilità', 'probabilita': 'Probabilità', 'mercato': 'Mercato',
+            'tip': 'Tip', 'quota': 'Quota', 'esito': 'Vinto/Perso'
+        };
+        const rawHeader = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const header = rawHeader.map(h => headerMap[h] || h.charAt(0).toUpperCase() + h.slice(1));
+        
+        return lines.slice(1).map(line => {
+            if (!line.trim()) return null;
+            
+            const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => {
+                let value = v.trim();
+                if (value.startsWith('"') && value.endsWith('"')) {
+                    value = value.substring(1, value.length - 1);
+                }
+                return value.trim();
+            });
+
+            const entry = {};
+            header.forEach((col, index) => {
+                if (col && index < values.length) entry[col] = values[index];
+            });
+            return entry;
+        }).filter(Boolean);
+    };
+
+    const handleFileUpload = (event, dataTarget, labelElement) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const parsedData = parseCSV(e.target.result);
+                if (dataTarget === 'historical') historicalData = parsedData;
+                else todayData = parsedData;
+                labelElement.querySelector('span').textContent = file.name;
+                errorMessage.textContent = '';
+            } catch (error) {
+                errorMessage.textContent = `Errore grave nel parsing del file ${file.name}.`;
+                console.error("CSV Parsing Error:", error);
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    historicalFileInput.addEventListener('change', (e) => handleFileUpload(e, 'historical', historicalLabel));
+    todayFileInput.addEventListener('change', (e) => handleFileUpload(e, 'today', todayLabel));
+
+    analyzeBtn.addEventListener('click', () => {
+        if (historicalData.length === 0 || todayData.length === 0) {
+            errorMessage.textContent = 'Per favore, carica entrambi i file CSV prima di procedere.';
+            return;
+        }
+        resultsSection.style.display = 'block';
+        loader.style.display = 'block';
+        [top10Container, safeBetContainer, valueBetContainer].forEach(el => el.innerHTML = '');
+        noMultiplesMessage.style.display = 'none';
+        
+        analyzeBtn.disabled = true;
+        analyzeBtn.textContent = 'Analizzando...';
+
+        setTimeout(() => {
+            if (currentMode === 'Mpetaz') runMpetazAnalysis();
+            else if (currentMode === 'Gemini') runGeminiAnalysis();
+
+            analyzeBtn.disabled = false;
+            analyzeBtn.textContent = 'Analizza';
+        }, 50);
+    });
+    
+    const calculateStats = (data) => {
+        const stats = {
+            specific: {}, market: {}, league: {},
+            global: { won: 0, total: 0 }
+        };
+
+        data.forEach(row => {
+            const { Lega, Mercato, Tip } = row;
+            const result = row['Vinto/Perso'];
+            
+            // NEW RULE: Exclude national cups from historical stats
+            if (Lega && Lega.toLowerCase().includes('cup')) {
+                return; 
+            }
+
+            if (!result || !Lega || !Mercato || !Tip) {
+                return; 
+            }
+            
+            const won = (result.trim().toLowerCase() === 'vinto') ? 1 : 0;
+            
+            stats.global.total++;
+            stats.global.won += won;
+            
+            const keySpecific = `${Lega}|${Mercato}|${Tip}`;
+            if (!stats.specific[keySpecific]) stats.specific[keySpecific] = { won: 0, total: 0 };
+            stats.specific[keySpecific].total++;
+            stats.specific[keySpecific].won += won;
+
+            const keyMarket = `${Lega}|${Mercato}`;
+            if (!stats.market[keyMarket]) stats.market[keyMarket] = { won: 0, total: 0 };
+            stats.market[keyMarket].total++;
+            stats.market[keyMarket].won += won;
+
+            const keyLeague = Lega;
+            if (!stats.league[keyLeague]) stats.league[keyLeague] = { won: 0, total: 0 };
+            stats.league[keyLeague].total++;
+            stats.league[keyLeague].won += won;
+        });
+        return stats;
+    };
+
+
+    const runMpetazAnalysis = () => {
+        const stats = calculateStats(historicalData);
+        
+        Object.values(stats.league).forEach(s => s.rate = s.total > 0 ? s.won / s.total : 0);
+        const marketTipStats = {};
+        Object.entries(stats.specific).forEach(([key, value]) => {
+            const marketTipKey = key.split('|').slice(1).join('|');
+            if(!marketTipStats[marketTipKey]) marketTipStats[marketTipKey] = { won: 0, total: 0 };
+            marketTipStats[marketTipKey].won += value.won;
+            marketTipStats[marketTipKey].total += value.total;
+        });
+        Object.values(marketTipStats).forEach(s => s.rate = s.total > 0 ? s.won / s.total : 0);
+
+
+        const scoredMatches = todayData
+            .filter(match => { // NEW RULES FILTER
+                const quotaFloat = parseFloat(String(match.Quota).replace(',', '.'));
+                const isCup = match.Lega && match.Lega.toLowerCase().includes('cup');
+                return !isCup && !isNaN(quotaFloat) && quotaFloat >= 1.20;
+            })
+            .map(match => {
+                const { Lega, Mercato, Tip, Quota, Probabilità } = match;
+                if (!Lega || !Mercato || !Tip || !Quota || !Probabilità) return null;
+
+                let rawScore = 0;
+                const maxRawScore = 60; 
+
+                const currentLeagueStats = stats.league[Lega];
+                if (currentLeagueStats) {
+                    rawScore += currentLeagueStats.rate * 10;
+                }
+
+                const marketTipKey = `${Mercato}|${Tip}`;
+                const currentMarketTipStats = marketTipStats[marketTipKey];
+                if (currentMarketTipStats) {
+                    rawScore += currentMarketTipStats.rate * 20;
+                }
+                
+                const probValue = parseInt(String(Probabilità).replace('%', ''));
+                if (!isNaN(probValue) && probValue >= 65) {
+                    rawScore += ((probValue - 65) / (100 - 65)) * 15;
+                }
+
+                const quotaFloat = parseFloat(String(Quota).replace(',', '.'));
+                if (isNaN(quotaFloat)) return null;
+
+                if (quotaFloat >= 1.40) rawScore += 15;
+                else if (quotaFloat >= 1.15) rawScore += ((quotaFloat - 1.15) / (1.40 - 1.15)) * 15;
+                
+                return { ...match, Quota: quotaFloat, Punteggio: ((rawScore / maxRawScore) * 100).toFixed(2) };
+            }).filter(Boolean);
+
+        scoredMatches.sort((a, b) => b.Punteggio - a.Punteggio);
+        renderResults(scoredMatches, 'Mpetaz');
+    };
+
+    const runGeminiAnalysis = () => {
+        const stats = calculateStats(historicalData);
+
+        const scoredMatches = todayData
+            .filter(match => { // NEW RULES FILTER
+                const quotaFloat = parseFloat(String(match.Quota).replace(',', '.'));
+                const isCup = match.Lega && match.Lega.toLowerCase().includes('cup');
+                return !isCup && !isNaN(quotaFloat) && quotaFloat >= 1.20;
+            })
+            .map(match => {
+                const { Lega, Mercato, Tip, Quota } = match;
+                if (!Lega || !Mercato || !Tip || !Quota) return null;
+
+                const keySpecific = `${Lega}|${Mercato}|${Tip}`;
+                const keyMarket = `${Lega}|${Mercato}`;
+                const keyLeague = Lega;
+                
+                let historicalStat = null;
+                let justification = "";
+                let confidence = 1.0; 
+
+                if (stats.specific[keySpecific] && stats.specific[keySpecific].total >= 5) {
+                    historicalStat = stats.specific[keySpecific];
+                    justification = `Dato specifico (${historicalStat.total}p)`;
+                } else if (stats.market[keyMarket] && stats.market[keyMarket].total >= 10) {
+                    historicalStat = stats.market[keyMarket];
+                    justification = `Basato su mercato (${historicalStat.total}p)`;
+                    confidence = 0.95; 
+                } else if (stats.league[keyLeague] && stats.league[keyLeague].total >= 20) {
+                    historicalStat = stats.league[keyLeague];
+                    justification = `Basato su lega (${historicalStat.total}p)`;
+                    confidence = 0.90; 
+                } else {
+                    historicalStat = stats.global;
+                    justification = `Dato Globale (${historicalStat.total}p totali)`;
+                    confidence = 0.80;
+                }
+
+                const successRate = (historicalStat.total > 0) ? (historicalStat.won / historicalStat.total) * 100 : 0;
+                const quotaFloat = parseFloat(String(Quota).replace(',', '.'));
+                if (isNaN(quotaFloat)) return null;
+                
+                const valueScore = successRate * (Math.log(quotaFloat) + 1);
+                const finalScore = ((successRate * 0.7) + (valueScore * 0.3)) * confidence;
+
+                return {
+                    ...match,
+                    Quota: quotaFloat,
+                    Punteggio: finalScore.toFixed(2),
+                    Justification: `${(successRate).toFixed(1)}% successo storico. ${justification}`
+                };
+            }).filter(Boolean);
+
+        scoredMatches.sort((a, b) => b.Punteggio - a.Punteggio);
+        renderResults(scoredMatches, 'Gemini');
+    };
+
+    const renderResults = (matches, mode) => {
+        const topTitle = mode === 'Mpetaz' ? '🏆 Migliori Partite (Metodo Mpetaz)' : '🧠 Migliori Partite (Metodo Gemini)';
+        const headers = ['Lega', 'Partita', 'Mercato', 'Tip', 'Probabilità', 'Quota', 'Punteggio'];
+        const columns = ['Lega', 'Partita', 'Mercato', 'Tip', 'Probabilità', 'Quota', 'Punteggio'];
+        if (mode === 'Gemini') {
+            headers.push('Note Gemini');
+            columns.push('Justification');
+        }
+        renderTable(top10Container, topTitle, headers, matches.slice(0, 10), columns);
+        buildAndRenderMultiples(matches);
+        loader.style.display = 'none';
+    };
+
+    const renderTable = (container, title, headers, data, columns) => {
+        let tableHTML = `<h2 class="text-xl font-bold text-gray-800 mb-4">${title}</h2>`;
+        if (data.length === 0) {
+            tableHTML += `<p class="text-gray-500">Nessuna partita ha superato i criteri di analisi (filtri coppe/quote applicati). Prova con un palinsesto più ampio.</p>`;
+            container.innerHTML = tableHTML;
+            return;
+        }
+        tableHTML += `<div class="table-wrapper"><table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+        data.forEach(row => {
+            tableHTML += `<tr>`;
+            columns.forEach(col => {
+                let cellValue = row[col] || '-';
+                if (col === 'Punteggio') {
+                    const score = parseFloat(cellValue);
+                    const color = score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500';
+                    cellValue = `<div class="w-full bg-gray-200 rounded-full h-2.5"><div class="${color} h-2.5 rounded-full" style="width: ${score}%"></div></div><span class="font-semibold text-gray-700">${cellValue}</span>`;
+                } else if (col === 'Quota' && typeof cellValue === 'number') {
+                    cellValue = cellValue.toFixed(2);
+                } else if (col === 'Justification') {
+                    cellValue = `<span class="text-sm italic text-gray-500">${cellValue}</span>`;
+                }
+                tableHTML += `<td>${cellValue}</td>`;
+            });
+            tableHTML += `</tr>`;
+        });
+        tableHTML += `</tbody></table></div>`;
+        container.innerHTML = tableHTML;
+    };
+    
+    const buildAndRenderMultiples = (matches) => {
+        const desiredOdds = parseFloat(desiredOddsInput.value);
+        const oddsMultiplier = 0.9;
+        
+        const valueMatches = [...matches].map(m => ({...m, value: m.Punteggio > 0 ? m.Punteggio / m.Quota : 0})).sort((a,b) => b.value - a.value);
+
+        const safeBet = buildMultipla(matches, desiredOdds, oddsMultiplier);
+        const valueBet = buildMultipla(valueMatches, desiredOdds, oddsMultiplier);
+        
+        let multiplesFound = false;
+        if (safeBet && safeBet.totalOddsAdjusted >= desiredOdds) {
+            renderMultipla(safeBetContainer, 'Multipla "Prudente"', safeBet, "Basata sulle partite con il punteggio più alto.");
+            multiplesFound = true;
+        } else {
+            safeBetContainer.innerHTML = `<h2 class="text-xl font-bold text-gray-800 mb-4">Multipla "Prudente"</h2><p class="text-gray-500">Non è stato possibile creare una multipla con la quota desiderata.</p>`;
+        }
+       
+        if (valueBet && valueBet.totalOddsAdjusted >= desiredOdds) {
+            renderMultipla(valueBetContainer, 'Multipla "Value Net"', valueBet, "Basata sul miglior rapporto tra punteggio e quota.");
+            multiplesFound = true;
+        } else {
+            valueBetContainer.innerHTML = `<h2 class="text-xl font-bold text-gray-800 mb-4">Multipla "Value Net"</h2><p class="text-gray-500">Non è stato possibile creare una multipla di valore con la quota desiderata.</p>`;
+        }
+
+        if (!multiplesFound && matches.length > 0) {
+            noMultiplesMessage.textContent = 'Non è stato possibile creare multiple che raggiungessero la quota desiderata. Prova ad abbassare la quota.';
+            noMultiplesMessage.style.display = 'block';
+        }
+    };
+
+    const buildMultipla = (sortedMatches, targetOdds, oddsMultiplier) => {
+        let multipla = { matches: [], totalOdds: 1, totalOddsAdjusted: 1 };
+        const usedMatches = new Set();
+        for (const match of sortedMatches) {
+            if (multipla.matches.length >= 4 || multipla.totalOddsAdjusted >= targetOdds) break;
+            if (!usedMatches.has(match.Partita)) {
+                multipla.matches.push(match);
+                multipla.totalOdds *= match.Quota;
+                multipla.totalOddsAdjusted *= (match.Quota * oddsMultiplier);
+                usedMatches.add(match.Partita);
+            }
+        }
+        return multipla.matches.length > 1 ? multipla : null;
+    };
+
+    const renderMultipla = (container, title, multipla, justification) => {
+        let html = `<h2 class="text-xl font-bold text-gray-800 mb-4">${title}</h2>`;
+        html += `<div class="mb-4 space-y-2">
+            <p><span class="font-semibold text-gray-600">Quota Stimata:</span> <span class="text-2xl font-bold text-blue-600">${multipla.totalOddsAdjusted.toFixed(2)}</span></p>
+            <p class="text-sm text-gray-500"><span class="font-semibold">Quota Originale:</span> ${multipla.totalOdds.toFixed(2)}</p>
+            <p class="text-sm italic text-gray-500">"${justification}"</p>
+        </div>`;
+        html += `<div class="table-wrapper"><table><thead><tr><th>Partita</th><th>Tip</th><th>Quota</th><th>Punteggio</th></tr></thead><tbody>`;
+        multipla.matches.forEach(m => {
+            html += `<tr>
+                <td>${m.Partita}</td><td>${m.Mercato}, ${m.Tip}</td>
+                <td>${m.Quota.toFixed(2)}</td><td>${m.Punteggio}</td>
+            </tr>`;
+        });
+        html += `</tbody></table></div>`;
+        container.innerHTML = html;
+    };
+    </script>
+</body>
+</html>
+
