@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motore AI di Analisi e Previsione Scommesse v3.1</title>
+    <title>Motore AI di Analisi e Previsione Scommesse v3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -71,7 +71,7 @@
     <div class="max-w-7xl mx-auto space-y-8">
         
         <div class="text-center">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v3.1 (Dynamic Range)</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v3.2 (True Waterfall)</h1>
             <p class="mt-2 text-lg text-gray-600">Scegli il tuo motore di analisi per iniziare.</p>
         </div>
 
@@ -80,12 +80,12 @@
                 <button id="select-mpetaz" class="mode-selection-btn rounded-lg">
                     <div class="text-2xl mb-2">🤖</div>
                     <h2 class="font-bold text-xl text-gray-800">Selezione Mpetaz</h2>
-                    <p class="text-sm text-gray-500">Usa le regole 'esperte' con il nuovo punteggio di probabilità basato sul range storico.</p>
+                    <p class="text-sm text-gray-500">Usa le regole 'esperte' con il punteggio di probabilità basato sul range storico.</p>
                 </button>
                 <button id="select-gemini" class="mode-selection-btn rounded-lg">
                     <div class="text-2xl mb-2">🧠</div>
                     <h2 class="font-bold text-xl text-gray-800">Selezione Gemini</h2>
-                    <p class="text-sm text-gray-500">Usa l'analisi a cascata, con i filtri per coppe e quote minime.</p>
+                    <p class="text-sm text-gray-500">Usa la nuova logica a "cascata reale" per un'analisi più precisa e dinamica.</p>
                 </button>
             </div>
         </div>
@@ -291,9 +291,7 @@
         const historicalLeagues = new Set(Object.keys(stats.league));
         const historicalTips = new Set(Object.keys(stats.tip));
 
-        // NEW: Calculate historical probability range for Mpetaz
-        let minHistoricalProb = 101;
-        let maxHistoricalProb = 0;
+        let minHistoricalProb = 101, maxHistoricalProb = 0;
         const validHistoricalData = historicalData.filter(row => {
             const isCup = row.Lega && row.Lega.toLowerCase().includes('cup');
             return !isCup && row.Probabilità;
@@ -318,7 +316,7 @@
                 if (!Lega || !Tip || !Quota || !Probabilità) return null;
 
                 let rawScore = 0;
-                const maxRawScore = 75; // 20 (lega) + 20 (tip) + 20 (prob) + 15 (odds)
+                const maxRawScore = 75; 
 
                 if (historicalLeagues.has(Lega)) {
                     rawScore += stats.league[Lega].rate * 20;
@@ -332,15 +330,14 @@
                     rawScore += 5;
                 }
                 
-                // MODIFIED: Probability Score based on historical range
                 const probValue = parseInt(String(Probabilità).replace('%', ''));
                 if (!isNaN(probValue)) {
                     if (probValue >= minHistoricalProb && probValue <= maxHistoricalProb) {
-                        rawScore += 20; // In range, full points
+                        rawScore += 20;
                     } else if (probValue >= minHistoricalProb - 3) {
-                        rawScore += 10; // Below by 1-3%
+                        rawScore += 10;
                     } else if (probValue >= minHistoricalProb - 7) {
-                        rawScore += 5;  // Below by 4-7%
+                        rawScore += 5;
                     }
                 }
 
@@ -378,14 +375,15 @@
                 let justification = "";
                 let confidence = 1.0; 
 
-                if (stats.specific[keySpecific] && stats.specific[keySpecific].total >= 5) {
+                // MODIFIED: "True Waterfall" logic without minimum thresholds
+                if (stats.specific[keySpecific]) {
                     historicalStat = stats.specific[keySpecific];
                     justification = `Dato specifico (${historicalStat.total}p)`;
-                } else if (stats.market[keyMarket] && stats.market[keyMarket].total >= 10) {
+                } else if (stats.market[keyMarket]) {
                     historicalStat = stats.market[keyMarket];
                     justification = `Basato su mercato (${historicalStat.total}p)`;
                     confidence = 0.95; 
-                } else if (stats.league[keyLeague] && stats.league[keyLeague].total >= 20) {
+                } else if (stats.league[keyLeague]) {
                     historicalStat = stats.league[keyLeague];
                     justification = `Basato su lega (${historicalStat.total}p)`;
                     confidence = 0.90; 
