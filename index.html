@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motore AI di Analisi e Previsione Scommesse v3.2</title>
+    <title>Motore AI di Analisi e Previsione Scommesse v3.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -71,7 +71,7 @@
     <div class="max-w-7xl mx-auto space-y-8">
         
         <div class="text-center">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v3.2 (True Waterfall)</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v3.3 (Auto-Multiples)</h1>
             <p class="mt-2 text-lg text-gray-600">Scegli il tuo motore di analisi per iniziare.</p>
         </div>
 
@@ -85,7 +85,7 @@
                 <button id="select-gemini" class="mode-selection-btn rounded-lg">
                     <div class="text-2xl mb-2">🧠</div>
                     <h2 class="font-bold text-xl text-gray-800">Selezione Gemini</h2>
-                    <p class="text-sm text-gray-500">Usa la nuova logica a "cascata reale" per un'analisi più precisa e dinamica.</p>
+                    <p class="text-sm text-gray-500">Usa la logica a "cascata reale" per un'analisi precisa e dinamica.</p>
                 </button>
             </div>
         </div>
@@ -96,7 +96,7 @@
                  <button id="back-to-selection" class="btn btn-secondary text-sm">Cambia Metodo</button>
             </div>
             <div class="card">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                     <div>
                         <label class="block text-sm font-medium mb-2 text-gray-700" for="historical-file">1. Carica Statistiche Storiche</label>
                         <label for="historical-file" class="file-input-label" id="historical-label"><span>Seleziona file storico</span></label>
@@ -106,10 +106,6 @@
                         <label class="block text-sm font-medium mb-2 text-gray-700" for="today-file">2. Carica Partite di Oggi</label>
                         <label for="today-file" class="file-input-label" id="today-label"><span>Seleziona file di oggi</span></label>
                         <input type="file" id="today-file" accept=".csv">
-                    </div>
-                    <div>
-                        <label for="desired-odds" class="block text-sm font-medium mb-2 text-gray-700">3. Quota Multipla Desiderata</label>
-                        <input type="number" id="desired-odds" value="2.0" step="0.1" min="1.1" class="w-full bg-white border border-gray-300 rounded-md p-2.5 text-gray-800 focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <button id="analyze-btn" class="btn btn-primary w-full">Analizza</button>
@@ -144,7 +140,6 @@
     const historicalLabel = document.getElementById('historical-label');
     const todayLabel = document.getElementById('today-label');
     const analyzeBtn = document.getElementById('analyze-btn');
-    const desiredOddsInput = document.getElementById('desired-odds');
     const resultsSection = document.getElementById('results-section');
     const loader = document.getElementById('loader');
     const errorMessage = document.getElementById('error-message');
@@ -375,7 +370,6 @@
                 let justification = "";
                 let confidence = 1.0; 
 
-                // MODIFIED: "True Waterfall" logic without minimum thresholds
                 if (stats.specific[keySpecific]) {
                     historicalStat = stats.specific[keySpecific];
                     justification = `Dato specifico (${historicalStat.total}p)`;
@@ -455,40 +449,42 @@
     };
     
     const buildAndRenderMultiples = (matches) => {
-        const desiredOdds = parseFloat(desiredOddsInput.value);
         const oddsMultiplier = 0.9;
-        
         const valueMatches = [...matches].map(m => ({...m, value: m.Punteggio > 0 ? m.Punteggio / m.Quota : 0})).sort((a,b) => b.value - a.value);
 
-        const safeBet = buildMultipla(matches, desiredOdds, oddsMultiplier);
-        const valueBet = buildMultipla(valueMatches, desiredOdds, oddsMultiplier);
+        const safeBet = buildMultipla(matches, 2, oddsMultiplier);
+        const valueBet = buildMultipla(valueMatches, 3, oddsMultiplier);
         
         let multiplesFound = false;
-        if (safeBet && safeBet.totalOddsAdjusted >= desiredOdds) {
-            renderMultipla(safeBetContainer, 'Multipla "Prudente"', safeBet, "Basata sulle partite con il punteggio più alto.");
+        if (safeBet) {
+            renderMultipla(safeBetContainer, 'Multipla "Prudente" (Doppia)', safeBet, "Basata sulle 2 partite con il punteggio più alto.");
             multiplesFound = true;
         } else {
-            safeBetContainer.innerHTML = `<h2 class="text-xl font-bold text-gray-800 mb-4">Multipla "Prudente"</h2><p class="text-gray-500">Non è stato possibile creare una multipla con la quota desiderata.</p>`;
+            safeBetContainer.innerHTML = `<h2 class="text-xl font-bold text-gray-800 mb-4">Multipla "Prudente" (Doppia)</h2><p class="text-gray-500">Non ci sono abbastanza partite per creare una doppia.</p>`;
         }
        
-        if (valueBet && valueBet.totalOddsAdjusted >= desiredOdds) {
-            renderMultipla(valueBetContainer, 'Multipla "Value Net"', valueBet, "Basata sul miglior rapporto tra punteggio e quota.");
+        if (valueBet) {
+            renderMultipla(valueBetContainer, 'Multipla "Value Net" (Tripla)', valueBet, "Basata sulle 3 partite con il miglior rapporto punteggio/quota.");
             multiplesFound = true;
         } else {
-            valueBetContainer.innerHTML = `<h2 class="text-xl font-bold text-gray-800 mb-4">Multipla "Value Net"</h2><p class="text-gray-500">Non è stato possibile creare una multipla di valore con la quota desiderata.</p>`;
+            valueBetContainer.innerHTML = `<h2 class="text-xl font-bold text-gray-800 mb-4">Multipla "Value Net" (Tripla)</h2><p class="text-gray-500">Non ci sono abbastanza partite per creare una tripla di valore.</p>`;
         }
 
         if (!multiplesFound && matches.length > 0) {
-            noMultiplesMessage.textContent = 'Non è stato possibile creare multiple che raggiungessero la quota desiderata. Prova ad abbassare la quota.';
+            noMultiplesMessage.textContent = 'Non ci sono abbastanza partite valide per creare le multiple suggerite.';
             noMultiplesMessage.style.display = 'block';
         }
     };
 
-    const buildMultipla = (sortedMatches, targetOdds, oddsMultiplier) => {
+    const buildMultipla = (sortedMatches, numEvents, oddsMultiplier) => {
+        if (sortedMatches.length < numEvents) {
+            return null;
+        }
+
         let multipla = { matches: [], totalOdds: 1, totalOddsAdjusted: 1 };
         const usedMatches = new Set();
         for (const match of sortedMatches) {
-            if (multipla.matches.length >= 4 || multipla.totalOddsAdjusted >= targetOdds) break;
+            if (multipla.matches.length >= numEvents) break;
             if (!usedMatches.has(match.Partita)) {
                 multipla.matches.push(match);
                 multipla.totalOdds *= match.Quota;
@@ -496,7 +492,7 @@
                 usedMatches.add(match.Partita);
             }
         }
-        return multipla.matches.length > 1 ? multipla : null;
+        return multipla.matches.length === numEvents ? multipla : null;
     };
 
     const renderMultipla = (container, title, multipla, justification) => {
