@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motore AI di Analisi e Previsione Scommesse v2.8</title>
+    <title>Motore AI di Analisi e Previsione Scommesse v3.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -71,7 +71,7 @@
     <div class="max-w-7xl mx-auto space-y-8">
         
         <div class="text-center">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v2.8 (Regole Strategiche)</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v3.1 (Dynamic Range)</h1>
             <p class="mt-2 text-lg text-gray-600">Scegli il tuo motore di analisi per iniziare.</p>
         </div>
 
@@ -80,12 +80,12 @@
                 <button id="select-mpetaz" class="mode-selection-btn rounded-lg">
                     <div class="text-2xl mb-2">🤖</div>
                     <h2 class="font-bold text-xl text-gray-800">Selezione Mpetaz</h2>
-                    <p class="text-sm text-gray-500">Usa il tuo algoritmo potenziato con punteggi dinamici basati su performance storiche.</p>
+                    <p class="text-sm text-gray-500">Usa le regole 'esperte' con il nuovo punteggio di probabilità basato sul range storico.</p>
                 </button>
                 <button id="select-gemini" class="mode-selection-btn rounded-lg">
                     <div class="text-2xl mb-2">🧠</div>
                     <h2 class="font-bold text-xl text-gray-800">Selezione Gemini</h2>
-                    <p class="text-sm text-gray-500">Usa l'analisi avanzata a cascata basata su tassi di successo e "value score".</p>
+                    <p class="text-sm text-gray-500">Usa l'analisi a cascata, con i filtri per coppe e quote minime.</p>
                 </button>
             </div>
         </div>
@@ -248,97 +248,107 @@
         }, 50);
     });
     
-    const calculateStats = (data) => {
-        const stats = {
-            specific: {}, market: {}, league: {},
-            global: { won: 0, total: 0 }
-        };
+    const calculateFilteredStats = (data) => {
+        const stats = { league: {}, tip: {}, specific: {}, market: {}, global: { won: 0, total: 0 } };
 
         data.forEach(row => {
             const { Lega, Mercato, Tip } = row;
             const result = row['Vinto/Perso'];
-            
-            // NEW RULE: Exclude national cups from historical stats
-            if (Lega && Lega.toLowerCase().includes('cup')) {
-                return; 
-            }
 
-            if (!result || !Lega || !Mercato || !Tip) {
-                return; 
-            }
+            if (Lega && Lega.toLowerCase().includes('cup')) return;
+            if (!result || !Lega || !Mercato || !Tip) return;
             
             const won = (result.trim().toLowerCase() === 'vinto') ? 1 : 0;
             
+            if (!stats.league[Lega]) stats.league[Lega] = { won: 0, total: 0 };
+            stats.league[Lega].total++;
+            stats.league[Lega].won += won;
+
+            if (!stats.tip[Tip]) stats.tip[Tip] = { won: 0, total: 0 };
+            stats.tip[Tip].total++;
+            stats.tip[Tip].won += won;
+
             stats.global.total++;
             stats.global.won += won;
-            
             const keySpecific = `${Lega}|${Mercato}|${Tip}`;
             if (!stats.specific[keySpecific]) stats.specific[keySpecific] = { won: 0, total: 0 };
             stats.specific[keySpecific].total++;
             stats.specific[keySpecific].won += won;
-
             const keyMarket = `${Lega}|${Mercato}`;
             if (!stats.market[keyMarket]) stats.market[keyMarket] = { won: 0, total: 0 };
             stats.market[keyMarket].total++;
             stats.market[keyMarket].won += won;
-
-            const keyLeague = Lega;
-            if (!stats.league[keyLeague]) stats.league[keyLeague] = { won: 0, total: 0 };
-            stats.league[keyLeague].total++;
-            stats.league[keyLeague].won += won;
         });
+
+        Object.values(stats.league).forEach(s => s.rate = s.total > 0 ? s.won / s.total : 0);
+        Object.values(stats.tip).forEach(s => s.rate = s.total > 0 ? s.won / s.total : 0);
+
         return stats;
     };
 
-
     const runMpetazAnalysis = () => {
-        const stats = calculateStats(historicalData);
-        
-        Object.values(stats.league).forEach(s => s.rate = s.total > 0 ? s.won / s.total : 0);
-        const marketTipStats = {};
-        Object.entries(stats.specific).forEach(([key, value]) => {
-            const marketTipKey = key.split('|').slice(1).join('|');
-            if(!marketTipStats[marketTipKey]) marketTipStats[marketTipKey] = { won: 0, total: 0 };
-            marketTipStats[marketTipKey].won += value.won;
-            marketTipStats[marketTipKey].total += value.total;
+        const stats = calculateFilteredStats(historicalData);
+        const historicalLeagues = new Set(Object.keys(stats.league));
+        const historicalTips = new Set(Object.keys(stats.tip));
+
+        // NEW: Calculate historical probability range for Mpetaz
+        let minHistoricalProb = 101;
+        let maxHistoricalProb = 0;
+        const validHistoricalData = historicalData.filter(row => {
+            const isCup = row.Lega && row.Lega.toLowerCase().includes('cup');
+            return !isCup && row.Probabilità;
         });
-        Object.values(marketTipStats).forEach(s => s.rate = s.total > 0 ? s.won / s.total : 0);
+        validHistoricalData.forEach(row => {
+            const probValue = parseInt(String(row.Probabilità).replace('%', ''));
+            if (!isNaN(probValue)) {
+                if (probValue < minHistoricalProb) minHistoricalProb = probValue;
+                if (probValue > maxHistoricalProb) maxHistoricalProb = probValue;
+            }
+        });
 
 
         const scoredMatches = todayData
-            .filter(match => { // NEW RULES FILTER
+            .filter(match => {
                 const quotaFloat = parseFloat(String(match.Quota).replace(',', '.'));
                 const isCup = match.Lega && match.Lega.toLowerCase().includes('cup');
                 return !isCup && !isNaN(quotaFloat) && quotaFloat >= 1.20;
             })
             .map(match => {
-                const { Lega, Mercato, Tip, Quota, Probabilità } = match;
-                if (!Lega || !Mercato || !Tip || !Quota || !Probabilità) return null;
+                const { Lega, Tip, Quota, Probabilità } = match;
+                if (!Lega || !Tip || !Quota || !Probabilità) return null;
 
                 let rawScore = 0;
-                const maxRawScore = 60; 
+                const maxRawScore = 75; // 20 (lega) + 20 (tip) + 20 (prob) + 15 (odds)
 
-                const currentLeagueStats = stats.league[Lega];
-                if (currentLeagueStats) {
-                    rawScore += currentLeagueStats.rate * 10;
+                if (historicalLeagues.has(Lega)) {
+                    rawScore += stats.league[Lega].rate * 20;
+                } else if (Lega.startsWith('EU-')) {
+                    rawScore += 5;
                 }
 
-                const marketTipKey = `${Mercato}|${Tip}`;
-                const currentMarketTipStats = marketTipStats[marketTipKey];
-                if (currentMarketTipStats) {
-                    rawScore += currentMarketTipStats.rate * 20;
+                if (historicalTips.has(Tip)) {
+                    rawScore += stats.tip[Tip].rate * 20;
+                } else if (Lega.startsWith('EU-')) {
+                    rawScore += 5;
                 }
                 
+                // MODIFIED: Probability Score based on historical range
                 const probValue = parseInt(String(Probabilità).replace('%', ''));
-                if (!isNaN(probValue) && probValue >= 65) {
-                    rawScore += ((probValue - 65) / (100 - 65)) * 15;
+                if (!isNaN(probValue)) {
+                    if (probValue >= minHistoricalProb && probValue <= maxHistoricalProb) {
+                        rawScore += 20; // In range, full points
+                    } else if (probValue >= minHistoricalProb - 3) {
+                        rawScore += 10; // Below by 1-3%
+                    } else if (probValue >= minHistoricalProb - 7) {
+                        rawScore += 5;  // Below by 4-7%
+                    }
                 }
 
                 const quotaFloat = parseFloat(String(Quota).replace(',', '.'));
                 if (isNaN(quotaFloat)) return null;
 
                 if (quotaFloat >= 1.40) rawScore += 15;
-                else if (quotaFloat >= 1.15) rawScore += ((quotaFloat - 1.15) / (1.40 - 1.15)) * 15;
+                else if (quotaFloat >= 1.20) rawScore += ((quotaFloat - 1.20) / (1.40 - 1.20)) * 15;
                 
                 return { ...match, Quota: quotaFloat, Punteggio: ((rawScore / maxRawScore) * 100).toFixed(2) };
             }).filter(Boolean);
@@ -348,10 +358,10 @@
     };
 
     const runGeminiAnalysis = () => {
-        const stats = calculateStats(historicalData);
+        const stats = calculateFilteredStats(historicalData);
 
         const scoredMatches = todayData
-            .filter(match => { // NEW RULES FILTER
+            .filter(match => {
                 const quotaFloat = parseFloat(String(match.Quota).replace(',', '.'));
                 const isCup = match.Lega && match.Lega.toLowerCase().includes('cup');
                 return !isCup && !isNaN(quotaFloat) && quotaFloat >= 1.20;
@@ -420,7 +430,7 @@
     const renderTable = (container, title, headers, data, columns) => {
         let tableHTML = `<h2 class="text-xl font-bold text-gray-800 mb-4">${title}</h2>`;
         if (data.length === 0) {
-            tableHTML += `<p class="text-gray-500">Nessuna partita ha superato i criteri di analisi (filtri coppe/quote applicati). Prova con un palinsesto più ampio.</p>`;
+            tableHTML += `<p class="text-gray-500">Nessuna partita ha superato i criteri di analisi (filtri coppe/quote/probabilità applicati). Prova con un palinsesto più ampio.</p>`;
             container.innerHTML = tableHTML;
             return;
         }
