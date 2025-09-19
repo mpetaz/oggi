@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motore AI di Analisi e Previsione Scommesse v5.0</title>
+    <title>Motore AI di Analisi e Previsione Scommesse v5.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -25,21 +25,34 @@
         tbody tr:hover { background-color: #f3f4f6; }
         #loader { display: none; border: 4px solid #e5e7eb; border-top: 4px solid #2563eb; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 2rem auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .view-selection-btn { padding: 2rem; font-size: 1.25rem; text-align: center; border: 2px solid #e5e7eb; transition: all 0.3s; }
+        .view-selection-btn { padding: 1.5rem; font-size: 1.1rem; text-align: center; border: 2px solid #e5e7eb; transition: all 0.3s; }
         .view-selection-btn:hover { border-color: #3b82f6; background-color: #eff6ff; }
+        .view-selection-btn:disabled { border-color: #e5e7eb; background-color: #f9fafb; color: #9ca3af; cursor: not-allowed; }
+        .view-selection-btn:disabled .text-2xl { filter: grayscale(100%); }
         .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; animation: pulse 2s infinite; }
         .status-red { background-color: #ef4444; }
         .status-green { background-color: #22c55e; }
         .status-yellow { background-color: #f59e0b; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        #notification {
+            position: fixed; top: 1.25rem; right: 1.25rem; padding: 1rem; border-radius: 0.5rem; color: white; font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: opacity 0.5s, transform 0.5s; z-index: 1000; transform: translateX(100%); opacity: 0;
+        }
+        #notification.show { transform: translateX(0); opacity: 1; }
+        .notification-success { background-color: #22c55e; }
+        .notification-error { background-color: #ef4444; }
     </style>
 </head>
 <body class="p-4 sm:p-6 md:p-8">
 
+    <div id="notification"></div>
+
     <div class="max-w-7xl mx-auto space-y-8">
         
         <div class="text-center">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v5.0 (Prediction Engine)</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v5.4</h1>
             <p id="db-status-text" class="mt-2 text-lg text-gray-600 flex items-center justify-center text-center">
                 <span id="db-status-dot" class="status-dot status-yellow"></span>
                 <span>Connessione a Firebase in corso...</span>
@@ -47,97 +60,55 @@
         </div>
         
         <div id="main-app" class="hidden">
-            <!-- VIEW SELECTION -->
-            <div id="view-selection" class="card">
-                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <button id="show-analysis-view-btn" class="view-selection-btn rounded-lg">
-                        <div class="text-2xl mb-2">📈</div>
-                        <h2 class="font-bold text-xl text-gray-800">Analisi Giorno</h2>
-                        <p class="text-sm text-gray-500">Carica i file e genera nuove previsioni.</p>
-                    </button>
-                    <button id="show-stats-view-btn" class="view-selection-btn rounded-lg">
-                        <div class="text-2xl mb-2">📊</div>
-                        <h2 class="font-bold text-xl text-gray-800">Statistiche & Verifica</h2>
-                        <p class="text-sm text-gray-500">Verifica i risultati passati e visualizza le performance.</p>
-                    </button>
-                </div>
-            </div>
-
-            <!-- ANALYSIS VIEW -->
-            <div id="analysis-view" class="hidden">
-                <!-- Engine Selection -->
-                <div id="mode-selection" class="card">
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <button id="select-mpetaz" class="view-selection-btn rounded-lg">
-                            <div class="text-2xl mb-2">🤖</div>
-                            <h2 class="font-bold text-xl text-gray-800">Selezione Mpetaz</h2>
-                            <p class="text-sm text-gray-500">Usa le tue regole 'esperte' e il range dinamico.</p>
-                        </button>
-                        <button id="select-gemini" class="view-selection-btn rounded-lg">
-                            <div class="text-2xl mb-2">🧠</div>
-                            <h2 class="font-bold text-xl text-gray-800">Selezione Gemini</h2>
-                            <p class="text-sm text-gray-500">Usa la logica a "cascata reale" per un'analisi dinamica.</p>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Control Panel -->
-                <div id="control-panel" class="hidden mt-8">
-                    <div class="flex justify-between items-center mb-4">
-                         <h2 id="panel-title" class="text-2xl font-bold text-gray-900"></h2>
-                         <button class="back-to-main-menu btn btn-secondary text-sm">Torna al Menu</button>
-                    </div>
-                    <div class="card">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-                            <div>
-                                <label class="block text-sm font-medium mb-2 text-gray-700" for="historical-file-analysis">1. Carica Storico per Analisi</label>
-                                <label for="historical-file-analysis" class="file-input-label" id="historical-label-analysis"><span>Seleziona file storico (.csv)</span></label>
-                                <input type="file" id="historical-file-analysis" accept=".csv">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-2 text-gray-700" for="today-file">2. Carica Partite di Oggi</label>
-                                <label for="today-file" class="file-input-label" id="today-label"><span>Seleziona file di oggi (.csv)</span></label>
-                                <input type="file" id="today-file" accept=".csv">
-                            </div>
+            <!-- WORKSPACE & ACTIONS -->
+            <div id="workspace-section" class="card">
+                <div id="initial-load-view">
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">1. Area di Lavoro</h2>
+                    <p class="text-gray-600 mb-4">Imposta la data e carica il file con le partite da analizzare.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                         <div>
+                            <label class="block text-sm font-medium mb-2 text-gray-700" for="prediction-date">Data delle Previsioni</label>
+                            <input type="date" id="prediction-date" class="w-full bg-white border border-gray-300 rounded-md p-2.5 text-gray-800 focus:ring-blue-500 focus:border-blue-500">
                         </div>
-                         <div class="mt-6 text-center">
-                            <button id="analyze-btn" class="btn btn-primary w-full md:w-auto">Analizza e Salva Pronostici</button>
-                         </div>
-                        <div id="error-message-analysis" class="mt-4 text-center text-red-600 font-semibold"></div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2 text-gray-700" for="today-file">File Partite da Analizzare</label>
+                            <label for="today-file" class="file-input-label" id="today-label"><span>Seleziona file partite (.csv)</span></label>
+                            <input type="file" id="today-file" accept=".csv">
+                        </div>
                     </div>
                 </div>
-
-                <!-- Results -->
-                <div id="results-section" class="space-y-8" style="display: none;">
-                    <div id="loader-analysis"></div>
-                    <div id="top-10-container" class="card"></div>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div id="safe-bet-container" class="card"></div>
-                        <div id="value-bet-container" class="card"></div>
+                
+                <div id="action-selection" class="mt-8">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">2. Azioni</h2>
+                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <button id="show-mpetaz-btn" class="view-selection-btn rounded-lg" disabled>
+                            <div class="text-2xl mb-2">🤖</div>
+                            <h2 class="font-bold text-lg text-gray-800">Strategia Mpetaz</h2>
+                        </button>
+                        <button id="show-gemini-btn" class="view-selection-btn rounded-lg" disabled>
+                            <div class="text-2xl mb-2">🧠</div>
+                            <h2 class="font-bold text-lg text-gray-800">Strategia Gemini</h2>
+                        </button>
+                        <button id="show-stats-btn" class="view-selection-btn rounded-lg">
+                            <div class="text-2xl mb-2">📊</div>
+                            <h2 class="font-bold text-lg text-gray-800">Statistiche</h2>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- STATS VIEW -->
-            <div id="stats-view" class="hidden space-y-8">
-                <div class="flex justify-between items-center">
-                     <h2 class="text-2xl font-bold text-gray-900">Verifica e Statistiche Performance</h2>
-                     <button class="back-to-main-menu btn btn-secondary text-sm">Torna al Menu</button>
+            <!-- ACTION VIEWS -->
+            <div id="action-view-container" class="hidden mt-8">
+                 <div class="flex justify-end mb-4">
+                    <button id="back-to-menu-btn" class="btn btn-secondary text-sm">Torna al Menu Principale</button>
                 </div>
-                <div class="card">
-                     <h3 class="font-bold text-lg mb-2">Verifica Risultati Pronostici</h3>
-                     <p class="text-gray-600 mb-4">Carica il file storico aggiornato (con i risultati di ieri) per verificare i pronostici in "In Attesa" e aggiornare le statistiche.</p>
-                     <div>
-                        <label class="block text-sm font-medium mb-2 text-gray-700" for="historical-file-verify">Carica Storico Aggiornato</label>
-                        <label for="historical-file-verify" class="file-input-label" id="historical-label-verify"><span>Seleziona file storico (.csv)</span></label>
-                        <input type="file" id="historical-file-verify" accept=".csv">
-                    </div>
-                    <button id="verify-btn" class="btn btn-primary mt-4">Verifica Risultati</button>
-                </div>
-                 <div id="stats-results-container" class="card">
-                    <!-- Stats will be rendered here -->
-                 </div>
+                <div id="mpetaz-view" class="card hidden"></div>
+                <div id="gemini-view" class="card hidden"></div>
+                <div id="stats-view" class="card hidden"></div>
             </div>
+
+            <!-- Results Section -->
+            <div id="results-section" class="space-y-8" style="display: none;"></div>
         </div>
     </div>
 
@@ -145,9 +116,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, getDocs, writeBatch, doc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, writeBatch, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        let historicalData = [], todayData = [], verificationData = [], currentMode = '';
+        let todayData = {}, mpetazHistoricalData = {}, geminiHistoricalData = {}, verificationData = {};
         let db;
 
         const firebaseConfig = {
@@ -160,101 +131,120 @@
         };
         
         // DOM Elements
-        const dbStatusDot = document.getElementById('db-status-dot');
         const dbStatusText = document.getElementById('db-status-text');
         const mainApp = document.getElementById('main-app');
-        const viewSelection = document.getElementById('view-selection');
-        const analysisView = document.getElementById('analysis-view');
-        const statsView = document.getElementById('stats-view');
-        const showAnalysisViewBtn = document.getElementById('show-analysis-view-btn');
-        const showStatsViewBtn = document.getElementById('show-stats-view-btn');
-        const backToMainMenuBtns = document.querySelectorAll('.back-to-main-menu');
-        
-        const modeSelection = document.getElementById('mode-selection');
-        const selectMpetazBtn = document.getElementById('select-mpetaz');
-        const selectGeminiBtn = document.getElementById('select-gemini');
-        const controlPanel = document.getElementById('control-panel');
-        const panelTitle = document.getElementById('panel-title');
-        const historicalFileInputAnalysis = document.getElementById('historical-file-analysis');
+        const workspaceSection = document.getElementById('workspace-section');
+        const predictionDateInput = document.getElementById('prediction-date');
         const todayFileInput = document.getElementById('today-file');
-        const historicalLabelAnalysis = document.getElementById('historical-label-analysis');
-        const todayLabel = document.getElementById('today-label');
-        const analyzeBtn = document.getElementById('analyze-btn');
+        const actionViewContainer = document.getElementById('action-view-container');
+        const showMpetazBtn = document.getElementById('show-mpetaz-btn');
+        const showGeminiBtn = document.getElementById('show-gemini-btn');
+        const showStatsBtn = document.getElementById('show-stats-btn');
+        const backToMenuBtn = document.getElementById('back-to-menu-btn');
+        const mpetazView = document.getElementById('mpetaz-view');
+        const geminiView = document.getElementById('gemini-view');
+        const statsView = document.getElementById('stats-view');
         const resultsSection = document.getElementById('results-section');
-        const loaderAnalysis = document.getElementById('loader-analysis');
-        const errorMessageAnalysis = document.getElementById('error-message-analysis');
-        const top10Container = document.getElementById('top-10-container');
-        const safeBetContainer = document.getElementById('safe-bet-container');
-        const valueBetContainer = document.getElementById('value-bet-container');
+        const notification = document.getElementById('notification');
+        let notificationTimeout;
 
-        const historicalFileInputVerify = document.getElementById('historical-file-verify');
-        const historicalLabelVerify = document.getElementById('historical-label-verify');
-        const verifyBtn = document.getElementById('verify-btn');
-        const statsResultsContainer = document.getElementById('stats-results-container');
+        function showNotification(message, type = 'success') {
+            clearTimeout(notificationTimeout);
+            notification.textContent = message;
+            notification.className = type === 'success' ? 'notification-success' : 'notification-error';
+            notification.classList.add('show');
+            notificationTimeout = setTimeout(() => { notification.classList.remove('show'); }, 5000);
+        }
 
-
-        // --- FIREBASE & APP INITIALIZATION ---
         async function initializeFirebase() {
              try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 const auth = getAuth(app);
                 await signInAnonymously(auth);
-                dbStatusDot.className = 'status-dot status-green';
-                dbStatusText.innerHTML = `<span id="db-status-dot" class="status-dot status-green"></span> <span>Connesso a Firebase!</span>`;
+                dbStatusText.innerHTML = `<span class="status-dot status-green"></span> <span>Connesso a Firebase!</span>`;
                 mainApp.style.display = 'block';
+                predictionDateInput.value = new Date().toISOString().split('T')[0];
             } catch (error) {
                 console.error("Firebase connection error:", error);
-                dbStatusDot.className = 'status-dot status-red';
-                if (error.code === 'auth/configuration-not-found') {
-                    dbStatusText.innerHTML = `<div class="text-left p-4 bg-red-50 border-l-4 border-red-400 text-red-700">
-                        <p class="font-bold">Errore di Configurazione</p>
-                        <p>L'accesso anonimo non è abilitato nel tuo progetto Firebase.</p>
-                        <p class="mt-2 font-semibold">Soluzione Rapida:</p>
-                        <ol class="list-decimal list-inside text-sm">
-                            <li>Vai alla tua <a href="https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers" target="_blank" class="underline">Console Firebase</a>.</li>
-                            <li>Vai su <strong>Authentication</strong> > <strong>Sign-in method</strong>.</li>
-                            <li>Clicca su <strong>Aggiungi nuovo provider</strong>.</li>
-                            <li>Seleziona <strong>Anonimo</strong> dalla lista e abilitalo.</li>
-                            <li>Ricarica questa pagina.</li>
-                        </ol>
-                    </div>`;
-                } else {
-                     dbStatusText.textContent = `Errore di connessione a Firebase: ${error.message}`;
-                }
+                dbStatusText.innerHTML = `<span class="status-dot status-red"></span> <span>Errore di connessione a Firebase.</span>`
             }
         }
+        
+        const hideAllActionViews = () => {
+            mpetazView.classList.add('hidden');
+            geminiView.classList.add('hidden');
+            statsView.classList.add('hidden');
+            resultsSection.style.display = 'none';
+        }
+        
+        const showActionView = (viewElement) => {
+            workspaceSection.classList.add('hidden');
+            actionViewContainer.classList.remove('hidden');
+            hideAllActionViews();
+            viewElement.classList.remove('hidden');
+        }
 
-        // --- UI NAVIGATION ---
-        showAnalysisViewBtn.addEventListener('click', () => {
-            viewSelection.style.display = 'none';
-            analysisView.style.display = 'block';
+        backToMenuBtn.addEventListener('click', () => {
+             workspaceSection.classList.remove('hidden');
+             actionViewContainer.classList.add('hidden');
+             hideAllActionViews();
         });
-        showStatsViewBtn.addEventListener('click', async () => {
-            viewSelection.style.display = 'none';
-            statsView.style.display = 'block';
+
+        showMpetazBtn.addEventListener('click', () => {
+            showActionView(mpetazView);
+            mpetazView.innerHTML = generateStrategyHTML('mpetaz');
+            document.getElementById('historical-file-mpetaz').addEventListener('change', (e) => handleFileUpload(e, 'mpetazHistorical', document.getElementById('historical-label-mpetaz')));
+            document.getElementById('analyze-btn-mpetaz').addEventListener('click', () => analyze('mpetaz'));
+        });
+
+        showGeminiBtn.addEventListener('click', () => {
+            showActionView(geminiView);
+            geminiView.innerHTML = generateStrategyHTML('gemini');
+            document.getElementById('historical-file-gemini').addEventListener('change', (e) => handleFileUpload(e, 'geminiHistorical', document.getElementById('historical-label-gemini')));
+            document.getElementById('analyze-btn-gemini').addEventListener('click', () => analyze('gemini'));
+        });
+
+        showStatsBtn.addEventListener('click', async () => {
+            showActionView(statsView);
+            statsView.innerHTML = generateStatsHTML();
+            document.getElementById('historical-file-verify').addEventListener('change', (e) => handleFileUpload(e, 'verification', document.getElementById('historical-label-verify')));
+            document.getElementById('verify-btn').addEventListener('click', verifyPredictions);
             await displayStatistics();
         });
-        backToMainMenuBtns.forEach(btn => btn.addEventListener('click', () => {
-            analysisView.style.display = 'none';
-            statsView.style.display = 'none';
-            controlPanel.classList.add('hidden');
-            modeSelection.classList.remove('hidden');
-            viewSelection.style.display = 'block';
-        }));
         
-        const showControlPanel = (mode) => {
-            currentMode = mode;
-            modeSelection.classList.add('hidden');
-            controlPanel.classList.remove('hidden');
-            resultsSection.style.display = 'none';
-            panelTitle.textContent = `Modalità: ${mode}`;
-        };
-        selectMpetazBtn.addEventListener('click', () => showControlPanel('Mpetaz'));
-        selectGeminiBtn.addEventListener('click', () => showControlPanel('Gemini'));
+        function generateStrategyHTML(engine) {
+            const title = engine === 'mpetaz' ? 'Strategia Mpetaz 🤖' : 'Strategia Gemini 🧠';
+            return `
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">${title}</h2>
+                <p class="mb-4 text-gray-600">Stai analizzando il file <strong>${todayData.name || 'N/A'}</strong> per la data <strong>${predictionDateInput.value}</strong>.</p>
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-700" for="historical-file-${engine}">Carica File Storico di Riferimento</label>
+                    <label for="historical-file-${engine}" class="file-input-label" id="historical-label-${engine}"><span>Seleziona file storico (.csv)</span></label>
+                    <input type="file" id="historical-file-${engine}" accept=".csv">
+                </div>
+                <div class="mt-6 text-center">
+                    <button id="analyze-btn-${engine}" class="btn btn-primary w-full md:w-auto">Analizza e Salva Pronostici</button>
+                </div>
+                <div id="error-message-${engine}" class="mt-4 text-center text-red-600 font-semibold"></div>`;
+        }
+        
+        function generateStatsHTML() {
+            return `
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Verifica e Statistiche Performance</h2>
+                <div class="card bg-gray-50">
+                     <h3 class="font-bold text-lg mb-2">Verifica Risultati Pronostici</h3>
+                     <p class="text-gray-600 mb-4">Carica il file storico aggiornato per verificare i pronostici salvati.</p>
+                     <div>
+                        <label class="block text-sm font-medium mb-2 text-gray-700" for="historical-file-verify">Carica File Risultati</label>
+                        <label for="historical-file-verify" class="file-input-label" id="historical-label-verify"><span>Seleziona file risultati (.csv)</span></label>
+                        <input type="file" id="historical-file-verify" accept=".csv">
+                    </div>
+                    <button id="verify-btn" class="btn btn-primary mt-4">Verifica Risultati</button>
+                </div>
+                 <div id="stats-results-container" class="card mt-8"></div>`;
+        }
 
-
-        // --- CORE LOGIC ---
         const parseCSV = (text) => {
             const lines = text.trim().replace(/\r/g, "").split('\n');
             const headerMap = { 'data': 'Data', 'lega': 'Lega', 'partita': 'Partita', 'risultato': 'Risultato', 'probabilità': 'Probabilità', 'probabilita': 'Probabilità', 'mercato': 'Mercato', 'tip': 'Tip', 'quota': 'Quota', 'esito': 'Vinto/Perso', 'ora': 'Ora' };
@@ -276,150 +266,164 @@
             reader.onload = (e) => {
                 try {
                     const parsedData = parseCSV(e.target.result);
-                    if (dataType === 'historical_analysis') historicalData = parsedData;
-                    else if (dataType === 'today') todayData = parsedData;
-                    else if (dataType === 'historical_verify') verificationData = parsedData;
+                    if (dataType === 'today') {
+                        todayData.data = parsedData;
+                        todayData.name = file.name;
+                        showMpetazBtn.disabled = false;
+                        showGeminiBtn.disabled = false;
+                    } else if (dataType === 'mpetazHistorical') {
+                        mpetazHistoricalData.data = parsedData;
+                        mpetazHistoricalData.name = file.name;
+                    } else if (dataType === 'geminiHistorical') {
+                        geminiHistoricalData.data = parsedData;
+                        geminiHistoricalData.name = file.name;
+                    } else if (dataType === 'verification') {
+                        verificationData.data = parsedData;
+                        verificationData.name = file.name;
+                    }
                     labelElement.querySelector('span').textContent = file.name;
                 } catch (error) {
-                    alert(`Errore nel parsing del file ${file.name}.`);
+                    showNotification(`Errore nel parsing del file ${file.name}.`, 'error');
                 }
             };
             reader.readAsText(file);
         };
 
-        historicalFileInputAnalysis.addEventListener('change', (e) => handleFileUpload(e, 'historical_analysis', historicalLabelAnalysis));
-        todayFileInput.addEventListener('change', (e) => handleFileUpload(e, 'today', todayLabel));
-        historicalFileInputVerify.addEventListener('change', (e) => handleFileUpload(e, 'historical_verify', historicalLabelVerify));
+        todayFileInput.addEventListener('change', (e) => handleFileUpload(e, 'today', document.getElementById('today-label')));
 
-        analyzeBtn.addEventListener('click', () => {
-            if (historicalData.length === 0 || todayData.length === 0) {
-                errorMessageAnalysis.textContent = 'Per favore, carica entrambi i file CSV prima di procedere.';
+        function analyze(engine) {
+            const historicalFile = engine === 'mpetaz' ? mpetazHistoricalData : geminiHistoricalData;
+            const errorEl = document.getElementById(`error-message-${engine}`);
+            const predictionDate = predictionDateInput.value;
+
+            if (!predictionDate) {
+                showNotification('Per favore, imposta una data valida nell\'Area di Lavoro Principale.', 'error');
                 return;
             }
-            resultsSection.style.display = 'block';
-            [top10Container, safeBetContainer, valueBetContainer].forEach(el => el.innerHTML = '');
-            
-            let scoredMatches;
-            if (currentMode === 'Mpetaz') scoredMatches = runMpetazAnalysis();
-            else if (currentMode === 'Gemini') scoredMatches = runGeminiAnalysis();
-            
-            if (scoredMatches) {
-                 savePredictionsToFirebase(scoredMatches, currentMode);
+            if (!todayData.data || todayData.data.length === 0) {
+                 showNotification('Errore: Ricarica il file delle partite da analizzare.', 'error');
+                return;
             }
-        });
-        
-        async function savePredictionsToFirebase(matches, engine) {
-            const predictionsRef = collection(db, "predictions");
-            const batch = writeBatch(db);
-            const today = new Date().toISOString().split('T')[0];
-
-            const matchesToSave = matches.slice(0, 10); // Save only top 10
+            if (!historicalFile.data || historicalFile.data.length === 0) {
+                errorEl.textContent = 'Per favore, carica un file storico di riferimento.';
+                return;
+            }
             
+            errorEl.textContent = '';
+            resultsSection.style.display = 'block';
+            resultsSection.innerHTML = '<div id="loader" style="display:block;"></div>';
+            
+            setTimeout(() => {
+                let scoredMatches;
+                if (engine === 'mpetaz') {
+                    scoredMatches = runMpetazAnalysis(historicalFile.data, todayData.data);
+                } else {
+                    scoredMatches = runGeminiAnalysis(historicalFile.data, todayData.data);
+                }
+                
+                if (scoredMatches) {
+                     renderResults(scoredMatches, engine);
+                     savePredictionsToFirebase(scoredMatches, engine, predictionDate);
+                }
+            }, 50);
+        }
+        
+        async function savePredictionsToFirebase(matches, engine, predictionDate) {
+            const predictionsRef = collection(db, "predictions");
+            const q = query(predictionsRef, where("date", "==", predictionDate), where("engine", "==", engine));
+            const existingPredictionsSnapshot = await getDocs(q);
+            const deleteBatch = writeBatch(db);
+            existingPredictionsSnapshot.forEach(doc => deleteBatch.delete(doc.ref));
+            await deleteBatch.commit();
+            const addBatch = writeBatch(db);
+            const matchesToSave = matches.slice(0, 10);
             matchesToSave.forEach(match => {
                 const newPredictionRef = doc(predictionsRef);
                 const predictionData = {
-                    date: today,
-                    engine: engine,
-                    match: match.Partita,
-                    league: match.Lega,
-                    market: match.Mercato,
-                    tip: match.Tip,
-                    quota: match.Quota,
-                    score: match.Punteggio,
-                    status: 'In Attesa' // pending
+                    date: predictionDate, engine: engine, match: match.Partita, league: match.Lega,
+                    market: match.Mercato, tip: match.Tip, quota: match.Quota,
+                    score: match.Punteggio, status: 'In Attesa'
                 };
-                batch.set(newPredictionRef, predictionData);
+                addBatch.set(newPredictionRef, predictionData);
             });
-
             try {
-                await batch.commit();
-                alert(`${matchesToSave.length} pronostici per il motore ${engine} salvati con successo!`);
+                await addBatch.commit();
+                showNotification(`${matchesToSave.length} nuovi pronostici per il ${predictionDate} (${engine}) salvati!`);
             } catch (error) {
-                alert(`Errore nel salvataggio dei pronostici: ${error.message}`);
+                showNotification(`Errore nel salvataggio: ${error.message}`, 'error');
             }
         }
         
-        // --- STATS & VERIFICATION LOGIC ---
-        verifyBtn.addEventListener('click', async () => {
-            if (verificationData.length === 0) {
-                alert('Per favore, carica un file storico aggiornato per la verifica.');
+        async function verifyPredictions() {
+            if (!verificationData.data || verificationData.data.length === 0) {
+                showNotification('Carica un file di risultati per la verifica.', 'error');
                 return;
             }
-
+            const verifyBtn = document.getElementById('verify-btn');
             verifyBtn.disabled = true;
             verifyBtn.textContent = 'Verifica in corso...';
-
             const predictionsRef = collection(db, "predictions");
             const q = query(predictionsRef, where("status", "==", "In Attesa"));
             const pendingPredictionsSnapshot = await getDocs(q);
-            
             if (pendingPredictionsSnapshot.empty) {
-                alert('Nessun pronostico in attesa da verificare.');
+                showNotification('Nessun pronostico in attesa da verificare.');
                 verifyBtn.disabled = false;
                 verifyBtn.textContent = 'Verifica Risultati';
                 return;
             }
-            
             const batch = writeBatch(db);
             let verifiedCount = 0;
-
             pendingPredictionsSnapshot.forEach(predDoc => {
                 const prediction = predDoc.data();
-                const resultInHistory = verificationData.find(hist => hist.Partita === prediction.match && hist.Lega === prediction.league);
-                
+                const resultInHistory = verificationData.data.find(hist => hist.Partita === prediction.match && hist.Lega === prediction.league);
                 if (resultInHistory && resultInHistory.esito) {
-                    const newStatus = resultInHistory.esito.trim(); // "Vinto" or "Perso"
+                    const newStatus = resultInHistory.esito.trim();
                     const docRef = doc(db, "predictions", predDoc.id);
                     batch.update(docRef, { status: newStatus });
                     verifiedCount++;
                 }
             });
-
             try {
                 await batch.commit();
-                alert(`${verifiedCount} pronostici sono stati verificati e aggiornati!`);
+                showNotification(`${verifiedCount} pronostici sono stati verificati e aggiornati!`);
             } catch (error) {
-                alert(`Errore durante l'aggiornamento: ${error.message}`);
+                showNotification(`Errore durante l'aggiornamento: ${error.message}`, 'error');
             }
-
             verifyBtn.disabled = false;
             verifyBtn.textContent = 'Verifica Risultati';
             await displayStatistics();
-        });
+        }
 
         async function displayStatistics() {
-            statsResultsContainer.innerHTML = 'Caricamento statistiche...';
+            const statsContainer = document.getElementById('stats-results-container');
+            statsContainer.innerHTML = 'Caricamento statistiche...';
             const predictionsSnapshot = await getDocs(collection(db, "predictions"));
             const allPredictions = predictionsSnapshot.docs.map(doc => doc.data());
-
             if (allPredictions.length === 0) {
-                statsResultsContainer.innerHTML = '<h3 class="font-bold text-lg mb-2">Statistiche Performance</h3><p>Nessun pronostico salvato nel database.</p>';
+                statsContainer.innerHTML = '<h3 class="font-bold text-lg mb-2">Statistiche Performance</h3><p>Nessun pronostico salvato.</p>';
                 return;
             }
-
             const stats = {
                 total: allPredictions.length,
                 won: allPredictions.filter(p => p.status === 'Vinto').length,
                 lost: allPredictions.filter(p => p.status === 'Perso').length,
                 pending: allPredictions.filter(p => p.status === 'In Attesa').length,
                 mpetaz: {
-                    total: allPredictions.filter(p => p.engine === 'Mpetaz' && p.status !== 'In Attesa').length,
-                    won: allPredictions.filter(p => p.engine === 'Mpetaz' && p.status === 'Vinto').length,
+                    total: allPredictions.filter(p => p.engine === 'mpetaz' && p.status !== 'In Attesa').length,
+                    won: allPredictions.filter(p => p.engine === 'mpetaz' && p.status === 'Vinto').length,
                 },
                 gemini: {
-                    total: allPredictions.filter(p => p.engine === 'Gemini' && p.status !== 'In Attesa').length,
-                    won: allPredictions.filter(p => p.engine === 'Gemini' && p.status === 'Vinto').length,
+                    total: allPredictions.filter(p => p.engine === 'gemini' && p.status !== 'In Attesa').length,
+                    won: allPredictions.filter(p => p.engine === 'gemini' && p.status === 'Vinto').length,
                 }
             };
-            
             const overallRate = stats.won + stats.lost > 0 ? ((stats.won / (stats.won + stats.lost)) * 100).toFixed(1) : 0;
             const mpetazRate = stats.mpetaz.total > 0 ? ((stats.mpetaz.won / stats.mpetaz.total) * 100).toFixed(1) : 0;
             const geminiRate = stats.gemini.total > 0 ? ((stats.gemini.won / stats.gemini.total) * 100).toFixed(1) : 0;
-
-            statsResultsContainer.innerHTML = `
+            statsContainer.innerHTML = `
                 <h3 class="font-bold text-lg mb-4">Statistiche Performance Totali</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div><p class="text-2xl font-bold">${stats.total}</p><p class="text-sm text-gray-500">Pronostici Totali</p></div>
+                    <div><p class="text-2xl font-bold">${stats.total}</p><p class="text-sm text-gray-500">Pronostici</p></div>
                     <div><p class="text-2xl font-bold text-green-600">${stats.won}</p><p class="text-sm text-gray-500">Vinti</p></div>
                     <div><p class="text-2xl font-bold text-red-600">${stats.lost}</p><p class="text-sm text-gray-500">Persi</p></div>
                     <div><p class="text-2xl font-bold text-blue-600">${overallRate}%</p><p class="text-sm text-gray-500">Successo</p></div>
@@ -427,20 +431,13 @@
                  <hr class="my-6">
                  <h3 class="font-bold text-lg mb-4">Performance per Motore</h3>
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="p-4 rounded-lg bg-gray-50">
-                        <h4 class="font-semibold text-center mb-2">🤖 Mpetaz</h4>
-                        <p>Successo: <span class="font-bold">${mpetazRate}%</span> (${stats.mpetaz.won} / ${stats.mpetaz.total})</p>
-                    </div>
-                     <div class="p-4 rounded-lg bg-gray-50">
-                        <h4 class="font-semibold text-center mb-2">🧠 Gemini</h4>
-                        <p>Successo: <span class="font-bold">${geminiRate}%</span> (${stats.gemini.won} / ${stats.gemini.total})</p>
-                    </div>
+                    <div class="p-4 rounded-lg bg-gray-50"><h4 class="font-semibold text-center mb-2">🤖 Mpetaz</h4><p>Successo: <span class="font-bold">${mpetazRate}%</span> (${stats.mpetaz.won} / ${stats.mpetaz.total})</p></div>
+                    <div class="p-4 rounded-lg bg-gray-50"><h4 class="font-semibold text-center mb-2">🧠 Gemini</h4><p>Successo: <span class="font-bold">${geminiRate}%</span> (${stats.gemini.won} / ${stats.gemini.total})</p></div>
                  </div>
-                 <p class="text-center mt-4 text-sm text-gray-500">${stats.pending} pronostici ancora in attesa di verifica.</p>
+                 <p class="text-center mt-4 text-sm text-gray-500">${stats.pending} pronostici in attesa di verifica.</p>
             `;
         }
-
-        // --- ANALYSIS LOGIC (UNCHANGED) ---
+        
         const calculateFilteredStats = (data) => {
             const stats = { league: {}, tip: {}, specific: {}, market: {}, global: { won: 0, total: 0 } };
             data.forEach(row => {
@@ -450,32 +447,27 @@
                 if (!result || !Lega || !Mercato || !Tip) return;
                 const won = (result.trim().toLowerCase() === 'vinto') ? 1 : 0;
                 if (!stats.league[Lega]) stats.league[Lega] = { won: 0, total: 0 };
-                stats.league[Lega].total++;
-                stats.league[Lega].won += won;
+                stats.league[Lega].total++; stats.league[Lega].won += won;
                 if (!stats.tip[Tip]) stats.tip[Tip] = { won: 0, total: 0 };
-                stats.tip[Tip].total++;
-                stats.tip[Tip].won += won;
-                stats.global.total++;
-                stats.global.won += won;
+                stats.tip[Tip].total++; stats.tip[Tip].won += won;
+                stats.global.total++; stats.global.won += won;
                 const keySpecific = `${Lega}|${Mercato}|${Tip}`;
                 if (!stats.specific[keySpecific]) stats.specific[keySpecific] = { won: 0, total: 0 };
-                stats.specific[keySpecific].total++;
-                stats.specific[keySpecific].won += won;
+                stats.specific[keySpecific].total++; stats.specific[keySpecific].won += won;
                 const keyMarket = `${Lega}|${Mercato}`;
                 if (!stats.market[keyMarket]) stats.market[keyMarket] = { won: 0, total: 0 };
-                stats.market[keyMarket].total++;
-                stats.market[keyMarket].won += won;
+                stats.market[keyMarket].total++; stats.market[keyMarket].won += won;
             });
             Object.values(stats.league).forEach(s => s.rate = s.total > 0 ? s.won / s.total : 0);
             Object.values(stats.tip).forEach(s => s.rate = s.total > 0 ? s.won / s.total : 0);
             return stats;
         };
-        const runMpetazAnalysis = () => {
-            const stats = calculateFilteredStats(historicalData);
+        const runMpetazAnalysis = (historical, today) => {
+            const stats = calculateFilteredStats(historical);
             const historicalLeagues = new Set(Object.keys(stats.league));
             const historicalTips = new Set(Object.keys(stats.tip));
             let minHistoricalProb = 101, maxHistoricalProb = 0;
-            const validHistoricalData = historicalData.filter(row => ! (row.Lega && row.Lega.toLowerCase().includes('cup')) && row.Probabilità);
+            const validHistoricalData = historical.filter(row => !(row.Lega && row.Lega.toLowerCase().includes('cup')) && row.Probabilità);
             validHistoricalData.forEach(row => {
                 const probValue = parseInt(String(row.Probabilità).replace('%', ''));
                 if (!isNaN(probValue)) {
@@ -483,14 +475,13 @@
                     if (probValue > maxHistoricalProb) maxHistoricalProb = probValue;
                 }
             });
-            const scoredMatches = todayData.filter(match => {
+            const scoredMatches = today.filter(match => {
                 const quotaFloat = parseFloat(String(match.Quota).replace(',', '.'));
                 return !(match.Lega && match.Lega.toLowerCase().includes('cup')) && !isNaN(quotaFloat) && quotaFloat >= 1.20;
             }).map(match => {
                 const { Lega, Tip, Quota, Probabilità } = match;
                 if (!Lega || !Tip || !Quota || !Probabilità) return null;
-                let rawScore = 0;
-                const maxRawScore = 75; 
+                let rawScore = 0; const maxRawScore = 75; 
                 if (historicalLeagues.has(Lega)) rawScore += stats.league[Lega].rate * 20;
                 else if (Lega.startsWith('EU-')) rawScore += 5;
                 if (historicalTips.has(Tip)) rawScore += stats.tip[Tip].rate * 20;
@@ -508,12 +499,11 @@
                 return { ...match, Quota: quotaFloat, Punteggio: ((rawScore / maxRawScore) * 100).toFixed(2) };
             }).filter(Boolean);
             scoredMatches.sort((a, b) => b.Punteggio - a.Punteggio);
-            renderResults(scoredMatches, 'Mpetaz');
             return scoredMatches;
         };
-        const runGeminiAnalysis = () => {
-            const stats = calculateFilteredStats(historicalData);
-            const scoredMatches = todayData.filter(match => {
+        const runGeminiAnalysis = (historical, today) => {
+            const stats = calculateFilteredStats(historical);
+            const scoredMatches = today.filter(match => {
                 const quotaFloat = parseFloat(String(match.Quota).replace(',', '.'));
                 return !(match.Lega && match.Lega.toLowerCase().includes('cup')) && !isNaN(quotaFloat) && quotaFloat >= 1.20;
             }).map(match => {
@@ -521,22 +511,10 @@
                 if (!Lega || !Mercato || !Tip || !Quota) return null;
                 const keySpecific = `${Lega}|${Mercato}|${Tip}`, keyMarket = `${Lega}|${Mercato}`, keyLeague = Lega;
                 let historicalStat = null, justification = "", confidence = 1.0; 
-                if (stats.specific[keySpecific]) {
-                    historicalStat = stats.specific[keySpecific];
-                    justification = `Dato specifico (${historicalStat.total}p)`;
-                } else if (stats.market[keyMarket]) {
-                    historicalStat = stats.market[keyMarket];
-                    justification = `Basato su mercato (${historicalStat.total}p)`;
-                    confidence = 0.95; 
-                } else if (stats.league[keyLeague]) {
-                    historicalStat = stats.league[keyLeague];
-                    justification = `Basato su lega (${historicalStat.total}p)`;
-                    confidence = 0.90; 
-                } else {
-                    historicalStat = stats.global;
-                    justification = `Dato Globale (${historicalStat.total}p totali)`;
-                    confidence = 0.80;
-                }
+                if (stats.specific[keySpecific]) { historicalStat = stats.specific[keySpecific]; justification = `Dato specifico (${historicalStat.total}p)`;
+                } else if (stats.market[keyMarket]) { historicalStat = stats.market[keyMarket]; justification = `Basato su mercato (${historicalStat.total}p)`; confidence = 0.95; 
+                } else if (stats.league[keyLeague]) { historicalStat = stats.league[keyLeague]; justification = `Basato su lega (${historicalStat.total}p)`; confidence = 0.90; 
+                } else { historicalStat = stats.global; justification = `Dato Globale (${historicalStat.total}p totali)`; confidence = 0.80; }
                 const successRate = (historicalStat.total > 0) ? (historicalStat.won / historicalStat.total) * 100 : 0;
                 const quotaFloat = parseFloat(String(Quota).replace(',', '.'));
                 if (isNaN(quotaFloat)) return null;
@@ -545,10 +523,17 @@
                 return { ...match, Quota: quotaFloat, Punteggio: finalScore.toFixed(2), Justification: `${(successRate).toFixed(1)}% successo storico. ${justification}` };
             }).filter(Boolean);
             scoredMatches.sort((a, b) => b.Punteggio - a.Punteggio);
-            renderResults(scoredMatches, 'Gemini');
             return scoredMatches;
         };
         const renderResults = (matches, mode) => {
+            const resultsContainer = document.getElementById('results-section');
+            resultsContainer.innerHTML = `
+                <div id="loader"></div>
+                <div id="top-10-container" class="card"></div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div id="safe-bet-container" class="card"></div>
+                    <div id="value-bet-container" class="card"></div>
+                </div>`;
             const topTitle = mode === 'Mpetaz' ? '🏆 Migliori Partite (Metodo Mpetaz)' : '🧠 Migliori Partite (Metodo Gemini)';
             const headers = ['Ora', 'Lega', 'Partita', 'Mercato', 'Tip', 'Probabilità', 'Quota', 'Punteggio'];
             const columns = ['Ora', 'Lega', 'Partita', 'Mercato', 'Tip', 'Probabilità', 'Quota', 'Punteggio'];
@@ -556,16 +541,12 @@
             let matchesToShow = greenMatches.length > 10 ? greenMatches : matches.slice(0, 10);
             if (mode === 'Gemini') { headers.push('Note Gemini'); columns.push('Justification'); }
             headers.push('Azioni'); columns.push('Azioni');
-            renderTable(top10Container, topTitle, headers, matchesToShow, columns);
+            renderTable(document.getElementById('top-10-container'), topTitle, headers, matchesToShow, columns);
             buildAndRenderMultiples(matches);
         };
         const renderTable = (container, title, headers, data, columns) => {
             let tableHTML = `<h2 class="text-xl font-bold text-gray-800 mb-4">${title}</h2>`;
-            if (data.length === 0) {
-                tableHTML += `<p class="text-gray-500">Nessuna partita ha superato i criteri di analisi. Prova con un palinsesto più ampio.</p>`;
-                container.innerHTML = tableHTML;
-                return;
-            }
+            if (data.length === 0) { tableHTML += `<p class="text-gray-500">Nessuna partita ha superato i criteri di analisi.</p>`; container.innerHTML = tableHTML; return; }
             tableHTML += `<div class="table-wrapper"><table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
             data.forEach(row => {
                 tableHTML += `<tr>`;
@@ -575,10 +556,8 @@
                         const score = parseFloat(cellValue);
                         const color = score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500';
                         cellValue = `<div class="w-full bg-gray-200 rounded-full h-2.5"><div class="${color} h-2.5 rounded-full" style="width: ${score}%"></div></div><span class="font-semibold text-gray-700">${cellValue}</span>`;
-                    } else if (col === 'Quota' && typeof cellValue === 'number') {
-                        cellValue = cellValue.toFixed(2);
-                    } else if (col === 'Justification') {
-                        cellValue = `<span class="text-sm italic text-gray-500">${cellValue}</span>`;
+                    } else if (col === 'Quota' && typeof cellValue === 'number') { cellValue = cellValue.toFixed(2);
+                    } else if (col === 'Justification') { cellValue = `<span class="text-sm italic text-gray-500">${cellValue}</span>`;
                     } else if (col === 'Azioni') {
                         const searchQuery = encodeURIComponent(`${row.Partita} orario partita`);
                         cellValue = `<a href="https://www.google.com/search?q=${searchQuery}" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold text-sm">Cerca Orario</a>`;
@@ -595,6 +574,8 @@
             const valueMatches = [...matches].map(m => ({...m, value: m.Punteggio > 0 ? m.Punteggio / m.Quota : 0})).sort((a,b) => b.value - a.value);
             const safeBet = buildMultipla(matches, 2, oddsMultiplier);
             const valueBet = buildMultipla(valueMatches, 3, oddsMultiplier);
+            const safeBetContainer = document.getElementById('safe-bet-container');
+            const valueBetContainer = document.getElementById('value-bet-container');
             if (safeBet) renderMultipla(safeBetContainer, 'Multipla "Prudente" (Doppia)', safeBet, "Basata sulle 2 partite con il punteggio più alto.");
             else safeBetContainer.innerHTML = `<h2 class="text-xl font-bold text-gray-800 mb-4">Multipla "Prudente" (Doppia)</h2><p class="text-gray-500">Non ci sono abbastanza partite per creare una doppia.</p>`;
             if (valueBet) renderMultipla(valueBetContainer, 'Multipla "Value Net" (Tripla)', valueBet, "Basata sulle 3 partite con il miglior rapporto punteggio/quota.");
