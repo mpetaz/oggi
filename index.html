@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motore AI di Analisi e Previsione Scommesse v3.3</title>
+    <title>Motore AI di Analisi e Previsione Scommesse v3.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -71,7 +71,7 @@
     <div class="max-w-7xl mx-auto space-y-8">
         
         <div class="text-center">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v3.3 (Auto-Multiples)</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v3.4 (Dynamic Table)</h1>
             <p class="mt-2 text-lg text-gray-600">Scegli il tuo motore di analisi per iniziare.</p>
         </div>
 
@@ -410,11 +410,17 @@
         const topTitle = mode === 'Mpetaz' ? '🏆 Migliori Partite (Metodo Mpetaz)' : '🧠 Migliori Partite (Metodo Gemini)';
         const headers = ['Lega', 'Partita', 'Mercato', 'Tip', 'Probabilità', 'Quota', 'Punteggio'];
         const columns = ['Lega', 'Partita', 'Mercato', 'Tip', 'Probabilità', 'Quota', 'Punteggio'];
+        
+        // MODIFIED: Dynamic table logic
+        const greenMatches = matches.filter(m => parseFloat(m.Punteggio) >= 80);
+        let matchesToShow = greenMatches.length > 10 ? greenMatches : matches.slice(0, 10);
+        
         if (mode === 'Gemini') {
             headers.push('Note Gemini');
             columns.push('Justification');
         }
-        renderTable(top10Container, topTitle, headers, matches.slice(0, 10), columns);
+
+        renderTable(top10Container, topTitle, headers, matchesToShow, columns);
         buildAndRenderMultiples(matches);
         loader.style.display = 'none';
     };
