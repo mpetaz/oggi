@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motore AI di Analisi e Previsione Scommesse v3.4</title>
+    <title>Motore AI di Analisi e Previsione Scommesse v3.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -71,7 +71,7 @@
     <div class="max-w-7xl mx-auto space-y-8">
         
         <div class="text-center">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v3.4 (Dynamic Table)</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Motore AI di Analisi v3.6 (Live Search)</h1>
             <p class="mt-2 text-lg text-gray-600">Scegli il tuo motore di analisi per iniziare.</p>
         </div>
 
@@ -175,7 +175,7 @@
         const headerMap = {
             'data': 'Data', 'lega': 'Lega', 'partita': 'Partita', 'risultato': 'Risultato', 
             'probabilità': 'Probabilità', 'probabilita': 'Probabilità', 'mercato': 'Mercato',
-            'tip': 'Tip', 'quota': 'Quota', 'esito': 'Vinto/Perso'
+            'tip': 'Tip', 'quota': 'Quota', 'esito': 'Vinto/Perso', 'ora': 'Ora'
         };
         const rawHeader = lines[0].split(',').map(h => h.trim().toLowerCase());
         const header = rawHeader.map(h => headerMap[h] || h.charAt(0).toUpperCase() + h.slice(1));
@@ -408,10 +408,9 @@
 
     const renderResults = (matches, mode) => {
         const topTitle = mode === 'Mpetaz' ? '🏆 Migliori Partite (Metodo Mpetaz)' : '🧠 Migliori Partite (Metodo Gemini)';
-        const headers = ['Lega', 'Partita', 'Mercato', 'Tip', 'Probabilità', 'Quota', 'Punteggio'];
-        const columns = ['Lega', 'Partita', 'Mercato', 'Tip', 'Probabilità', 'Quota', 'Punteggio'];
+        const headers = ['Ora', 'Lega', 'Partita', 'Mercato', 'Tip', 'Probabilità', 'Quota', 'Punteggio'];
+        const columns = ['Ora', 'Lega', 'Partita', 'Mercato', 'Tip', 'Probabilità', 'Quota', 'Punteggio'];
         
-        // MODIFIED: Dynamic table logic
         const greenMatches = matches.filter(m => parseFloat(m.Punteggio) >= 80);
         let matchesToShow = greenMatches.length > 10 ? greenMatches : matches.slice(0, 10);
         
@@ -419,6 +418,9 @@
             headers.push('Note Gemini');
             columns.push('Justification');
         }
+        
+        headers.push('Azioni'); // Add Actions header
+        columns.push('Azioni'); // Add Actions column
 
         renderTable(top10Container, topTitle, headers, matchesToShow, columns);
         buildAndRenderMultiples(matches);
@@ -445,6 +447,9 @@
                     cellValue = cellValue.toFixed(2);
                 } else if (col === 'Justification') {
                     cellValue = `<span class="text-sm italic text-gray-500">${cellValue}</span>`;
+                } else if (col === 'Azioni') {
+                    const searchQuery = encodeURIComponent(`${row.Partita} orario partita`);
+                    cellValue = `<a href="https://www.google.com/search?q=${searchQuery}" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold text-sm">Cerca Orario</a>`;
                 }
                 tableHTML += `<td>${cellValue}</td>`;
             });
@@ -508,9 +513,10 @@
             <p class="text-sm text-gray-500"><span class="font-semibold">Quota Originale:</span> ${multipla.totalOdds.toFixed(2)}</p>
             <p class="text-sm italic text-gray-500">"${justification}"</p>
         </div>`;
-        html += `<div class="table-wrapper"><table><thead><tr><th>Partita</th><th>Tip</th><th>Quota</th><th>Punteggio</th></tr></thead><tbody>`;
+        html += `<div class="table-wrapper"><table><thead><tr><th>Ora</th><th>Partita</th><th>Tip</th><th>Quota</th><th>Punteggio</th></tr></thead><tbody>`;
         multipla.matches.forEach(m => {
             html += `<tr>
+                <td>${m.Ora || '-'}</td>
                 <td>${m.Partita}</td><td>${m.Mercato}, ${m.Tip}</td>
                 <td>${m.Quota.toFixed(2)}</td><td>${m.Punteggio}</td>
             </tr>`;
