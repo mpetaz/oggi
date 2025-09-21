@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🤖 AI Betting Engine - SISTEMA FUNZIONANTE</title>
+    <title>🤖 AI Betting Engine - Con Filtro Date</title>
     <style>
         :root {
             --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
@@ -36,6 +36,7 @@
         .btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); }
         .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
         .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
         .btn-mpetaz { background: var(--purple); color: white; }
         .btn-gemini { background: var(--orange); color: white; }
         .btn-secondary { background: var(--gray-200); color: var(--gray-700); }
@@ -142,6 +143,15 @@
             background: #dcfce7; color: #166534;
         }
 
+        .filter-section {
+            background: #f8fafc; border: 2px solid #e5e7eb; padding: 1.5rem; 
+            border-radius: 12px; margin-bottom: 1rem;
+        }
+
+        .filter-active {
+            background: #dcfce7; border-color: #10b981; color: #166534;
+        }
+
         @media (max-width: 768px) {
             .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
             .stats-comparison { grid-template-columns: 1fr; }
@@ -152,9 +162,9 @@
 <body>
     <nav class="nav">
         <div class="container">
-            <h1>🤖 AI Betting Engine - SISTEMA FUNZIONANTE</h1>
+            <h1>🤖 AI Betting Engine - Con Filtro Date</h1>
             <p style="margin-top: 0.5rem; opacity: 0.9; font-size: 0.9rem;">
-                🔥 Sistema ripristinato alla versione funzionante
+                🔥 Sistema funzionante + 📅 Filtro per date specifiche
             </p>
         </div>
     </nav>
@@ -237,9 +247,55 @@
             <div id="verification-summary" class="mt-4"></div>
         </div>
 
+        <!-- *** FILTRO DATE *** -->
+        <section class="card">
+            <h2 class="font-bold mb-6">📅 Filtro per Date</h2>
+
+            <div class="filter-section" id="date-filter-section">
+                <h3 class="font-bold mb-4">🔍 Seleziona Periodo</h3>
+
+                <div class="grid grid-4 mb-4">
+                    <div>
+                        <label class="font-medium mb-2 block">📅 Data Da</label>
+                        <input type="date" id="filter-date-from">
+                    </div>
+                    <div>
+                        <label class="font-medium mb-2 block">📅 Data A</label>
+                        <input type="date" id="filter-date-to">
+                    </div>
+                    <div style="display: flex; align-items: end;">
+                        <button class="btn btn-primary" onclick="applyDateFilter()" style="width: 100%;">
+                            🔍 Applica Filtro
+                        </button>
+                    </div>
+                    <div style="display: flex; align-items: end;">
+                        <button class="btn btn-secondary" onclick="resetDateFilter()" style="width: 100%;">
+                            🔄 Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Azioni su Date Filtrate -->
+                <div class="grid grid-2 gap-3">
+                    <button class="btn btn-danger" onclick="deleteFilteredDates()" id="delete-filtered-btn" style="display: none;">
+                        🗑️ Elimina Partite del Periodo
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportFilteredDates()" id="export-filtered-btn" style="display: none;">
+                        📊 Esporta Periodo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Info Filtro Attivo -->
+            <div id="filter-info" style="display: none; background: #dcfce7; padding: 1rem; border-radius: 8px; color: #166534; margin-top: 1rem;">
+                <strong>🔍 Filtro Attivo:</strong> <span id="filter-period"></span><br>
+                <strong>📊 Risultati:</strong> <span id="filter-results-count"></span>
+            </div>
+        </section>
+
         <!-- STATISTICHE -->
         <section class="card">
-            <h2 class="font-bold mb-6">📊 Confronto Prestazioni</h2>
+            <h2 class="font-bold mb-6">📊 Confronto Prestazioni <span id="stats-filter-indicator" style="display: none; color: #10b981;">(FILTRATE)</span></h2>
 
             <div class="stats-comparison">
                 <!-- Mpetaz Stats -->
@@ -322,7 +378,7 @@
         <div class="card">
             <h2 class="font-bold mb-4">🔍 Console Sistema</h2>
             <div class="debug-section" id="debug-console">
-                <div style="color: #10b981;">[SISTEMA] Versione funzionante ripristinata</div>
+                <div style="color: #10b981;">[SISTEMA] Sistema con filtro date inizializzato</div>
             </div>
             <div class="mt-4 grid grid-2 gap-3">
                 <button class="btn btn-secondary" onclick="clearConsole()">🗑️ Pulisci</button>
@@ -331,7 +387,7 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT FUNZIONANTE -->
+    <!-- JAVASCRIPT CON FILTRO DATE -->
     <script type="module">
         const MIN_ODDS = 1.20;
 
@@ -342,6 +398,10 @@
         let mpetazHistory = { data: [], name: '' };
         let geminiHistory = { data: [], name: '' };
         let resultsData = { data: [], name: '' };
+
+        // VARIABILI FILTRO DATE
+        let currentDateFilter = null;
+        let allPredictions = [];
 
         const log = (level, message, data = null) => {
             const timestamp = new Date().toLocaleTimeString();
@@ -806,15 +866,158 @@
             return false;
         };
 
-        const loadStatistics = async () => {
+        // *** FUNZIONI FILTRO DATE ***
+        const applyDateFilter = async () => {
+            const dateFrom = document.getElementById('filter-date-from').value;
+            const dateTo = document.getElementById('filter-date-to').value;
+
+            if (!dateFrom || !dateTo) {
+                notify('Seleziona entrambe le date!', 'warning');
+                return;
+            }
+
+            if (dateFrom > dateTo) {
+                notify('Data inizio deve essere <= data fine!', 'error');
+                return;
+            }
+
+            log('info', `📅 Applicazione filtro date: ${dateFrom} → ${dateTo}`);
+
+            currentDateFilter = { from: dateFrom, to: dateTo };
+
+            // Attiva UI filtro
+            document.getElementById('date-filter-section').classList.add('filter-active');
+            document.getElementById('filter-info').style.display = 'block';
+            document.getElementById('filter-period').textContent = `${dateFrom} → ${dateTo}`;
+            document.getElementById('stats-filter-indicator').style.display = 'inline';
+            document.getElementById('delete-filtered-btn').style.display = 'block';
+            document.getElementById('export-filtered-btn').style.display = 'block';
+
+            // Ricarica statistiche con filtro
+            await loadStatistics(true);
+
+            notify(`Filtro applicato: ${dateFrom} → ${dateTo}`);
+        };
+
+        const resetDateFilter = async () => {
+            currentDateFilter = null;
+
+            // Reset UI
+            document.getElementById('date-filter-section').classList.remove('filter-active');
+            document.getElementById('filter-info').style.display = 'none';
+            document.getElementById('stats-filter-indicator').style.display = 'none';
+            document.getElementById('delete-filtered-btn').style.display = 'none';
+            document.getElementById('export-filtered-btn').style.display = 'none';
+            document.getElementById('filter-date-from').value = '';
+            document.getElementById('filter-date-to').value = '';
+
+            // Ricarica statistiche complete
+            await loadStatistics(false);
+
+            notify('Filtro date rimosso');
+            log('info', '🔄 Filtro date resettato');
+        };
+
+        const deleteFilteredDates = async () => {
+            if (!currentDateFilter) {
+                notify('Nessun filtro attivo!', 'warning');
+                return;
+            }
+
+            const confirmed = confirm(`ATTENZIONE: Vuoi eliminare TUTTI i pronostici dal ${currentDateFilter.from} al ${currentDateFilter.to}?\n\nQuesta azione non può essere annullata!`);
+            if (!confirmed) return;
+
+            try {
+                log('info', '🗑️ Eliminazione pronostici filtrati...');
+
+                const filtered = allPredictions.filter(p => 
+                    p.date >= currentDateFilter.from && p.date <= currentDateFilter.to
+                );
+
+                let deleted = 0;
+                for (const prediction of filtered) {
+                    try {
+                        const docRef = firestoreDoc(db, "ai_predictions", prediction.id);
+                        await firestoreDeleteDoc(docRef);
+                        deleted++;
+                    } catch (deleteError) {
+                        log('error', `❌ Errore eliminazione ${prediction.match}: ${deleteError.message}`);
+                    }
+                }
+
+                // Reset filtro e ricarica
+                await resetDateFilter();
+
+                notify(`${deleted} pronostici eliminati!`);
+                log('success', `🗑️ ${deleted} pronostici eliminati dal periodo`);
+
+            } catch (error) {
+                log('error', `❌ Errore eliminazione: ${error.message}`);
+                notify(`Errore eliminazione: ${error.message}`, 'error');
+            }
+        };
+
+        const exportFilteredDates = async () => {
+            if (!currentDateFilter) {
+                notify('Nessun filtro attivo!', 'warning');
+                return;
+            }
+
+            try {
+                const filtered = allPredictions.filter(p => 
+                    p.date >= currentDateFilter.from && p.date <= currentDateFilter.to
+                );
+
+                let csv = 'Data,Strategia,Partita,Lega,Mercato,Tip,Quota,Score,Status,ROI\n';
+
+                filtered.forEach(pred => {
+                    let roi = '0.00';
+                    if (pred.status === 'won') {
+                        roi = ((pred.quota - 1) * 100).toFixed(2);
+                    } else if (pred.status === 'lost') {
+                        roi = '-100.00';
+                    }
+
+                    csv += `${pred.date},${pred.strategy},${pred.match},${pred.league},${pred.market},${pred.tip},${pred.quota.toFixed(2)},${pred.score},${pred.status},${roi}\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `predictions-${currentDateFilter.from}-${currentDateFilter.to}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                notify(`${filtered.length} pronostici esportati!`);
+                log('success', `📊 Export periodo: ${filtered.length} pronostici`);
+
+            } catch (error) {
+                log('error', `❌ Errore export: ${error.message}`);
+            }
+        };
+
+        const loadStatistics = async (useFilter = false) => {
             if (!firebaseReady) return;
 
             try {
                 const snapshot = await firestoreGetDocs(firestoreCollection(db, "ai_predictions"));
-                const allPredictions = snapshot.docs.map(doc => doc.data());
+                allPredictions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                const mpetazPreds = allPredictions.filter(p => p.strategy === 'mpetaz');
-                const geminiPreds = allPredictions.filter(p => p.strategy === 'gemini');
+                let predictions = allPredictions;
+
+                // Applica filtro date se attivo
+                if (useFilter && currentDateFilter) {
+                    predictions = allPredictions.filter(p => 
+                        p.date >= currentDateFilter.from && p.date <= currentDateFilter.to
+                    );
+
+                    document.getElementById('filter-results-count').textContent = 
+                        `${predictions.length} pronostici trovati`;
+                }
+
+                const mpetazPreds = predictions.filter(p => p.strategy === 'mpetaz');
+                const geminiPreds = predictions.filter(p => p.strategy === 'gemini');
 
                 const mpetazStats = calculateStrategyStats(mpetazPreds);
                 const geminiStats = calculateStrategyStats(geminiPreds);
@@ -824,7 +1027,7 @@
 
                 updateWinnerIndicator(mpetazStats, geminiStats);
 
-                log('success', '📊 Statistiche aggiornate');
+                log('success', `📊 Statistiche ${useFilter ? 'filtrate' : 'complete'} aggiornate`);
 
             } catch (error) {
                 log('error', `❌ Errore stats: ${error.message}`);
@@ -948,12 +1151,9 @@
             if (!firebaseReady) return;
 
             try {
-                const snapshot = await firestoreGetDocs(firestoreCollection(db, "ai_predictions"));
-                const predictions = snapshot.docs.map(doc => doc.data());
-
                 let csv = 'Data,Strategia,Partita,Lega,Mercato,Tip,Quota,Score,Status\n';
 
-                predictions.forEach(pred => {
+                allPredictions.forEach(pred => {
                     csv += `${pred.date},${pred.strategy},${pred.match},${pred.league},${pred.market},${pred.tip},${pred.quota.toFixed(2)},${pred.score},${pred.status}\n`;
                 });
 
@@ -961,27 +1161,40 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `predictions-${new Date().toISOString().split('T')[0]}.csv`;
+                a.download = `predictions-all-${new Date().toISOString().split('T')[0]}.csv`;
                 a.click();
                 URL.revokeObjectURL(url);
 
-                notify(`${predictions.length} pronostici esportati!`);
+                notify(`${allPredictions.length} pronostici esportati!`);
 
             } catch (error) {
                 log('error', `❌ Errore export: ${error.message}`);
             }
         };
 
+        // ESPOSIZIONE FUNZIONI GLOBALI
         window.runAnalysis = runAnalysis;
         window.verifyResults = verifyResults;
         window.updateLearningModel = updateLearningModel;
+        window.applyDateFilter = applyDateFilter;
+        window.resetDateFilter = resetDateFilter;
+        window.deleteFilteredDates = deleteFilteredDates;
+        window.exportFilteredDates = exportFilteredDates;
         window.clearConsole = clearConsole;
         window.exportData = exportData;
 
         document.addEventListener('DOMContentLoaded', () => {
-            log('success', '🎉 Sistema funzionante avviato!');
+            log('success', '🎉 Sistema con filtro date avviato!');
 
             document.getElementById('prediction-date').valueAsDate = new Date();
+
+            // Imposta date filtro di default (ultimo mese)
+            const today = new Date();
+            const lastMonth = new Date();
+            lastMonth.setMonth(today.getMonth() - 1);
+
+            document.getElementById('filter-date-from').value = lastMonth.toISOString().split('T')[0];
+            document.getElementById('filter-date-to').value = today.toISOString().split('T')[0];
 
             document.getElementById('today-file').addEventListener('change', (e) => 
                 handleUpload(e, 'today', document.getElementById('today-label')));
@@ -993,7 +1206,7 @@
                 handleUpload(e, 'results', document.getElementById('results-label')));
 
             setInterval(() => {
-                if (firebaseReady) loadStatistics();
+                if (firebaseReady) loadStatistics(currentDateFilter !== null);
             }, 60000);
         });
 
