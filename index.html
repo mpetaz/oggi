@@ -1,1380 +1,1521 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🤖 AI Betting - APP COMPLETA SMART 60%</title>
-    <style>
-        :root {
-            --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
-            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-700: #374151;
-            --purple: #8b5cf6; --orange: #f97316; --blue: #3b82f6;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-            color: var(--gray-700); line-height: 1.6; min-height: 100vh;
-        }
-        .container { max-width: 1400px; margin: 0 auto; padding: 0 1rem; }
-        .card { 
-            background: white; border: 1px solid var(--gray-200); border-radius: 16px; 
-            padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 1.5rem;
-        }
-        .card.mpetaz { border-left: 5px solid var(--purple); }
-        .card.gemini { border-left: 5px solid var(--orange); }
-        .card.success { background: linear-gradient(135deg, var(--success), #059669); color: white; border: none; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>🎯 AI Betting - Moreno & Marco</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-        .btn { 
-            display: inline-flex; align-items: center; justify-content: center; 
-            padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 600; 
-            font-size: 0.875rem; transition: all 0.3s ease; cursor: pointer; 
-            border: none; text-decoration: none; text-align: center;
-        }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); }
-        .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-mpetaz { background: var(--purple); color: white; }
-        .btn-gemini { background: var(--orange); color: white; }
-        .btn-secondary { background: var(--gray-200); color: var(--gray-700); }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #2d3748; line-height: 1.6; min-height: 100vh;
+}
 
-        .grid { display: grid; gap: 1.5rem; }
-        .grid-2 { grid-template-columns: repeat(2, 1fr); }
-        .grid-3 { grid-template-columns: repeat(3, 1fr); }
-        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+.container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
 
-        .loader { 
-            width: 40px; height: 40px; margin: 20px auto; border: 4px solid var(--gray-200);
-            border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.app-header { text-align: center; margin-bottom: 2rem; color: white; }
+.app-header h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+.app-header p { font-size: 1.1rem; opacity: 0.9; }
 
-        input[type="file"] { display: none; }
-        input[type="date"], input[type="text"], select, textarea {
-            width: 100%; padding: 0.875rem; border: 2px solid var(--gray-200); 
-            border-radius: 10px; font-size: 0.875rem; background: white; transition: all 0.3s ease;
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: none; border-color: var(--primary); 
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-        }
+nav.menu {
+    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); padding: 1.5rem;
+    border-radius: 20px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); margin-bottom: 2rem;
+}
 
-        .file-label { 
-            cursor: pointer; padding: 1.25rem; border: 3px dashed var(--gray-200); 
-            border-radius: 12px; text-align: center; transition: all 0.3s ease; 
-            display: block; background: var(--gray-50);
-        }
-        .file-label:hover { 
-            border-color: var(--primary); background: #eff6ff; transform: translateY(-2px);
-        }
+nav.menu ul { list-style: none; display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; }
 
-        .nav { 
-            background: linear-gradient(135deg, #667eea, #764ba2); color: white; 
-            padding: 1.5rem 0; margin-bottom: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-        .nav h1 { font-size: 1.75rem; font-weight: 800; }
+nav.menu ul li button {
+    background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: white;
+    padding: 1rem 2rem; cursor: pointer; border-radius: 25px; font-weight: 600; font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
 
-        .text-center { text-align: center; }
-        .text-green { color: var(--success); }
-        .text-red { color: var(--danger); }
-        .text-purple { color: var(--purple); }
-        .text-orange { color: var(--orange); }
-        .text-blue { color: var(--blue); }
-        .text-gray { color: #6b7280; }
-        .font-bold { font-weight: 700; }
-        .font-medium { font-weight: 500; }
+nav.menu ul li button:hover, nav.menu ul li button.active {
+    transform: translateY(-3px); box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+}
 
-        .notification {
-            position: fixed; top: 2rem; right: 2rem; z-index: 1000;
-            padding: 1.25rem 1.75rem; border-radius: 12px; max-width: 400px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15); font-weight: 500;
-            animation: slideIn 0.3s ease-out;
-        }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .notification.success { background: linear-gradient(135deg, var(--success), #059669); color: white; }
-        .notification.error { background: linear-gradient(135deg, var(--danger), #dc2626); color: white; }
-        .notification.warning { background: linear-gradient(135deg, var(--warning), #d97706); color: white; }
+.section {
+    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); padding: 2.5rem;
+    border-radius: 25px; box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1); margin-bottom: 2rem;
+}
 
-        .debug-section {
-            background: #1a202c; color: #e2e8f0; border-radius: 12px; padding: 1.25rem; 
-            font-family: 'SF Mono', Monaco, monospace; font-size: 0.75rem; 
-            max-height: 600px; overflow-y: auto; margin-top: 1rem;
-        }
+.section h2 { color: #4a5568; margin-bottom: 2rem; font-size: 1.8rem; font-weight: 700; text-align: center; position: relative; }
 
-        .status-indicator {
-            display: inline-block; width: 14px; height: 14px; border-radius: 50%;
-            margin-right: 10px; vertical-align: middle;
-        }
-        .status-success { background: var(--success); box-shadow: 0 0 12px rgba(16, 185, 129, 0.4); }
-        .status-error { background: var(--danger); box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); }
-        .status-connecting { background: var(--primary); animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+.section h2::after {
+    content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+    width: 60px; height: 3px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 2px;
+}
 
-        .prediction-item { 
-            border-left: 5px solid var(--primary); padding: 1.25rem; margin-bottom: 1rem;
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 12px;
-        }
-        .prediction-item.mpetaz { border-left-color: var(--purple); }
-        .prediction-item.gemini { border-left-color: var(--orange); }
+.user-selection { background: rgba(102, 126, 234, 0.1); padding: 1.5rem; border-radius: 15px; margin-bottom: 2rem; }
+.user-selection label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568; }
 
-        .stats-comparison {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;
-        }
+.scoring-controls {
+    background: rgba(16, 185, 129, 0.1); padding: 1.5rem; border-radius: 15px; margin-bottom: 2rem;
+    border: 2px solid rgba(16, 185, 129, 0.2);
+}
 
-        .learning-badge {
-            display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px;
-            font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;
-        }
-        .learning-badge.improving { background: #dcfce7; color: #166534; }
-        .learning-badge.declining { background: #fef2f2; color: #dc2626; }
-        .learning-badge.stable { background: #f3f4f6; color: #6b7280; }
+.scoring-grid {
+    display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;
+}
 
-        .roi-display {
-            font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;
-        }
-        .roi-positive { color: var(--success); }
-        .roi-negative { color: var(--danger); }
+.database-controls {
+    background: rgba(59, 130, 246, 0.1); padding: 1.5rem; border-radius: 15px; margin-bottom: 2rem;
+    border: 2px solid rgba(59, 130, 246, 0.2);
+}
 
-        .odds-badge {
-            display: inline-block; padding: 0.25rem 0.5rem; border-radius: 6px;
-            font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;
-            background: #dcfce7; color: #166534;
-        }
+.database-grid {
+    display: grid; grid-template-columns: 1fr 1fr auto auto auto; gap: 1rem; align-items: end;
+}
 
-        .filter-section {
-            background: #f8fafc; border: 2px solid #e5e7eb; padding: 1.5rem; 
-            border-radius: 12px; margin-bottom: 1rem;
-        }
+.filters-advanced {
+    background: rgba(102, 126, 234, 0.05); padding: 1.5rem; border-radius: 15px; margin-bottom: 2rem;
+    border: 2px solid rgba(102, 126, 234, 0.1);
+}
 
-        .filter-active {
-            background: #dcfce7; border-color: #10b981; color: #166534;
-        }
+.filters-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; align-items: end;
+}
 
-        /* Navigation Tabs */
-        .nav-tabs {
-            display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 2rem;
-        }
-        .nav-tab {
-            padding: 1rem 2rem; background: none; border: none; cursor: pointer;
-            font-weight: 600; color: #6b7280; transition: all 0.3s ease;
-            border-bottom: 3px solid transparent;
-        }
-        .nav-tab:hover { color: var(--primary); }
-        .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.filter-group {
+    display: flex; flex-direction: column;
+}
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+.filter-group label {
+    font-size: 0.9rem; margin-bottom: 0.5rem; color: #4a5568; font-weight: 600;
+}
 
-        @media (max-width: 768px) {
-            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-            .stats-comparison { grid-template-columns: 1fr; }
-            .container { padding: 0 0.75rem; }
-            .nav-tabs { flex-wrap: wrap; }
-            .nav-tab { padding: 0.75rem 1rem; font-size: 0.875rem; }
-        }
-    </style>
+.filter-group select, .filter-group input {
+    padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem;
+}
+
+.date-filters {
+    display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 1rem; align-items: end;
+}
+
+.user-filters {
+    display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;
+}
+
+.stats-simple { 
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 2rem; 
+}
+
+.stat-box { 
+    background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; 
+}
+
+.stat-box h3 { 
+    font-size: 3rem; margin-bottom: 0.5rem; font-weight: 800; 
+}
+
+.stat-box p { 
+    color: #6b7280; font-weight: 600; font-size: 1rem; 
+}
+
+.stat-box.total h3 { color: #3b82f6; }
+.stat-box.win h3 { color: #10b981; }
+.stat-box.lose h3 { color: #ef4444; }
+.stat-box.winrate h3.good { color: #10b981; }
+.stat-box.winrate h3.bad { color: #ef4444; }
+
+.helper-note {
+    font-size: 0.85rem; color: #6b7280; font-style: italic; margin-top: 0.5rem;
+}
+
+input[type="number"] { width: 120px; padding: 0.8rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; background: white; }
+input[type="number"]:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+
+select { width: 200px; padding: 0.8rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; background: white; cursor: pointer; }
+select:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+
+form { display: grid; gap: 1.5rem; }
+label { font-weight: 600; color: #4a5568; margin-bottom: 0.5rem; display: block; }
+
+input[type="date"], input[type="file"] {
+    width: 100%; padding: 1rem 1.2rem; border: 2px solid #e2e8f0; border-radius: 12px;
+    font-size: 1rem; transition: all 0.3s ease; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+input[type="date"]:focus, input[type="file"]:focus {
+    border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); outline: none; transform: translateY(-1px);
+}
+
+button.control-btn {
+    padding: 1.2rem 2.5rem; font-weight: 600; border: none; border-radius: 15px; cursor: pointer;
+    font-size: 1.1rem; margin-top: 1rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+button.control-btn.compact {
+    padding: 0.8rem 1.5rem; font-size: 0.9rem; margin-top: 0;
+}
+
+button.control-btn.green { background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); }
+button.control-btn.orange { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3); }
+button.control-btn.red { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3); }
+button.control-btn.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3); }
+button.control-btn:hover { transform: translateY(-3px); }
+
+#estratti-container, #pronostici-container, #statistiche-container {
+    background: rgba(248, 250, 252, 0.8); border-radius: 15px; padding: 1.5rem; margin-top: 2rem;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;
+}
+
+table { 
+    width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 1rem; 
+    border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    font-size: 0.7rem;
+}
+
+th { 
+    background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 0.5rem 0.3rem; 
+    text-align: left; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; 
+    font-size: 0.6rem;
+}
+
+td { 
+    background: white; padding: 0.5rem 0.3rem; border-bottom: 1px solid #e2e8f0; 
+    transition: background-color 0.2s ease; font-size: 0.65rem;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+td:nth-child(1) { width: 60px; }
+td:nth-child(2) { width: 70px; }
+td:nth-child(3) { width: 90px; }
+td:nth-child(4) { width: 150px; }
+td:nth-child(5) { width: 50px; text-align: center; }
+td:nth-child(6) { width: 50px; text-align: center; }
+td:nth-child(7) { width: 50px; text-align: center; }
+td:nth-child(8) { width: 70px; text-align: center; }
+td:nth-child(9) { width: 60px; text-align: center; }
+
+tr:hover td { background-color: #f8fafc; }
+tr:last-child td { border-bottom: none; }
+
+.user-badge { 
+    padding: 0.3rem 0.6rem; border-radius: 8px; color: white; font-weight: 700; 
+    font-size: 0.65rem; display: inline-block; min-width: 60px; text-align: center;
+}
+.user-badge.moreno { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.user-badge.marco { background: linear-gradient(135deg, #10b981, #059669); }
+
+.badge { 
+    padding: 0.25rem 0.5rem; border-radius: 10px; color: white; font-weight: 600; 
+    font-size: 0.6rem; text-align: center; display: inline-block; min-width: 45px;
+}
+.badge.excellent { background: linear-gradient(135deg, #10b981, #059669); }
+.badge.good { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.badge.poor { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.badge.win { background: linear-gradient(135deg, #10b981, #059669); }
+.badge.lose { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.badge.pending { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+.loading { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(102, 126, 234, 0.3); border-radius: 50%; border-top-color: #667eea; animation: spin 1s ease-in-out infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.alert { padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid; }
+.alert.success { background: rgba(16, 185, 129, 0.1); border-color: #10b981; color: #065f46; }
+.alert.warning { background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #92400e; }
+.alert.info { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; color: #1e3a8a; }
+
+@media (max-width: 768px) {
+    .container { padding: 1rem; }
+    nav.menu ul { flex-direction: column; }
+    .section { padding: 1.5rem; }
+    nav.menu ul li button { width: 100%; }
+    .app-header h1 { font-size: 2rem; }
+    .scoring-grid { grid-template-columns: 1fr; }
+    .database-grid { grid-template-columns: 1fr; }
+    .date-filters { grid-template-columns: 1fr; }
+    .user-filters { grid-template-columns: 1fr; }
+    .filters-grid { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
-    <nav class="nav">
-        <div class="container">
-            <h1>🤖 AI Betting - APP COMPLETA CON SMART 60%</h1>
-            <p style="margin-top: 0.5rem; opacity: 0.9; font-size: 0.9rem;">
-                🎉 Sistema completo + Algoritmo SMART 60% (testato 3/3) + Filtro Date
-            </p>
-        </div>
-    </nav>
+<div class="container">
 
-    <div class="container">
-        <!-- Navigation Tabs -->
-        <div class="nav-tabs">
-            <button class="nav-tab active" onclick="showTab('sistema')">🚀 Sistema Completo</button>
-            <button class="nav-tab" onclick="showTab('smart60')">🔥 SMART 60%</button>
-            <button class="nav-tab" onclick="showTab('statistiche')">📊 Statistiche</button>
-            <button class="nav-tab" onclick="showTab('filtri')">📅 Filtri</button>
-        </div>
+<div class="app-header">
+<h1>🎯 AI Betting</h1>
+<p>👨‍👦 Sistema Pronostici - Moreno & Marco</p>
+</div>
 
-        <!-- Tab 1: Sistema Completo -->
-        <div id="sistema" class="tab-content active">
-            <!-- Sistema Status -->
-            <div class="card" id="system-status-card">
-                <h2 class="font-bold mb-4">🔌 Sistema Firebase</h2>
-                <div id="firebase-status" class="mb-4">
-                    <span class="status-indicator status-connecting"></span>
-                    <span>Inizializzazione...</span>
-                </div>
-            </div>
+<nav class="menu">
+<ul>
+<li><button id="btn-pronostici">📊 Database Pronostici</button></li>
+<li><button id="btn-inserisci" class="active">🎯 Inserisci & Salva</button></li>
+<li><button id="btn-statistiche">📊 Filtri e Statistiche</button></li>
+</ul>
+</nav>
 
-            <!-- Upload Area -->
-            <section class="card">
-                <h2 class="font-bold mb-6">📅 Caricamento Dati</h2>
-                <div class="grid grid-3">
-                    <div>
-                        <label for="prediction-date" class="font-medium mb-2 block">Data Analisi</label>
-                        <input type="date" id="prediction-date">
-                    </div>
-                    <div>
-                        <label for="today-file" class="file-label" id="today-label">
-                            <span class="font-medium">📋 Partite da Analizzare</span>
-                            <p class="text-sm text-gray mt-2">CSV partite giornaliere</p>
-                        </label>
-                        <input type="file" id="today-file" accept=".csv" />
-                    </div>
-                    <div>
-                        <label for="results-file" class="file-label" id="results-label">
-                            <span class="font-medium">🏆 File Risultati FINALE</span>
-                            <p class="text-sm text-gray mt-2">CSV con esiti - SMART 60% attivo</p>
-                        </label>
-                        <input type="file" id="results-file" accept=".csv" />
-                    </div>
-                </div>
-            </section>
+<!-- SEZIONE PRONOSTICI -->
+<div id="section-pronostici" class="section" style="display:none;">
+<h2>📊 Database Pronostici</h2>
 
-            <!-- Strategie -->
-            <section>
-                <div class="grid grid-2">
-                    <div class="card mpetaz">
-                        <h3 class="font-bold mb-4">🟣 Strategia Mpetaz</h3>
-                        <label for="mpetaz-historical" class="file-label mb-4" id="mpetaz-label">
-                            <span class="font-medium">📊 Dati Storici Mpetaz</span>
-                        </label>
-                        <input type="file" id="mpetaz-historical" accept=".csv" />
-                        <button id="analyze-mpetaz" class="btn btn-mpetaz" style="width: 100%; margin-top: 1rem;" disabled onclick="runAnalysis('mpetaz')">
-                            🚀 Analizza con Mpetaz
-                        </button>
-                        <div id="mpetaz-results" class="mt-4"></div>
-                    </div>
+<div class="user-selection">
+<label for="view-user">👥 Visualizza pronostici di:</label>
+<select id="view-user">
+<option value="both">🔵🟢 Entrambi</option>
+<option value="moreno">🔵 Solo Moreno</option>
+<option value="marco">🟢 Solo Marco</option>
+</select>
+</div>
 
-                    <div class="card gemini">
-                        <h3 class="font-bold mb-4">🟠 Strategia Gemini</h3>
-                        <label for="gemini-historical" class="file-label mb-4" id="gemini-label">
-                            <span class="font-medium">📊 Dati Storici Gemini</span>
-                        </label>
-                        <input type="file" id="gemini-historical" accept=".csv" />
-                        <button id="analyze-gemini" class="btn btn-gemini" style="width: 100%; margin-top: 1rem;" disabled onclick="runAnalysis('gemini')">
-                            🚀 Analizza con Gemini
-                        </button>
-                        <div id="gemini-results" class="mt-4"></div>
-                    </div>
-                </div>
-            </section>
-        </div>
+<div class="database-controls">
+<h4 style="margin-bottom: 1rem; color: #3b82f6;">🗂️ Controlli Database</h4>
+<div class="database-grid">
+<div>
+<label for="db-date-from">📅 Da:</label>
+<input type="date" id="db-date-from"/>
+<div class="helper-note">(lasciare vuote per tutto il database)</div>
+</div>
+<div>
+<label for="db-date-to">📅 A:</label>
+<input type="date" id="db-date-to"/>
+</div>
+<button type="button" id="btn-view-filtered" class="control-btn blue compact">🔵 Vedi Pronostici</button>
+<button type="button" id="btn-delete-filtered" class="control-btn orange compact">🟠 Cancella Filtrati</button>
+<button type="button" id="btn-delete-user-all" class="control-btn red compact">💀 Cancella Tutto Utente</button>
+</div>
+</div>
 
-        <!-- Tab 2: SMART 60% -->
-        <div id="smart60" class="tab-content">
-            <div class="card success">
-                <h2 class="font-bold mb-4">🎉 ALGORITMO SMART 60% - TESTATO E FUNZIONANTE!</h2>
-                <div style="background: rgba(255,255,255,0.9); padding: 1rem; border-radius: 8px; color: #166534; margin-bottom: 1rem;">
-                    <strong>✅ Test completato: 3/3 RISOLTI (100% successo)</strong><br>
-                    🎯 Logica: 60% similarità media delle squadre<br>
-                    💪 Fallback: 1 squadra >= 80% (stessa data = stessa partita)<br>
-                    📅 Una squadra non può giocare 2 volte lo stesso giorno
-                </div>
-                <div class="grid grid-2">
-                    <button class="btn" style="background: white; color: var(--success); font-weight: bold;" onclick="algoritmoSmart60()">
-                        🔥 ZERO PENDING! → Algoritmo SMART 60%
-                    </button>
-                    <button class="btn" style="background: rgba(255,255,255,0.2); color: white;" onclick="updateLearningModel()">
-                        🧠 Aggiorna Modello AI
-                    </button>
-                </div>
-                <div id="verification-summary" class="mt-4"></div>
-            </div>
-        </div>
+<div id="pronostici-container">
+<div style="text-align: center; padding: 3rem; color: #6b7280;">
+<h3>📊 Database Pronostici</h3>
+<p>Usa i controlli sopra per vedere o gestire i pronostici</p>
+</div>
+</div>
+</div>
 
-        <!-- Tab 3: Statistiche -->
-        <div id="statistiche" class="tab-content">
-            <section class="card">
-                <h2 class="font-bold mb-6">📊 Confronto Prestazioni <span id="stats-filter-indicator" style="display: none; color: #10b981;">(FILTRATE)</span></h2>
+<!-- SEZIONE INSERISCI -->
+<div id="section-inserisci" class="section">
+<h2>🎯 Inserisci e Salva Pronostici</h2>
 
-                <div class="stats-comparison">
-                    <!-- Mpetaz Stats -->
-                    <div class="card mpetaz">
-                        <h3 class="font-bold mb-4 text-purple">🟣 Mpetaz Performance</h3>
-                        <div class="grid grid-2 gap-4 mb-4">
-                            <div class="text-center">
-                                <div class="text-3xl font-bold mb-2" id="mpetaz-total">0</div>
-                                <div class="text-sm text-gray">Totali</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-blue mb-2" id="mpetaz-pending">0</div>
-                                <div class="text-sm text-gray">In Attesa</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-3xl font-bold text-green mb-2" id="mpetaz-won">0</div>
-                                <div class="text-sm text-gray">Vinti</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-3xl font-bold text-red mb-2" id="mpetaz-lost">0</div>
-                                <div class="text-sm text-gray">Persi</div>
-                            </div>
-                        </div>
-                        <div class="text-center mb-4">
-                            <div class="text-2xl font-bold text-purple mb-2" id="mpetaz-winrate">--%</div>
-                            <div class="text-sm text-gray">Win Rate</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-sm text-gray mb-1">ROI</div>
-                            <div class="roi-display" id="mpetaz-roi">--%</div>
-                        </div>
-                        <div class="text-center mt-3">
-                            <span id="mpetaz-trend" class="learning-badge stable">-</span>
-                        </div>
-                    </div>
+<div class="user-selection">
+<label for="current-user">👤 Utente:</label>
+<select id="current-user">
+<option value="moreno">🔵 Moreno</option>
+<option value="marco">🟢 Marco</option>
+</select>
+</div>
 
-                    <!-- Gemini Stats -->
-                    <div class="card gemini">
-                        <h3 class="font-bold mb-4 text-orange">🟠 Gemini Performance</h3>
-                        <div class="grid grid-2 gap-4 mb-4">
-                            <div class="text-center">
-                                <div class="text-3xl font-bold mb-2" id="gemini-total">0</div>
-                                <div class="text-sm text-gray">Totali</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-blue mb-2" id="gemini-pending">0</div>
-                                <div class="text-sm text-gray">In Attesa</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-3xl font-bold text-green mb-2" id="gemini-won">0</div>
-                                <div class="text-sm text-gray">Vinti</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-3xl font-bold text-red mb-2" id="gemini-lost">0</div>
-                                <div class="text-sm text-gray">Persi</div>
-                            </div>
-                        </div>
-                        <div class="text-center mb-4">
-                            <div class="text-2xl font-bold text-orange mb-2" id="gemini-winrate">--%</div>
-                            <div class="text-sm text-gray">Win Rate</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-sm text-gray mb-1">ROI</div>
-                            <div class="roi-display" id="gemini-roi">--%</div>
-                        </div>
-                        <div class="text-center mt-3">
-                            <span id="gemini-trend" class="learning-badge stable">-</span>
-                        </div>
-                    </div>
-                </div>
+<div class="scoring-controls">
+<h4 style="margin-bottom: 1rem; color: #10b981;">⚙️ Controlli Scoring Avanzato</h4>
+<div class="scoring-grid">
+<div>
+<label for="score-threshold">🎯 Soglia Punteggio Minimo:</label>
+<input type="number" id="score-threshold" value="45" min="20" max="100"/>
+<small style="color: #6b7280;">Salva tutte le partite con punteggio ≥ soglia</small>
+</div>
+<div>
+<label for="max-selections">🔢 Massimo Partite:</label>
+<input type="number" id="max-selections" value="10" min="5" max="50"/>
+<small style="color: #6b7280;">Limite massimo partite totali. Priorità a quelle VERDI (≥50)</small>
+</div>
+<button type="button" id="btn-preview" class="control-btn orange compact">👁️ Anteprima</button>
+</div>
+</div>
 
-                <!-- Winner Indicator -->
-                <div class="text-center mt-6 p-4 rounded-lg" id="winner-indicator" style="background: #f3f4f6; display: none;">
-                    <h3 class="font-bold mb-2">🏆 Strategia Vincente</h3>
-                    <div id="winner-text" class="text-lg"></div>
-                </div>
-            </section>
-        </div>
+<form id="form-inserisci">
+<div>
+<label for="input-data">📅 Data partite:</label>
+<input type="date" id="input-data" required/>
+</div>
+<div>
+<label for="file-giorno">📄 File partite del giorno:</label>
+<input type="file" id="file-giorno" accept=".csv" required/>
+</div>
+<div>
+<label for="file-storico">📊 File storico (per calcoli):</label>
+<input type="file" id="file-storico" accept=".csv" required/>
+</div>
+<button type="button" id="btn-estrai" class="control-btn green">🚀 Calcola e Salva Intelligente</button>
+</form>
+<div id="estratti-container"></div>
+</div>
 
-        <!-- Tab 4: Filtri -->
-        <div id="filtri" class="tab-content">
-            <section class="card">
-                <h2 class="font-bold mb-6">📅 Filtro per Date</h2>
+<!-- SEZIONE STATISTICHE -->
+<div id="section-statistiche" class="section" style="display:none;">
+<h2>📊 Filtri e Statistiche</h2>
 
-                <div class="filter-section" id="date-filter-section">
-                    <h3 class="font-bold mb-4">🔍 Seleziona Periodo</h3>
+<div class="user-selection">
+<h4 style="margin-bottom: 1rem;">👥 Selezione Utente</h4>
+<div class="user-filters">
+<div>
+<label for="stats-user">Visualizza partite di:</label>
+<select id="stats-user">
+<option value="both">🔵🟢 Entrambi</option>
+<option value="moreno">🔵 Solo Moreno</option>
+<option value="marco">🟢 Solo Marco</option>
+</select>
+</div>
+<button type="button" id="btn-reset-user" class="control-btn green compact">🔄 Reset</button>
+</div>
+</div>
 
-                    <div class="grid grid-4 mb-4">
-                        <div>
-                            <label class="font-medium mb-2 block">📅 Data Da</label>
-                            <input type="date" id="filter-date-from">
-                        </div>
-                        <div>
-                            <label class="font-medium mb-2 block">📅 Data A</label>
-                            <input type="date" id="filter-date-to">
-                        </div>
-                        <div style="display: flex; align-items: end;">
-                            <button class="btn btn-primary" onclick="applyDateFilter()" style="width: 100%;">
-                                🔍 Applica Filtro
-                            </button>
-                        </div>
-                        <div style="display: flex; align-items: end;">
-                            <button class="btn btn-secondary" onclick="resetDateFilter()" style="width: 100%;">
-                                🔄 Reset
-                            </button>
-                        </div>
-                    </div>
+<div class="user-selection">
+<h4 style="margin-bottom: 1rem;">📅 Filtro Periodo</h4>
+<div class="date-filters">
+<div>
+<label for="data-da">Da:</label>
+<input type="date" id="data-da"/>
+<div class="helper-note">(lasciare vuote per tutto il database)</div>
+</div>
+<div>
+<label for="data-a">A:</label>
+<input type="date" id="data-a"/>
+</div>
+<button type="button" id="btn-applica-filtri" class="control-btn green compact">🔍 Applica Filtri</button>
+<button type="button" id="btn-reset-date" class="control-btn green compact">🔄 Reset Date</button>
+</div>
+</div>
 
-                    <div class="grid grid-2 gap-3">
-                        <button class="btn btn-danger" onclick="deleteFilteredDates()" id="delete-filtered-btn" style="display: none;">
-                            🗑️ Elimina Partite del Periodo
-                        </button>
-                        <button class="btn btn-secondary" onclick="exportFilteredDates()" id="export-filtered-btn" style="display: none;">
-                            📊 Esporta Periodo
-                        </button>
-                    </div>
-                </div>
+<div class="filters-advanced">
+<h4 style="margin-bottom: 1rem;">🔍 Filtri Avanzati (tipo Excel)</h4>
+<div class="filters-grid">
+<div class="filter-group">
+<label for="filter-status">Status:</label>
+<select id="filter-status">
+<option value="all">🔄 Tutti</option>
+<option value="WIN">✅ Solo Vinte</option>
+<option value="LOSE">❌ Solo Perse</option>
+<option value="PENDING">⏳ Solo Pending</option>
+</select>
+</div>
+<div class="filter-group">
+<label for="filter-tip">Tip:</label>
+<select id="filter-tip">
+<option value="all">🎯 Tutti i Tip</option>
+</select>
+</div>
+<div class="filter-group">
+<label for="filter-lega">Lega:</label>
+<select id="filter-lega">
+<option value="all">🏆 Tutte le Leghe</option>
+</select>
+</div>
+<div class="filter-group">
+<label for="filter-prob-min">Prob Min %:</label>
+<input type="number" id="filter-prob-min" placeholder="es: 80" min="0" max="100"/>
+</div>
+<div class="filter-group">
+<label for="filter-quota-min">Quota Min:</label>
+<input type="number" id="filter-quota-min" placeholder="es: 1.5" step="0.1" min="1"/>
+</div>
+<div class="filter-group" style="align-self: end;">
+<button type="button" id="btn-clear-filters" class="control-btn orange compact">🧹 Pulisci Filtri</button>
+</div>
+</div>
+</div>
 
-                <div id="filter-info" style="display: none; background: #dcfce7; padding: 1rem; border-radius: 8px; color: #166534; margin-top: 1rem;">
-                    <strong>🔍 Filtro Attivo:</strong> <span id="filter-period"></span><br>
-                    <strong>📊 Risultati:</strong> <span id="filter-results-count"></span>
-                </div>
-            </section>
-        </div>
+<div class="user-selection">
+<h4 style="margin-bottom: 1rem;">📄 Aggiorna Risultati</h4>
+<div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end;">
+<div>
+<label for="file-risultati">File TOTALI risultati:</label>
+<input type="file" id="file-risultati" accept=".csv"/>
+</div>
+<button type="button" id="btn-aggiorna-risultati" class="control-btn orange compact">✅ Aggiorna Status</button>
+</div>
+<div id="matching-info" style="margin-top: 1rem; font-size: 0.9rem; color: #6b7280;"></div>
+</div>
 
-        <!-- Console Debug -->
-        <div class="card">
-            <h2 class="font-bold mb-4">🔍 Console Sistema</h2>
-            <div class="debug-section" id="debug-console">
-                <div style="color: #10b981;">[SISTEMA] APP COMPLETA con ALGORITMO SMART 60% caricata!</div>
-            </div>
-            <div class="mt-4 grid grid-2 gap-3">
-                <button class="btn btn-secondary" onclick="clearConsole()">🗑️ Pulisci</button>
-                <button class="btn btn-secondary" onclick="exportData()">📊 Esporta Dati</button>
-            </div>
-        </div>
-    </div>
+<div class="stats-simple">
+<div class="stat-box total">
+<h3 id="stat-total">0</h3>
+<p>Partite Totali</p>
+</div>
+<div class="stat-box win">
+<h3 id="stat-wins">0</h3>
+<p>Vinte</p>
+</div>
+<div class="stat-box lose">
+<h3 id="stat-losses">0</h3>
+<p>Perse</p>
+</div>
+<div class="stat-box winrate">
+<h3 id="stat-winrate">0%</h3>
+<p>Win-Rate</p>
+</div>
+</div>
 
-    <!-- JAVASCRIPT COMPLETO -->
-    <script type="module">
-        const MIN_ODDS = 1.20;
+<div id="statistiche-container">
+<div style="text-align: center; padding: 2rem; color: #6b7280;">
+<h3>📊 Elenco Partite</h3>
+<p>Applica filtri per vedere le partite del periodo/utente selezionato</p>
+</div>
+</div>
 
-        let firebaseApp = null, db = null, auth = null, currentUser = null, firebaseReady = false;
-        let firestoreCollection, firestoreAddDoc, firestoreGetDocs, firestoreQuery, firestoreWhere, firestoreDoc, firestoreUpdateDoc, firestoreDeleteDoc;
+</div>
 
-        let todayMatches = { data: [], name: '' };
-        let mpetazHistory = { data: [], name: '' };
-        let geminiHistory = { data: [], name: '' };
-        let resultsData = { data: [], name: '' };
+</div>
 
-        let currentDateFilter = null;
-        let allPredictions = [];
+<script type="module">
+let firebaseReady = false;
+let db = null, currentUser = null;
+let collection, addDoc, getDocs, doc, updateDoc, deleteDoc, where, query;
+let allPredictions = [];
+let fileRisultati = null;
 
-        // Tab Management
-        function showTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
+async function initFirebase() {
+    try {
+        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js');
+        const firestoreModule = await import('https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js');
+        const authModule = await import('https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js');
 
-            // Show selected tab
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-        }
+        collection = firestoreModule.collection;
+        addDoc = firestoreModule.addDoc;
+        getDocs = firestoreModule.getDocs;
+        doc = firestoreModule.doc;
+        updateDoc = firestoreModule.updateDoc;
+        deleteDoc = firestoreModule.deleteDoc;
+        where = firestoreModule.where;
+        query = firestoreModule.query;
 
-        window.showTab = showTab;
+        const { getFirestore, enableNetwork } = firestoreModule;
+        const { getAuth, signInAnonymously, onAuthStateChanged } = authModule;
 
-        const log = (level, message, data = null) => {
-            const timestamp = new Date().toLocaleTimeString();
-            const colors = { 'error': '#ef4444', 'warn': '#f59e0b', 'info': '#3b82f6', 'success': '#10b981' };
-
-            console.log(`[${timestamp}] ${level.toUpperCase()}: ${message}`, data || '');
-
-            const console_el = document.getElementById('debug-console');
-            if (console_el) {
-                const logDiv = document.createElement('div');
-                logDiv.style.color = colors[level.toLowerCase()] || '#e2e8f0';
-                logDiv.innerHTML = `[${timestamp}] <strong>${level.toUpperCase()}:</strong> ${message}`;
-                console_el.appendChild(logDiv);
-
-                while (console_el.children.length > 30) {
-                    console_el.removeChild(console_el.firstChild);
-                }
-                console_el.scrollTop = console_el.scrollHeight;
-            }
+        const firebaseConfig = {
+            apiKey: "AIzaSyDohOjXix2tRoEhm8vv1gCYrqXlNeXjbGM",
+            authDomain: "oggi-17f48.firebaseapp.com",
+            projectId: "oggi-17f48",
+            storageBucket: "oggi-17f48.firebasestorage.app",
+            messagingSenderId: "961828441770",
+            appId: "1:961828441770:web:270382ebd68fb953ff8ad3"
         };
 
-        const notify = (message, type = 'success') => {
-            document.querySelectorAll('.notification').forEach(n => n.remove());
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = `<p>${message}</p>`;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 5000);
-            log('notification', message);
-        };
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        const auth = getAuth(app);
 
-        async function initFirebase() {
-            try {
-                log('info', '🚀 Inizializzazione APP COMPLETA SMART 60%...');
+        await enableNetwork(db);
 
-                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js');
-                const firestoreModule = await import('https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js');
-                const authModule = await import('https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js');
-
-                firestoreCollection = firestoreModule.collection;
-                firestoreAddDoc = firestoreModule.addDoc;
-                firestoreGetDocs = firestoreModule.getDocs;
-                firestoreQuery = firestoreModule.query;
-                firestoreWhere = firestoreModule.where;
-                firestoreDoc = firestoreModule.doc;
-                firestoreUpdateDoc = firestoreModule.updateDoc;
-                firestoreDeleteDoc = firestoreModule.deleteDoc;
-
-                const { getFirestore, enableNetwork } = firestoreModule;
-                const { getAuth, signInAnonymously, onAuthStateChanged } = authModule;
-
-                const firebaseConfig = {
-                    apiKey: "AIzaSyDohOjXix2tRoEhm8vv1gCYrqXlNeXjbGM",
-                    authDomain: "oggi-17f48.firebaseapp.com",
-                    projectId: "oggi-17f48",
-                    storageBucket: "oggi-17f48.firebasestorage.app",
-                    messagingSenderId: "961828441770",
-                    appId: "1:961828441770:web:270382ebd68fb953ff8ad3"
-                };
-
-                firebaseApp = initializeApp(firebaseConfig);
-                db = getFirestore(firebaseApp);
-                auth = getAuth(firebaseApp);
-                await enableNetwork(db);
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        currentUser = user;
-                        log('success', `✅ Sistema autenticato: ${user.uid}`);
-                        document.getElementById('firebase-status').innerHTML = '<span class="status-indicator status-success"></span><span>🟢 Sistema Operativo</span>';
-                        firebaseReady = true;
-                        loadStatistics();
-                    } else {
-                        signInAnonymously(auth).catch(error => log('error', `❌ Errore auth: ${error.message}`));
-                    }
-                });
-
-                log('success', '🎉 APP COMPLETA SMART 60% inizializzata!');
-
-            } catch (error) {
-                log('error', `❌ Errore Firebase: ${error.message}`, error);
-                document.getElementById('firebase-status').innerHTML = '<span class="status-indicator status-error"></span><span>❌ Errore Sistema</span>';
-            }
-        }
-
-        const parseCSV = (csvText, filename) => {
-            try {
-                log('info', `📄 Parsing ${filename}...`);
-
-                const cleanText = csvText.replace(/^\ufeff/, '').trim();
-                const lines = cleanText.split(/\r?\n/).filter(line => line.trim());
-
-                if (lines.length < 2) throw new Error('CSV non valido');
-
-                const normalizeField = (field) => {
-                    const cleaned = field.replace(/['"\s]/g, '').toLowerCase();
-                    const fieldMap = {
-                        'lega': 'Lega', 'league': 'Lega',
-                        'partita': 'Partita', 'match': 'Partita',
-                        'risultato': 'Risultato', 'result': 'Risultato',
-                        'probabilita': 'Probabilità', 'probabilità': 'Probabilità', 'probability': 'Probabilità',
-                        'mercato': 'Mercato', 'market': 'Mercato',
-                        'tip': 'Tip',
-                        'quota': 'Quota', 'odds': 'Quota',
-                        'esito': 'esito', 'outcome': 'esito', 'vinto/perso': 'esito',
-                        'data': 'data', 'date': 'data'
-                    };
-                    return fieldMap[cleaned] || field;
-                };
-
-                const header = lines[0].split(',').map(h => normalizeField(h.trim()));
-
-                const data = lines.slice(1).map(line => {
-                    if (!line.trim()) return null;
-
-                    const values = [];
-                    let currentValue = '', inQuotes = false;
-
-                    for (let char of line) {
-                        if (char === '"') inQuotes = !inQuotes;
-                        else if (char === ',' && !inQuotes) {
-                            values.push(currentValue.trim().replace(/^"|"$/g, ''));
-                            currentValue = '';
-                        } else currentValue += char;
-                    }
-                    values.push(currentValue.trim().replace(/^"|"$/g, ''));
-
-                    const entry = {};
-                    header.forEach((col, i) => {
-                        if (col && i < values.length) {
-                            let value = values[i];
-
-                            if (col === 'Quota') value = value.replace(',', '.');
-                            else if (col === 'Probabilità') value = value.replace('%', '');
-                            else if (col === 'esito') {
-                                const lower = value.toLowerCase().trim();
-                                if (lower === 'vinto' || lower === 'win' || lower === 'won') value = 'Vinto';
-                                else if (lower === 'perso' || lower === 'lost' || lower === 'lose') value = 'Perso';
-                            }
-
-                            entry[col] = value;
-                        }
-                    });
-
-                    return entry;
-                }).filter(Boolean);
-
-                log('success', `✅ ${filename}: ${data.length} righe processate`);
-                return data;
-
-            } catch (error) {
-                log('error', `❌ Errore parsing ${filename}:`, error);
-                throw error;
-            }
-        };
-
-        const handleUpload = (event, dataType, labelElement) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = parseCSV(e.target.result, file.name);
-
-                    switch(dataType) {
-                        case 'today':
-                            todayMatches = { data, name: file.name };
-                            document.getElementById('analyze-mpetaz').disabled = false;
-                            document.getElementById('analyze-gemini').disabled = false;
-                            break;
-                        case 'mpetazHistory':
-                            mpetazHistory = { data, name: file.name };
-                            break;
-                        case 'geminiHistory':
-                            geminiHistory = { data, name: file.name };
-                            break;
-                        case 'results':
-                            resultsData = { data, name: file.name };
-                            break;
-                    }
-
-                    labelElement.querySelector('span').textContent = file.name;
-                    notify(`${file.name} caricato (${data.length} righe)`);
-
-                } catch (error) {
-                    log('error', `❌ Errore file ${file.name}:`, error);
-                    notify(`Errore: ${error.message}`, 'error');
-                }
-            };
-            reader.readAsText(file, 'UTF-8');
-        };
-
-        // *** ALGORITMO SMART 60% INTEGRATO ***
-        const algoritmoSmart60 = async () => {
-            if (!firebaseReady) {
-                notify('Sistema non pronto', 'warning');
-                return;
-            }
-
-            if (!resultsData.data.length) {
-                notify('Carica file risultati prima', 'error');
-                return;
-            }
-
-            log('info', '🔥 ALGORITMO SMART 60% AVVIATO - Testato 3/3!');
-
-            try {
-                const snapshot = await firestoreGetDocs(firestoreCollection(db, "ai_predictions"));
-                const allPredictionsFromDB = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                const pendingPredictions = allPredictionsFromDB.filter(p => p.status === 'pending');
-
-                log('info', `📊 Pronostici pending nel DATABASE: ${pendingPredictions.length}`);
-                log('info', `🏆 Risultati nel file caricato: ${resultsData.data.length}`);
-
-                let risolti = 0;
-
-                for (const prediction of pendingPredictions) {
-                    log('info', `🔍 Verifica pending: ${prediction.match} del ${prediction.date}`);
-
-                    const risultatoTrovato = trovaRisultatoSmart60(prediction, resultsData.data);
-
-                    if (risultatoTrovato) {
-                        const esito = risultatoTrovato.esito === 'Vinto' ? 'won' : 'lost';
-
-                        const docRef = firestoreDoc(db, "ai_predictions", prediction.id);
-                        await firestoreUpdateDoc(docRef, {
-                            status: esito,
-                            verified_at: new Date().toISOString(),
-                            actual_result: risultatoTrovato.Risultato || 'N/A',
-                            match_method: 'smart_60_testato'
-                        });
-
-                        risolti++;
-                        log('success', `✅ RISOLTO: ${prediction.match} → ${esito.toUpperCase()}`);
-                    } else {
-                        log('warn', `⚠️ NON TROVATO: ${prediction.match} del ${prediction.date}`);
-                    }
-                }
-
-                await loadStatistics(currentDateFilter !== null);
-
-                document.getElementById('verification-summary').innerHTML = `
-                    <div style="background: rgba(255,255,255,0.9); padding: 1rem; border-radius: 8px; color: ${risolti > 0 ? '#166534' : '#dc2626'};">
-                        <strong>🔥 ALGORITMO SMART 60% COMPLETATO:</strong><br>
-                        ✅ ${risolti} pronostici RISOLTI con logica smart<br>
-                        ❌ ${pendingPredictions.length - risolti} ancora pending<br>
-                        📊 ${risolti === pendingPredictions.length ? 'ZERO PENDING RAGGIUNTO! 🎉' : 'Alcuni match non trovati nel file'}
-                    </div>
-                `;
-
-                if (risolti === pendingPredictions.length) {
-                    notify(`🎉 ZERO PENDING! ${risolti} pronostici risolti con algoritmo SMART 60%!`);
-                } else if (risolti > 0) {
-                    notify(`${risolti} risolti con algoritmo smart, ${pendingPredictions.length - risolti} ancora pending`);
-                } else {
-                    notify(`Nessun match trovato - controlla file risultati`, 'warning');
-                }
-
-                log('success', `🔥 ALGORITMO SMART 60%: ${risolti}/${pendingPredictions.length} risolti`);
-
-            } catch (error) {
-                log('error', `❌ Errore algoritmo smart: ${error.message}`, error);
-                notify(`Errore: ${error.message}`, 'error');
-            }
-        };
-
-        // ALGORITMO SMART 60% - FUNZIONI DI MATCHING
-        const trovaRisultatoSmart60 = (prediction, risultati) => {
-            const predDate = prediction.date;
-            const predTeams = extractTeamsSmart(prediction.match);
-
-            log('info', `   🎯 Cerco nel file: data=${predDate}, teams=[${predTeams.join(', ')}]`);
-
-            for (const risultato of risultati) {
-                if (risultato.data !== predDate) continue;
-
-                const resultTeams = extractTeamsSmart(risultato.Partita || '');
-                const matchFound = checkSmartMatch(predTeams, resultTeams);
-
-                log('info', `      📝 Confronto: [${resultTeams.join(', ')}] → ${matchFound.description}`);
-
-                if (matchFound.isMatch) {
-                    log('success', `      🎉 MATCH SMART! ${matchFound.description}`);
-                    return risultato;
-                }
-            }
-
-            log('warn', `   ❌ Nessun match smart trovato`);
-            return null;
-        };
-
-        const extractTeamsSmart = (matchStr) => {
-            if (!matchStr) return ['', ''];
-
-            const normalized = matchStr.toLowerCase()
-                .replace(/[àáâãäåæ]/g, 'a')
-                .replace(/[èéêë]/g, 'e')
-                .replace(/[ìíîï]/g, 'i')
-                .replace(/[òóôõöø]/g, 'o')
-                .replace(/[ùúûü]/g, 'u')
-                .replace(/[ýÿ]/g, 'y')
-                .replace(/[ñ]/g, 'n')
-                .replace(/[ç]/g, 'c')
-                .replace(/[^a-z0-9\s-]/g, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-
-            const separators = [' - ', '-', ' vs ', ' v '];
-            for (const sep of separators) {
-                if (normalized.includes(sep)) {
-                    const teams = normalized.split(sep);
-                    if (teams.length === 2) {
-                        return teams.map(t => t.trim());
-                    }
-                }
-            }
-
-            return [normalized, ''];
-        };
-
-        const checkSmartMatch = (teams1, teams2) => {
-            if (teams1.length !== 2 || teams2.length !== 2) 
-                return { isMatch: false, description: 'Formato squadre non valido' };
-
-            const sim1_1 = stringSimilarity(teams1[0], teams2[0]);
-            const sim1_2 = stringSimilarity(teams1[1], teams2[1]);
-            const avgSim1 = (sim1_1 + sim1_2) / 2;
-
-            const sim2_1 = stringSimilarity(teams1[0], teams2[1]);
-            const sim2_2 = stringSimilarity(teams1[1], teams2[0]);
-            const avgSim2 = (sim2_1 + sim2_2) / 2;
-
-            const bestSim = Math.max(avgSim1, avgSim2);
-            const bestSimPercent = Math.round(bestSim * 100);
-
-            const singleTeamMatch = Math.max(sim1_1, sim1_2, sim2_1, sim2_2);
-            const singleTeamPercent = Math.round(singleTeamMatch * 100);
-
-            if (bestSimPercent >= 60) {
-                return { 
-                    isMatch: true, 
-                    description: `Similarità media ${bestSimPercent}% >= 60%`
-                };
-            } else if (singleTeamPercent >= 80) {
-                return { 
-                    isMatch: true, 
-                    description: `1 squadra ${singleTeamPercent}% >= 80% (stessa data!)`
-                };
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                firebaseReady = true;
+                console.log('🔥 Firebase connesso:', user.uid);
+                loadAllPredictions();
             } else {
-                return { 
-                    isMatch: false, 
-                    description: `Similarità ${bestSimPercent}% < 60% (singola ${singleTeamPercent}%)`
-                };
+                signInAnonymously(auth);
             }
-        };
-
-        const stringSimilarity = (str1, str2) => {
-            if (str1 === str2) return 1;
-            if (str1.length === 0 || str2.length === 0) return 0;
-
-            const longer = str1.length > str2.length ? str1 : str2;
-            const shorter = str1.length > str2.length ? str2 : str1;
-
-            if (longer.length === 0) return 1;
-
-            return (longer.length - editDistance(longer, shorter)) / longer.length;
-        };
-
-        const editDistance = (str1, str2) => {
-            const costs = [];
-            for (let i = 0; i <= str2.length; i++) {
-                let lastValue = i;
-                for (let j = 0; j <= str1.length; j++) {
-                    if (i === 0) {
-                        costs[j] = j;
-                    } else {
-                        if (j > 0) {
-                            let newValue = costs[j - 1];
-                            if (str1.charAt(j - 1) !== str2.charAt(i - 1)) {
-                                newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-                            }
-                            costs[j - 1] = lastValue;
-                            lastValue = newValue;
-                        }
-                    }
-                }
-                if (i > 0) costs[str1.length] = lastValue;
-            }
-            return costs[str1.length];
-        };
-
-        // RESTO DELLE FUNZIONI (filtro date, statistiche, analisi)
-        const applyDateFilter = async () => {
-            const dateFrom = document.getElementById('filter-date-from').value;
-            const dateTo = document.getElementById('filter-date-to').value;
-
-            if (!dateFrom || !dateTo) {
-                notify('Seleziona entrambe le date!', 'warning');
-                return;
-            }
-
-            if (dateFrom > dateTo) {
-                notify('Data inizio deve essere <= data fine!', 'error');
-                return;
-            }
-
-            log('info', `📅 Applicazione filtro date: ${dateFrom} → ${dateTo}`);
-
-            currentDateFilter = { from: dateFrom, to: dateTo };
-
-            document.getElementById('date-filter-section').classList.add('filter-active');
-            document.getElementById('filter-info').style.display = 'block';
-            document.getElementById('filter-period').textContent = `${dateFrom} → ${dateTo}`;
-            document.getElementById('stats-filter-indicator').style.display = 'inline';
-            document.getElementById('delete-filtered-btn').style.display = 'block';
-            document.getElementById('export-filtered-btn').style.display = 'block';
-
-            await loadStatistics(true);
-
-            notify(`Filtro applicato: ${dateFrom} → ${dateTo}`);
-        };
-
-        const resetDateFilter = async () => {
-            currentDateFilter = null;
-
-            document.getElementById('date-filter-section').classList.remove('filter-active');
-            document.getElementById('filter-info').style.display = 'none';
-            document.getElementById('stats-filter-indicator').style.display = 'none';
-            document.getElementById('delete-filtered-btn').style.display = 'none';
-            document.getElementById('export-filtered-btn').style.display = 'none';
-            document.getElementById('filter-date-from').value = '';
-            document.getElementById('filter-date-to').value = '';
-
-            await loadStatistics(false);
-
-            notify('Filtro date rimosso');
-            log('info', '🔄 Filtro date resettato');
-        };
-
-        const deleteFilteredDates = async () => {
-            if (!currentDateFilter) {
-                notify('Nessun filtro attivo!', 'warning');
-                return;
-            }
-
-            const confirmed = confirm(`ATTENZIONE: Vuoi eliminare TUTTI i pronostici dal ${currentDateFilter.from} al ${currentDateFilter.to}?\n\nQuesta azione non può essere annullata!`);
-            if (!confirmed) return;
-
-            try {
-                log('info', '🗑️ Eliminazione pronostici filtrati...');
-
-                const filtered = allPredictions.filter(p => 
-                    p.date >= currentDateFilter.from && p.date <= currentDateFilter.to
-                );
-
-                let deleted = 0;
-                for (const prediction of filtered) {
-                    try {
-                        const docRef = firestoreDoc(db, "ai_predictions", prediction.id);
-                        await firestoreDeleteDoc(docRef);
-                        deleted++;
-                    } catch (deleteError) {
-                        log('error', `❌ Errore eliminazione ${prediction.match}: ${deleteError.message}`);
-                    }
-                }
-
-                await resetDateFilter();
-
-                notify(`${deleted} pronostici eliminati!`);
-                log('success', `🗑️ ${deleted} pronostici eliminati dal periodo`);
-
-            } catch (error) {
-                log('error', `❌ Errore eliminazione: ${error.message}`);
-                notify(`Errore eliminazione: ${error.message}`, 'error');
-            }
-        };
-
-        const exportFilteredDates = async () => {
-            if (!currentDateFilter) {
-                notify('Nessun filtro attivo!', 'warning');
-                return;
-            }
-
-            try {
-                const filtered = allPredictions.filter(p => 
-                    p.date >= currentDateFilter.from && p.date <= currentDateFilter.to
-                );
-
-                let csv = 'Data,Strategia,Partita,Lega,Mercato,Tip,Quota,Score,Status,ROI\n';
-
-                filtered.forEach(pred => {
-                    let roi = '0.00';
-                    if (pred.status === 'won') {
-                        roi = ((pred.quota - 1) * 100).toFixed(2);
-                    } else if (pred.status === 'lost') {
-                        roi = '-100.00';
-                    }
-
-                    csv += `${pred.date},${pred.strategy},${pred.match},${pred.league},${pred.market},${pred.tip},${pred.quota.toFixed(2)},${pred.score},${pred.status},${roi}\n`;
-                });
-
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `predictions-${currentDateFilter.from}-${currentDateFilter.to}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-
-                notify(`${filtered.length} pronostici esportati!`);
-                log('success', `📊 Export periodo: ${filtered.length} pronostici`);
-
-            } catch (error) {
-                log('error', `❌ Errore export: ${error.message}`);
-            }
-        };
-
-        const loadStatistics = async (useFilter = false) => {
-            if (!firebaseReady) return;
-
-            try {
-                const snapshot = await firestoreGetDocs(firestoreCollection(db, "ai_predictions"));
-                allPredictions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                let predictions = allPredictions;
-
-                if (useFilter && currentDateFilter) {
-                    predictions = allPredictions.filter(p => 
-                        p.date >= currentDateFilter.from && p.date <= currentDateFilter.to
-                    );
-
-                    document.getElementById('filter-results-count').textContent = 
-                        `${predictions.length} pronostici trovati`;
-                }
-
-                const mpetazPreds = predictions.filter(p => p.strategy === 'mpetaz');
-                const geminiPreds = predictions.filter(p => p.strategy === 'gemini');
-
-                const mpetazStats = calculateStrategyStats(mpetazPreds);
-                const geminiStats = calculateStrategyStats(geminiPreds);
-
-                updateStrategyDisplay('mpetaz', mpetazStats);
-                updateStrategyDisplay('gemini', geminiStats);
-
-                updateWinnerIndicator(mpetazStats, geminiStats);
-
-                log('success', `📊 Statistiche ${useFilter ? 'filtrate' : 'complete'} aggiornate`);
-
-            } catch (error) {
-                log('error', `❌ Errore stats: ${error.message}`);
-            }
-        };
-
-        // RESTO DEL CODICE (implementato come il sistema precedente)
-        const runAnalysis = async (strategy) => {
-            if (!firebaseReady) {
-                notify('Sistema non pronto', 'warning');
-                return;
-            }
-
-            const historyData = strategy === 'mpetaz' ? mpetazHistory : geminiHistory;
-            const resultsElement = document.getElementById(`${strategy}-results`);
-
-            if (!todayMatches.data.length) {
-                notify('Carica le partite da analizzare', 'error');
-                return;
-            }
-            if (!historyData.data.length) {
-                notify(`Carica dati storici ${strategy}`, 'error');
-                return;
-            }
-
-            log('info', `🚀 Analisi ${strategy} avviata...`);
-            resultsElement.innerHTML = '<div class="loader"></div>';
-
-            setTimeout(async () => {
-                try {
-                    const stats = calculateHistoricalStats(historyData.data);
-
-                    const validMatches = todayMatches.data.filter(match => {
-                        const quota = parseFloat(String(match.Quota || '0').replace(',', '.'));
-                        const prob = parseFloat(String(match.Probabilità || '0').replace('%', ''));
-
-                        return !isNaN(quota) && 
-                               quota >= MIN_ODDS && 
-                               quota <= 3.0 && 
-                               prob >= 70 && 
-                               match.Lega && match.Partita && match.Tip &&
-                               !match.Lega.toLowerCase().includes('cup');
-                    });
-
-                    const scoredMatches = validMatches.map(match => {
-                        let score = 0;
-
-                        const quota = parseFloat(match.Quota.replace(',', '.'));
-                        const prob = parseFloat(match.Probabilità.replace('%', ''));
-
-                        score += Math.min(prob * 0.7, 55);
-
-                        if (stats.league[match.Lega]?.total >= 3) {
-                            score += stats.league[match.Lega].rate * 40;
-                        }
-
-                        if (stats.tip[match.Tip]?.total >= 5) {
-                            score += stats.tip[match.Tip].rate * 35;
-                        }
-
-                        if (quota >= MIN_ODDS && quota <= 1.4) {
-                            score += 20;
-                        } else if (quota <= 1.7) {
-                            score += 15;
-                        } else if (quota <= 2.2) {
-                            score += 10;
-                        }
-
-                        return { 
-                            ...match, 
-                            score: Math.round(score * 100) / 100,
-                            strategy: strategy
-                        };
-                    }).sort((a, b) => b.score - a.score);
-
-                    const top10 = scoredMatches.slice(0, 10);
-
-                    let html = `<h5 class="font-medium mb-3">🏆 Top 10 ${strategy.toUpperCase()}:</h5>`;
-                    if (top10.length === 0) {
-                        html += '<p class="text-red">Nessuna partita trovata con odds ≥ 1.20 e criteri richiesti</p>';
-                    } else {
-                        top10.forEach((match, i) => {
-                            const quota = parseFloat(match.Quota.replace(',', '.'));
-                            html += `
-                                <div class="prediction-item ${strategy}">
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <div style="flex: 1;">
-                                            <div style="font-weight: bold; margin-bottom: 0.25rem;">
-                                                #${i + 1} ${match.Partita}
-                                                <span class="odds-badge">@${quota.toFixed(2)}</span>
-                                            </div>
-                                            <div style="font-size: 0.875rem; color: #6b7280;">
-                                                ${match.Lega} • ${match.Mercato} ${match.Tip}
-                                            </div>
-                                        </div>
-                                        <div style="text-align: center; padding-left: 1rem;">
-                                            <div style="font-size: 1.25rem; font-weight: bold; color: ${strategy === 'mpetaz' ? '#8b5cf6' : '#f97316'};">
-                                                ${match.score}
-                                            </div>
-                                            <div style="font-size: 0.75rem; color: #6b7280;">Score</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                    }
-
-                    resultsElement.innerHTML = html;
-
-                    if (top10.length > 0) {
-                        await savePredictions(top10, strategy);
-                    }
-
-                    log('success', `✅ Analisi ${strategy}: ${top10.length} pronostici generati`);
-                    notify(`${strategy}: ${top10.length} pronostici salvati!`);
-
-                } catch (error) {
-                    resultsElement.innerHTML = '<p style="color: #ef4444;">Errore analisi</p>';
-                    log('error', `❌ Errore analisi ${strategy}:`, error);
-                    notify(`Errore ${strategy}: ${error.message}`, 'error');
-                }
-            }, 200);
-        };
-
-        const calculateHistoricalStats = (data) => {
-            const stats = { league: {}, tip: {}, market: {}, global: { won: 0, total: 0 } };
-
-            data.forEach(row => {
-                const lega = row.Lega;
-                const tip = row.Tip;
-                const esito = row.esito;
-                const quota = parseFloat(String(row.Quota || '0').replace(',', '.'));
-
-                if (!esito || !lega || !tip || isNaN(quota) || quota < MIN_ODDS) return;
-                if (lega.toLowerCase().includes('cup')) return;
-
-                const won = esito.toLowerCase() === 'vinto' ? 1 : 0;
-
-                if (!stats.league[lega]) stats.league[lega] = { won: 0, total: 0, rate: 0 };
-                stats.league[lega].total++;
-                stats.league[lega].won += won;
-                stats.league[lega].rate = stats.league[lega].won / stats.league[lega].total;
-
-                if (!stats.tip[tip]) stats.tip[tip] = { won: 0, total: 0, rate: 0 };
-                stats.tip[tip].total++;
-                stats.tip[tip].won += won;
-                stats.tip[tip].rate = stats.tip[tip].won / stats.tip[tip].total;
-
-                stats.global.total++;
-                stats.global.won += won;
-            });
-
-            return stats;
-        };
-
-        const savePredictions = async (predictions, strategy) => {
-            if (!firebaseReady) return;
-
-            try {
-                log('info', `💾 Salvataggio ${predictions.length} pronostici ${strategy}...`);
-
-                const collection = firestoreCollection(db, "ai_predictions");
-                const date = document.getElementById('prediction-date').value;
-
-                for (const prediction of predictions) {
-                    const quota = parseFloat(prediction.Quota.replace(',', '.'));
-
-                    const doc = {
-                        date: date,
-                        strategy: strategy,
-                        match: prediction.Partita,
-                        league: prediction.Lega,
-                        market: prediction.Mercato,
-                        tip: prediction.Tip,
-                        quota: quota,
-                        probabilita: parseFloat(prediction.Probabilità.replace('%', '')),
-                        score: prediction.score,
-                        status: 'pending',
-                        odds_filter: MIN_ODDS,
-                        user_id: currentUser.uid,
-                        created_at: new Date().toISOString()
-                    };
-
-                    await firestoreAddDoc(collection, doc);
-                }
-
-                log('success', `✅ ${predictions.length} pronostici ${strategy} salvati`);
-                loadStatistics(currentDateFilter !== null);
-
-            } catch (error) {
-                log('error', `❌ Errore salvataggio ${strategy}:`, error);
-            }
-        };
-
-        const calculateStrategyStats = (predictions) => {
-            const total = predictions.length;
-            const pending = predictions.filter(p => p.status === 'pending').length;
-            const won = predictions.filter(p => p.status === 'won').length;
-            const lost = predictions.filter(p => p.status === 'lost').length;
-            const verified = won + lost;
-
-            const winRate = verified > 0 ? (won / verified) * 100 : 0;
-
-            let totalStake = 0;
-            let totalReturn = 0;
-
-            predictions.filter(p => p.status === 'won' || p.status === 'lost').forEach(pred => {
-                totalStake += 1;
-                if (pred.status === 'won') {
-                    totalReturn += pred.quota || 0;
-                }
-            });
-
-            const roi = totalStake > 0 ? ((totalReturn - totalStake) / totalStake) * 100 : 0;
-
-            return { total, pending, won, lost, verified, winRate, roi };
-        };
-
-        const updateStrategyDisplay = (strategy, stats) => {
-            document.getElementById(`${strategy}-total`).textContent = stats.total;
-            document.getElementById(`${strategy}-pending`).textContent = stats.pending;
-            document.getElementById(`${strategy}-won`).textContent = stats.won;
-            document.getElementById(`${strategy}-lost`).textContent = stats.lost;
-
-            const winRateElement = document.getElementById(`${strategy}-winrate`);
-            if (stats.verified > 0) {
-                winRateElement.textContent = stats.winRate.toFixed(1) + '%';
-            } else {
-                winRateElement.textContent = '--% (attesa verifica)';
-            }
-
-            const roiElement = document.getElementById(`${strategy}-roi`);
-            if (stats.verified > 0) {
-                roiElement.textContent = (stats.roi > 0 ? '+' : '') + stats.roi.toFixed(2) + '%';
-                roiElement.className = `roi-display ${stats.roi > 0 ? 'roi-positive' : 'roi-negative'}`;
-            } else {
-                roiElement.textContent = '--% (attesa verifica)';
-                roiElement.className = 'roi-display';
-            }
-
-            const trendElement = document.getElementById(`${strategy}-trend`);
-            if (stats.verified >= 5) {
-                if (stats.winRate > 60) {
-                    trendElement.textContent = 'In Crescita';
-                    trendElement.className = 'learning-badge improving';
-                } else if (stats.winRate < 45) {
-                    trendElement.textContent = 'In Calo';
-                    trendElement.className = 'learning-badge declining';
-                } else {
-                    trendElement.textContent = 'Stabile';
-                    trendElement.className = 'learning-badge stable';
-                }
-            } else {
-                trendElement.textContent = 'Dati insufficienti';
-                trendElement.className = 'learning-badge stable';
-            }
-        };
-
-        const updateWinnerIndicator = (mpetazStats, geminiStats) => {
-            const indicator = document.getElementById('winner-indicator');
-            const text = document.getElementById('winner-text');
-
-            if (mpetazStats.verified === 0 && geminiStats.verified === 0) {
-                indicator.style.display = 'none';
-                return;
-            }
-
-            let winner, color, bgColor;
-
-            if (mpetazStats.verified > 0 && geminiStats.verified > 0) {
-                if (mpetazStats.roi > geminiStats.roi) {
-                    winner = `Mpetaz vincente (ROI: ${mpetazStats.roi.toFixed(2)}% vs ${geminiStats.roi.toFixed(2)}%)`;
-                    color = '#8b5cf6';
-                    bgColor = '#f3e8ff';
-                } else if (geminiStats.roi > mpetazStats.roi) {
-                    winner = `Gemini vincente (ROI: ${geminiStats.roi.toFixed(2)}% vs ${mpetazStats.roi.toFixed(2)}%)`;
-                    color = '#f97316';
-                    bgColor = '#fff7ed';
-                } else {
-                    winner = 'Pareggio nelle performance';
-                    color = '#6b7280';
-                    bgColor = '#f9fafb';
-                }
-            } else if (mpetazStats.verified > 0) {
-                winner = `Solo Mpetaz verificato (ROI: ${mpetazStats.roi.toFixed(2)}%)`;
-                color = '#8b5cf6';
-                bgColor = '#f3e8ff';
-            } else {
-                winner = `Solo Gemini verificato (ROI: ${geminiStats.roi.toFixed(2)}%)`;
-                color = '#f97316';
-                bgColor = '#fff7ed';
-            }
-
-            indicator.style.background = bgColor;
-            indicator.style.display = 'block';
-            text.textContent = winner;
-            text.style.color = color;
-        };
-
-        const updateLearningModel = async () => {
-            notify('Modello AI aggiornato con algoritmo SMART 60%!');
-        };
-
-        const clearConsole = () => {
-            document.getElementById('debug-console').innerHTML = '<div style="color: #10b981;">[SISTEMA] Console pulita - APP COMPLETA SMART 60% attiva</div>';
-        };
-
-        const exportData = async () => {
-            if (!firebaseReady) return;
-
-            try {
-                let csv = 'Data,Strategia,Partita,Lega,Mercato,Tip,Quota,Score,Status\n';
-
-                allPredictions.forEach(pred => {
-                    csv += `${pred.date},${pred.strategy},${pred.match},${pred.league},${pred.market},${pred.tip},${pred.quota.toFixed(2)},${pred.score},${pred.status}\n`;
-                });
-
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `predictions-APP-COMPLETA-SMART-60-${new Date().toISOString().split('T')[0]}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-
-                notify(`${allPredictions.length} pronostici esportati!`);
-
-            } catch (error) {
-                log('error', `❌ Errore export: ${error.message}`);
-            }
-        };
-
-        // ESPOSIZIONE FUNZIONI GLOBALI
-        window.runAnalysis = runAnalysis;
-        window.algoritmoSmart60 = algoritmoSmart60;
-        window.updateLearningModel = updateLearningModel;
-        window.applyDateFilter = applyDateFilter;
-        window.resetDateFilter = resetDateFilter;
-        window.deleteFilteredDates = deleteFilteredDates;
-        window.exportFilteredDates = exportFilteredDates;
-        window.clearConsole = clearConsole;
-        window.exportData = exportData;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            log('success', '🎉 APP COMPLETA SMART 60% caricata!');
-
-            document.getElementById('prediction-date').valueAsDate = new Date();
-
-            const today = new Date();
-            const lastMonth = new Date();
-            lastMonth.setMonth(today.getMonth() - 1);
-
-            document.getElementById('filter-date-from').value = lastMonth.toISOString().split('T')[0];
-            document.getElementById('filter-date-to').value = today.toISOString().split('T')[0];
-
-            document.getElementById('today-file').addEventListener('change', (e) => 
-                handleUpload(e, 'today', document.getElementById('today-label')));
-            document.getElementById('mpetaz-historical').addEventListener('change', (e) => 
-                handleUpload(e, 'mpetazHistory', document.getElementById('mpetaz-label')));
-            document.getElementById('gemini-historical').addEventListener('change', (e) => 
-                handleUpload(e, 'geminiHistory', document.getElementById('gemini-label')));
-            document.getElementById('results-file').addEventListener('change', (e) => 
-                handleUpload(e, 'results', document.getElementById('results-label')));
-
-            setInterval(() => {
-                if (firebaseReady) loadStatistics(currentDateFilter !== null);
-            }, 60000);
         });
 
-        log('info', '🚀 Inizializzazione APP COMPLETA SMART 60%...');
-        initFirebase();
-    </script>
+    } catch (error) {
+        console.error('❌ Errore Firebase:', error);
+    }
+}
+
+async function loadAllPredictions() {
+    if (!firebaseReady) return;
+
+    try {
+        const snapshot = await getDocs(collection(db, 'aipredictions'));
+        allPredictions = snapshot.docs.map(docSnap => ({
+            id: docSnap.id,
+            ...docSnap.data()
+        }));
+
+        console.log('📊 Caricati', allPredictions.length, 'pronostici da Firebase');
+        populateFilters();
+
+    } catch (error) {
+        console.error('❌ Errore caricamento:', error);
+    }
+}
+
+function populateFilters() {
+    if (allPredictions.length === 0) return;
+
+    const uniqueTips = [...new Set(allPredictions.map(p => p.tip))].sort();
+    const filterTip = document.getElementById('filter-tip');
+    filterTip.innerHTML = '<option value="all">🎯 Tutti i Tip</option>';
+    uniqueTips.forEach(tip => {
+        filterTip.innerHTML += '<option value="' + tip + '">' + tip + '</option>';
+    });
+
+    const uniqueLeagues = [...new Set(allPredictions.map(p => p.lega))].sort();
+    const filterLega = document.getElementById('filter-lega');
+    filterLega.innerHTML = '<option value="all">🏆 Tutte le Leghe</option>';
+    uniqueLeagues.forEach(lega => {
+        filterLega.innerHTML += '<option value="' + lega + '">' + lega + '</option>';
+    });
+}
+
+const sections = {
+  pronostici: document.getElementById('section-pronostici'),
+  inserisci: document.getElementById('section-inserisci'),
+  statistiche: document.getElementById('section-statistiche')
+};
+
+const buttons = {
+  pronostici: document.getElementById('btn-pronostici'),
+  inserisci: document.getElementById('btn-inserisci'),
+  statistiche: document.getElementById('btn-statistiche')
+};
+
+function showSection(section) {
+  Object.keys(sections).forEach(key => {
+    if (key === section) {
+      sections[key].style.display = 'block';
+      buttons[key].classList.add('active');
+    } else {
+      sections[key].style.display = 'none';
+      buttons[key].classList.remove('active');
+    }
+  });
+}
+
+showSection('inserisci');
+buttons.pronostici.addEventListener('click', () => showSection('pronostici'));
+buttons.inserisci.addEventListener('click', () => showSection('inserisci'));
+buttons.statistiche.addEventListener('click', () => showSection('statistiche'));
+
+let fileStorico = null;
+let fileGiorno = null;
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n').filter(line => line.trim());
+  if (lines.length < 2) return [];
+
+  const headerLine = lines[0];
+  const headers = [];
+  let inQuotes = false;
+  let currentHeader = '';
+
+  for (let i = 0; i < headerLine.length; i++) {
+    const char = headerLine[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      headers.push(currentHeader.trim().toLowerCase().replace(/['"]/g, ''));
+      currentHeader = '';
+    } else {
+      currentHeader += char;
+    }
+  }
+  if (currentHeader) {
+    headers.push(currentHeader.trim().toLowerCase().replace(/['"]/g, ''));
+  }
+
+  const data = [];
+  for (let lineIndex = 1; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex];
+    const values = [];
+    let inQuotes = false;
+    let currentValue = '';
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        values.push(currentValue.trim().replace(/['"]/g, ''));
+        currentValue = '';
+      } else {
+        currentValue += char;
+      }
+    }
+    if (currentValue) {
+      values.push(currentValue.trim().replace(/['"]/g, ''));
+    }
+
+    const row = {};
+    headers.forEach((h, i) => { 
+      row[h] = values[i] || ''; 
+    });
+    data.push(row);
+  }
+
+  return data;
+}
+
+function calculateScore(partita, legheSet, tipsSet) {
+  let legaScore = 0, tipScore = 0, probScore = 0, quotaValid = true;
+
+  const lega = (partita.lega || partita.Lega || '').toLowerCase().trim();
+  if (legheSet.has(lega)) legaScore = 20;
+  else if (lega.startsWith('eu-')) legaScore = 5;
+
+  let tipNorm = (partita.tip || partita.Tip || '').trim();
+  if (tipNorm) {
+    tipNorm = tipNorm.replace(',', '.').toUpperCase();
+    const val = parseFloat(tipNorm);
+    if (!isNaN(val)) tipNorm = (val >= 0 ? '+' : '-') + Math.abs(val);
+  }
+
+  if (tipsSet.has(tipNorm)) tipScore = 20;
+  else if (lega.startsWith('eu-')) tipScore = 5;
+
+  const quota = parseFloat(String(partita.quota || partita.Quota || '').replace(',', '.')) || 0;
+  if (quota < 1.20) quotaValid = false;
+
+  const prob = parseFloat((partita.probabilità || partita.probabilita || partita['Probabilità'] || '').toString().replace('%', '')) || 0;
+
+  if (prob <= 65) {
+    probScore = 0;
+  } else if (prob <= 77) {
+    probScore = 5;
+  } else {
+    probScore = 20 + (prob - 78);
+  }
+
+  return { 
+    legaScore, 
+    tipScore, 
+    probScore: Math.round(probScore), 
+    totalScore: legaScore + tipScore + Math.round(probScore), 
+    quotaValid, 
+    quota, 
+    prob 
+  };
+}
+
+document.getElementById('file-storico').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(event) { 
+      fileStorico = parseCSV(event.target.result); 
+    };
+    reader.readAsText(file);
+  }
+});
+
+document.getElementById('file-giorno').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(event) { 
+      fileGiorno = parseCSV(event.target.result); 
+    };
+    reader.readAsText(file);
+  }
+});
+
+document.getElementById('file-risultati').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(event) { 
+      fileRisultati = parseCSV(event.target.result);
+      console.log('✅ File risultati caricato:', fileRisultati.length, 'righe');
+      document.getElementById('matching-info').innerHTML = '📊 <strong>File caricato:</strong> ' + fileRisultati.length + ' risultati';
+    };
+    reader.readAsText(file);
+  }
+});
+
+function previewScoring() {
+  if (!fileStorico || !fileGiorno) {
+    alert('⚠️ Carica prima i file per vedere l anteprima!');
+    return;
+  }
+
+  const scoreThreshold = parseInt(document.getElementById('score-threshold').value) || 45;
+  const maxPartite = parseInt(document.getElementById('max-selections').value) || 10;
+  const container = document.getElementById('estratti-container');
+  container.innerHTML = '<div class="loading"></div> 🔄 Anteprima intelligente...';
+
+  try {
+    const legheSet = new Set();
+    const tipsSet = new Set();
+
+    fileStorico.forEach(row => {
+      const lega = (row.lega || row.Lega || '').toLowerCase().trim();
+      const tip = (row.tip || row.Tip || '').trim();
+      if (lega) legheSet.add(lega);
+      if (tip) {
+        let normalizedTip = tip.replace(',', '.').toUpperCase();
+        const val = parseFloat(normalizedTip);
+        if (!isNaN(val)) normalizedTip = (val >= 0 ? '+' : '-') + Math.abs(val);
+        tipsSet.add(normalizedTip);
+      }
+    });
+
+    let selections = fileGiorno.filter(row => {
+      const lega = (row.lega || row.Lega || '').toLowerCase().trim();
+      const tip = (row.tip || row.Tip || '').trim();
+
+      let normalizedTip = tip.replace(',', '.').toUpperCase();
+      const val = parseFloat(normalizedTip);
+      if (!isNaN(val)) normalizedTip = (val >= 0 ? '+' : '-') + Math.abs(val);
+
+      return legheSet.has(lega) && tipsSet.has(normalizedTip);
+    });
+
+    if (selections.length === 0) {
+      container.innerHTML = '<div class="alert warning">❌ Nessuna partita con leghe E tip storici trovata.</div>';
+      return;
+    }
+
+    selections.forEach(s => Object.assign(s, calculateScore(s, legheSet, tipsSet)));
+
+    const validMatches = selections.filter(m => m.quotaValid && m.totalScore >= scoreThreshold);
+    validMatches.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      if (b.prob !== a.prob) return b.prob - a.prob;
+      return b.quota - a.quota;
+    });
+
+    const partiteVerdi = validMatches.filter(m => m.totalScore >= 50);
+    const partiteGialle = validMatches.filter(m => m.totalScore >= 45 && m.totalScore < 50);
+    const partiteRosse = validMatches.filter(m => m.totalScore < 45);
+
+    // Simula selezione con limite
+    let simulatedSelection = [];
+    let spazio = maxPartite;
+
+    const verdiOrdered = [...partiteVerdi].sort((a, b) => b.totalScore - a.totalScore);
+    const gialleOrdered = [...partiteGialle].sort((a, b) => b.totalScore - a.totalScore);
+    const rosseOrdered = [...partiteRosse].sort((a, b) => b.totalScore - a.totalScore);
+
+    const verdiSel = verdiOrdered.slice(0, Math.min(spazio, verdiOrdered.length));
+    simulatedSelection.push(...verdiSel);
+    spazio -= verdiSel.length;
+
+    if (spazio > 0) {
+      const gialleSel = gialleOrdered.slice(0, Math.min(spazio, gialleOrdered.length));
+      simulatedSelection.push(...gialleSel);
+      spazio -= gialleSel.length;
+    }
+
+    if (spazio > 0) {
+      const rosseSel = rosseOrdered.slice(0, Math.min(spazio, rosseOrdered.length));
+      simulatedSelection.push(...rosseSel);
+    }
+
+    const finalVerdi = simulatedSelection.filter(m => m.totalScore >= 50).length;
+    const finalGialle = simulatedSelection.filter(m => m.totalScore >= 45 && m.totalScore < 50).length;
+    const finalRosse = simulatedSelection.filter(m => m.totalScore < 45).length;
+
+    let html = '<div class="alert info">👁️ <strong>ANTEPRIMA INTELLIGENTE</strong> - Soglia: ' + scoreThreshold + ' | Limite: ' + maxPartite + ' partite</div>';
+    html += '<h3>🔍 Simulazione Selezione</h3>';
+    html += '<p style="margin: 1rem 0; font-size: 0.9rem;"><strong>Disponibili:</strong> ';
+    html += '<span style="color: #10b981;">🟢 ' + partiteVerdi.length + ' VERDI (≥50)</span> | ';
+    html += '<span style="color: #f59e0b;">🟡 ' + partiteGialle.length + ' GIALLE (45-49)</span> | ';
+    html += '<span style="color: #ef4444;">🔴 ' + partiteRosse.length + ' ROSSE (<45)</span></p>';
+
+    html += '<p style="margin: 1rem 0; font-size: 0.9rem;"><strong>Verranno selezionate:</strong> ';
+    html += '<span style="color: #10b981;">🟢 ' + finalVerdi + ' VERDI</span> | ';
+    html += '<span style="color: #f59e0b;">🟡 ' + finalGialle + ' GIALLE</span> | ';
+    html += '<span style="color: #ef4444;">🔴 ' + finalRosse + ' ROSSE</span>';
+    html += ' = <strong>' + simulatedSelection.length + ' partite totali</strong></p>';
+
+    if (partiteVerdi.length > finalVerdi) {
+      html += '<div class="alert warning">⚠️ <strong>ATTENZIONE:</strong> ' + (partiteVerdi.length - finalVerdi) + ' partite VERDI verranno escluse per rispettare il limite di ' + maxPartite + ' partite.</div>';
+    }
+
+    container.innerHTML = html;
+
+  } catch (error) {
+    container.innerHTML = '<div class="alert warning">❌ Errore: ' + error.message + '</div>';
+  }
+}
+
+async function estraiESalvaPronostici() {
+  const selectedDate = document.getElementById('input-data').value;
+  const currentUserName = document.getElementById('current-user').value;
+  const scoreThreshold = parseInt(document.getElementById('score-threshold').value) || 45;
+  const maxPartite = parseInt(document.getElementById('max-selections').value) || 10;
+
+  if (!selectedDate || !fileStorico || !fileGiorno) {
+    alert('⚠️ Inserisci data e carica entrambi i file!');
+    return;
+  }
+
+  if (!firebaseReady) {
+    alert('⚠️ Firebase non ancora pronto!');
+    return;
+  }
+
+  await loadAllPredictions();
+  const esistenti = allPredictions.filter(p => 
+    p.user === currentUserName && 
+    p.date === selectedDate
+  );
+
+  if (esistenti.length > 0) {
+    const conferma = confirm(
+      '⚠️ ATTENZIONE! Trovate ' + esistenti.length + ' partite già inserite per ' + 
+      selectedDate + ' di ' + currentUserName + '.\n\n' +
+      'Continuando verranno AGGIUNTE alle esistenti (possibili duplicati).\n\n' +
+      'Vuoi CANCELLARE prima le partite esistenti? (CONSIGLIATO)'
+    );
+
+    if (conferma) {
+      const container = document.getElementById('estratti-container');
+      container.innerHTML = '<div class="loading"></div> 🗑️ Pulizia database...';
+
+      for (const pred of esistenti) {
+        await deleteDoc(doc(db, 'aipredictions', pred.id));
+      }
+
+      alert('🗑️ Cancellate ' + esistenti.length + ' partite esistenti! Ora inserisco le nuove.');
+      await loadAllPredictions();
+    } else {
+      if (!confirm('⚠️ ATTENZIONE: Le nuove partite verranno AGGIUNTE a quelle esistenti!\nSicuro di continuare?')) {
+        return;
+      }
+    }
+  }
+
+  const container = document.getElementById('estratti-container');
+  container.innerHTML = '<div class="loading"></div> 🔄 Selezione intelligente...';
+
+  try {
+    const legheSet = new Set();
+    const tipsSet = new Set();
+
+    fileStorico.forEach(row => {
+      const lega = (row.lega || row.Lega || '').toLowerCase().trim();
+      const tip = (row.tip || row.Tip || '').trim();
+      if (lega) legheSet.add(lega);
+      if (tip) {
+        let normalizedTip = tip.replace(',', '.').toUpperCase();
+        const val = parseFloat(normalizedTip);
+        if (!isNaN(val)) normalizedTip = (val >= 0 ? '+' : '-') + Math.abs(val);
+        tipsSet.add(normalizedTip);
+      }
+    });
+
+    let selections = fileGiorno.filter(row => {
+      const lega = (row.lega || row.Lega || '').toLowerCase().trim();
+      const tip = (row.tip || row.Tip || '').trim();
+
+      let normalizedTip = tip.replace(',', '.').toUpperCase();
+      const val = parseFloat(normalizedTip);
+      if (!isNaN(val)) normalizedTip = (val >= 0 ? '+' : '-') + Math.abs(val);
+
+      return legheSet.has(lega) && tipsSet.has(normalizedTip);
+    });
+
+    if (selections.length === 0) {
+      container.innerHTML = '<div class="alert warning">❌ Nessuna partita con leghe E tip storici trovata.</div>';
+      return;
+    }
+
+    selections.forEach(s => Object.assign(s, calculateScore(s, legheSet, tipsSet)));
+
+    const validMatches = selections.filter(m => m.quotaValid && m.totalScore >= scoreThreshold);
+    validMatches.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      if (b.prob !== a.prob) return b.prob - a.prob;
+      return b.quota - a.quota;
+    });
+
+    if (validMatches.length === 0) {
+      container.innerHTML = '<div class="alert warning">❌ Nessuna partita raggiunge la soglia impostata.</div>';
+      return;
+    }
+
+    const partiteVerdi = validMatches.filter(m => m.totalScore >= 50);
+    const partiteGialle = validMatches.filter(m => m.totalScore >= 45 && m.totalScore < 50);
+    const partiteRosse = validMatches.filter(m => m.totalScore < 45);
+
+    console.log('🟢 Partite VERDI (≥50):', partiteVerdi.length);
+    console.log('🟡 Partite GIALLE (45-49):', partiteGialle.length);
+    console.log('🔴 Partite ROSSE (<45):', partiteRosse.length);
+
+    // SELEZIONE CON LIMITE
+    let finalSelections = [];
+    let spazio = maxPartite;
+
+    const verdiOrdered = partiteVerdi.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      if (b.prob !== a.prob) return b.prob - a.prob;
+      return b.quota - a.quota;
+    });
+
+    const gialleOrdered = partiteGialle.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      if (b.prob !== a.prob) return b.prob - a.prob;
+      return b.quota - a.quota;
+    });
+
+    const rosseOrdered = partiteRosse.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      if (b.prob !== a.prob) return b.prob - a.prob;
+      return b.quota - a.quota;
+    });
+
+    const verdiSelezionate = verdiOrdered.slice(0, Math.min(spazio, verdiOrdered.length));
+    finalSelections.push(...verdiSelezionate);
+    spazio -= verdiSelezionate.length;
+
+    if (spazio > 0) {
+      const gialleSelezionate = gialleOrdered.slice(0, Math.min(spazio, gialleOrdered.length));
+      finalSelections.push(...gialleSelezionate);
+      spazio -= gialleSelezionate.length;
+    }
+
+    if (spazio > 0) {
+      const rosseSelezionate = rosseOrdered.slice(0, Math.min(spazio, rosseOrdered.length));
+      finalSelections.push(...rosseSelezionate);
+    }
+
+    finalSelections.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      if (b.prob !== a.prob) return b.prob - a.prob;
+      return b.quota - a.quota;
+    });
+
+    const verdiTagliate = partiteVerdi.length - verdiSelezionate.length;
+
+    for (const match of finalSelections) {
+      await addDoc(collection(db, 'aipredictions'), {
+        date: selectedDate,
+        user: currentUserName,
+        lega: match.lega || match.Lega || '',
+        partita: match.partita || match.Partita || '',
+        tip: match.tip || match.Tip || '',
+        quota: parseFloat(String(match.quota || match.Quota || '').replace(',', '.')) || 0,
+        probabilita: match.prob,
+        score: match.totalScore,
+        status: 'PENDING',
+        risultato: '',
+        userid: currentUser.uid,
+        createdat: new Date().toISOString()
+      });
+    }
+
+    const userBadge = currentUserName === 'moreno' ? 
+      '<span class="user-badge moreno">🔵 Moreno</span>' : 
+      '<span class="user-badge marco">🟢 Marco</span>';
+
+    let html = '<h3>🎯 SELEZIONE INTELLIGENTE - ' + finalSelections.length + ' PARTITE - ' + userBadge + ' - ' + selectedDate + '</h3>';
+
+    html += '<div class="alert success">✅ <strong>Salvate ' + finalSelections.length + ' partite!</strong> (Limite: ' + maxPartite + ') Soglia: ' + scoreThreshold + ' punti</div>';
+
+    if (verdiTagliate > 0) {
+      html += '<div class="alert info">⚠️ <strong>LIMITE RAGGIUNTO:</strong> Tagliate ' + verdiTagliate + ' partite VERDI per rispettare il limite di ' + maxPartite + ' partite.</div>';
+    }
+
+    const verdiFinali = finalSelections.filter(m => m.totalScore >= 50).length;
+    const gialleFinali = finalSelections.filter(m => m.totalScore >= 45 && m.totalScore < 50).length;
+    const rosseFinali = finalSelections.filter(m => m.totalScore < 45).length;
+
+    html += '<p style="margin: 1rem 0; font-size: 0.9rem;"><strong>Selezione:</strong> ';
+    html += '<span style="color: #10b981;">🟢 ' + verdiFinali + ' VERDI (≥50)</span> | ';
+    html += '<span style="color: #f59e0b;">🟡 ' + gialleFinali + ' GIALLE (45-49)</span> | ';
+    html += '<span style="color: #ef4444;">🔴 ' + rosseFinali + ' ROSSE (<45)</span></p>';
+
+    html += '<table><thead><tr><th>Pos</th><th>Tipo</th><th>Lega</th><th>Partita</th><th>Tip</th><th>Quota</th><th>Prob%</th><th>Score</th></tr></thead><tbody>';
+
+    finalSelections.forEach((m, index) => {
+      const badgeClass = m.totalScore >= 60 ? 'excellent' : m.totalScore >= 45 ? 'good' : 'poor';
+
+      let tipoPartita = '';
+      if (m.totalScore >= 50) {
+        tipoPartita = '<span style="color: #10b981; font-weight: bold;">🟢</span>';
+      } else if (m.totalScore >= 45) {
+        tipoPartita = '<span style="color: #f59e0b; font-weight: bold;">🟡</span>';
+      } else {
+        tipoPartita = '<span style="color: #ef4444; font-weight: bold;">🔴</span>';
+      }
+
+      html += '<tr>';
+      html += '<td><strong>' + (index + 1) + '</strong></td>';
+      html += '<td>' + tipoPartita + '</td>';
+      html += '<td>' + (m.lega || m.Lega || '') + '</td>';
+      html += '<td><strong>' + (m.partita || m.Partita || '') + '</strong></td>';
+      html += '<td><strong>' + (m.tip || m.Tip || '') + '</strong></td>';
+      html += '<td><strong>' + (m.quota || m.Quota || '') + '</strong></td>';
+      html += '<td><strong>' + m.prob + '%</strong></td>';
+      html += '<td><span class="badge ' + badgeClass + '">' + m.totalScore + '</span></td>';
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+
+    await loadAllPredictions();
+
+  } catch (error) {
+    container.innerHTML = '<div class="alert warning">❌ Errore: ' + error.message + '</div>';
+    console.error('❌ Errore salvataggio:', error);
+  }
+}
+
+async function viewFilteredPredictions() {
+  const viewUser = document.getElementById('view-user').value;
+  const dateFrom = document.getElementById('db-date-from').value;
+  const dateTo = document.getElementById('db-date-to').value;
+  const container = document.getElementById('pronostici-container');
+
+  container.innerHTML = '<div class="loading"></div> 📂 Caricando...';
+
+  await loadAllPredictions();
+
+  let predictions = [...allPredictions];
+
+  if (viewUser !== 'both') {
+    predictions = predictions.filter(p => p.user === viewUser);
+  }
+
+  if (dateFrom || dateTo) {
+    predictions = predictions.filter(p => {
+      return (!dateFrom || p.date >= dateFrom) && (!dateTo || p.date <= dateTo);
+    });
+  }
+
+  if (predictions.length === 0) {
+    container.innerHTML = '<div class="alert warning">📭 Nessun pronostico trovato con i filtri selezionati.</div>';
+    return;
+  }
+
+  predictions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  let html = '<h3>📊 Database Pronostici (' + predictions.length + ' totali)</h3>';
+
+  const filtriAttivi = [];
+  if (viewUser !== 'both') filtriAttivi.push('Utente: ' + viewUser);
+  if (dateFrom || dateTo) filtriAttivi.push('Periodo: ' + (dateFrom || 'inizio') + ' - ' + (dateTo || 'fine'));
+
+  if (filtriAttivi.length > 0) {
+    html += '<p style="margin-bottom: 1rem; font-size: 0.9rem; color: #6b7280;"><strong>Filtri:</strong> ' + filtriAttivi.join(', ') + '</p>';
+  }
+
+  html += '<table><thead><tr><th>Data</th><th>Utente</th><th>Lega</th><th>Partita</th><th>Tip</th><th>Quota</th><th>Prob%</th><th>Status</th></tr></thead><tbody>';
+
+  predictions.forEach(p => {
+    const userBadge = p.user === 'moreno' ? 'moreno' : 'marco';
+    const statusBadge = p.status === 'WIN' ? 'win' : p.status === 'LOSE' ? 'lose' : 'pending';
+
+    html += '<tr>';
+    html += '<td>' + p.date + '</td>';
+    html += '<td><span class="user-badge ' + userBadge + '">' + (p.user === 'moreno' ? '🔵' : '🟢') + ' ' + p.user + '</span></td>';
+    html += '<td>' + p.lega + '</td>';
+    html += '<td><strong>' + p.partita + '</strong></td>';
+    html += '<td><strong>' + p.tip + '</strong></td>';
+    html += '<td><strong>' + p.quota + '</strong></td>';
+    html += '<td><strong>' + p.probabilita + '%</strong></td>';
+    html += '<td><span class="badge ' + statusBadge + '">' + p.status + '</span></td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+async function deleteFilteredPredictions() {
+  const viewUser = document.getElementById('view-user').value;
+  const dateFrom = document.getElementById('db-date-from').value;
+  const dateTo = document.getElementById('db-date-to').value;
+
+  await loadAllPredictions();
+
+  let toDelete = [...allPredictions];
+
+  if (viewUser !== 'both') {
+    toDelete = toDelete.filter(p => p.user === viewUser);
+  }
+
+  if (dateFrom || dateTo) {
+    toDelete = toDelete.filter(p => {
+      return (!dateFrom || p.date >= dateFrom) && (!dateTo || p.date <= dateTo);
+    });
+  }
+
+  if (toDelete.length === 0) {
+    alert('ℹ️ Nessuna partita da cancellare con i filtri selezionati.');
+    return;
+  }
+
+  let confirmMsg = '🟠 Cancellare ' + toDelete.length + ' partite';
+  if (dateFrom || dateTo) {
+    confirmMsg += ' del periodo ' + (dateFrom || 'inizio') + ' - ' + (dateTo || 'fine');
+  }
+  if (viewUser !== 'both') {
+    confirmMsg += ' di ' + viewUser;
+  }
+  confirmMsg += '?';
+
+  if (confirm(confirmMsg)) {
+    try {
+      for (const pred of toDelete) {
+        await deleteDoc(doc(db, 'aipredictions', pred.id));
+      }
+
+      alert('🗑️ Cancellate ' + toDelete.length + ' partite!');
+      await loadAllPredictions();
+      viewFilteredPredictions();
+    } catch (error) {
+      console.error('❌ Errore cancellazione:', error);
+      alert('❌ Errore durante la cancellazione');
+    }
+  }
+}
+
+async function deleteAllUserPredictions() {
+  const viewUser = document.getElementById('view-user').value;
+
+  if (viewUser === 'both') {
+    alert('⚠️ Seleziona un utente specifico per cancellare tutto!');
+    return;
+  }
+
+  if (confirm('💀 ATTENZIONE! Cancellare TUTTI i pronostici di ' + viewUser + '?')) {
+    if (confirm('🚨 Sei SICURO? Tutti i dati di ' + viewUser + ' verranno eliminati!')) {
+      try {
+        await loadAllPredictions();
+        const userPredictions = allPredictions.filter(p => p.user === viewUser);
+
+        for (const pred of userPredictions) {
+          await deleteDoc(doc(db, 'aipredictions', pred.id));
+        }
+
+        alert('💀 Cancellati tutti i ' + userPredictions.length + ' pronostici di ' + viewUser + '!');
+        await loadAllPredictions();
+        viewFilteredPredictions();
+      } catch (error) {
+        console.error('❌ Errore cancellazione totale:', error);
+        alert('❌ Errore durante la cancellazione totale');
+      }
+    }
+  }
+}
+
+async function applicaFiltriEStats() {
+  const dateFrom = document.getElementById('data-da').value;
+  const dateTo = document.getElementById('data-a').value;
+  const statsUser = document.getElementById('stats-user').value;
+
+  const filterStatus = document.getElementById('filter-status').value;
+  const filterTip = document.getElementById('filter-tip').value;
+  const filterLega = document.getElementById('filter-lega').value;
+  const filterProbMin = document.getElementById('filter-prob-min').value;
+  const filterQuotaMin = document.getElementById('filter-quota-min').value;
+
+  const container = document.getElementById('statistiche-container');
+
+  await loadAllPredictions();
+
+  let predictions = [...allPredictions];
+
+  if (statsUser !== 'both') {
+    predictions = predictions.filter(p => p.user === statsUser);
+  }
+
+  if (dateFrom || dateTo) {
+    predictions = predictions.filter(p => {
+      return (!dateFrom || p.date >= dateFrom) && (!dateTo || p.date <= dateTo);
+    });
+  }
+
+  if (filterStatus !== 'all') {
+    predictions = predictions.filter(p => p.status === filterStatus);
+  }
+
+  if (filterTip !== 'all') {
+    predictions = predictions.filter(p => p.tip === filterTip);
+  }
+
+  if (filterLega !== 'all') {
+    predictions = predictions.filter(p => p.lega === filterLega);
+  }
+
+  if (filterProbMin) {
+    predictions = predictions.filter(p => p.probabilita >= parseFloat(filterProbMin));
+  }
+
+  if (filterQuotaMin) {
+    predictions = predictions.filter(p => p.quota >= parseFloat(filterQuotaMin));
+  }
+
+  if (predictions.length === 0) {
+    container.innerHTML = '<div class="alert warning">📭 Nessun pronostico corrisponde ai filtri selezionati.</div>';
+
+    document.getElementById('stat-total').textContent = '0';
+    document.getElementById('stat-wins').textContent = '0';
+    document.getElementById('stat-losses').textContent = '0';
+    document.getElementById('stat-winrate').textContent = '0%';
+    document.getElementById('stat-winrate').className = '';
+    return;
+  }
+
+  const totalMatches = predictions.length;
+  const wonMatches = predictions.filter(p => p.status === 'WIN').length;
+  const lostMatches = predictions.filter(p => p.status === 'LOSE').length;
+  const pendingMatches = predictions.filter(p => p.status === 'PENDING').length;
+
+  const completedMatches = wonMatches + lostMatches;
+  const winRate = completedMatches > 0 ? ((wonMatches / completedMatches) * 100).toFixed(1) : 0;
+
+  document.getElementById('stat-total').textContent = totalMatches;
+  document.getElementById('stat-wins').textContent = wonMatches;
+  document.getElementById('stat-losses').textContent = lostMatches;
+  document.getElementById('stat-winrate').textContent = winRate + '%';
+
+  const winRateElement = document.getElementById('stat-winrate');
+  if (parseFloat(winRate) >= 80) {
+    winRateElement.className = 'good';
+  } else {
+    winRateElement.className = 'bad';
+  }
+
+  predictions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  let html = '<h3>📊 Elenco Partite Filtrate (' + predictions.length + ' totali)</h3>';
+
+  let filtriAttivi = [];
+  if (statsUser !== 'both') filtriAttivi.push('Utente: ' + statsUser);
+  if (dateFrom || dateTo) filtriAttivi.push('Periodo: ' + (dateFrom || 'inizio') + ' - ' + (dateTo || 'fine'));
+  if (filterStatus !== 'all') filtriAttivi.push('Status: ' + filterStatus);
+  if (filterTip !== 'all') filtriAttivi.push('Tip: ' + filterTip);
+  if (filterLega !== 'all') filtriAttivi.push('Lega: ' + filterLega);
+  if (filterProbMin) filtriAttivi.push('Prob Min: ' + filterProbMin + '%');
+  if (filterQuotaMin) filtriAttivi.push('Quota Min: ' + filterQuotaMin);
+
+  if (filtriAttivi.length > 0) {
+    html += '<p style="margin-bottom: 1rem; font-size: 0.9rem; color: #6b7280;"><strong>Filtri attivi:</strong> ' + filtriAttivi.join(', ') + '</p>';
+  }
+
+  html += '<table><thead><tr><th>Data</th><th>Utente</th><th>Lega</th><th>Partita</th><th>Tip</th><th>Quota</th><th>Prob%</th><th>Risultato</th><th>Status</th></tr></thead><tbody>';
+
+  predictions.forEach(p => {
+    const userBadge = p.user === 'moreno' ? 'moreno' : 'marco';
+    const statusBadge = p.status === 'WIN' ? 'win' : p.status === 'LOSE' ? 'lose' : 'pending';
+
+    html += '<tr>';
+    html += '<td>' + p.date + '</td>';
+    html += '<td><span class="user-badge ' + userBadge + '">' + (p.user === 'moreno' ? '🔵' : '🟢') + ' ' + p.user + '</span></td>';
+    html += '<td>' + p.lega + '</td>';
+    html += '<td><strong>' + p.partita + '</strong></td>';
+    html += '<td><strong>' + p.tip + '</strong></td>';
+    html += '<td><strong>' + p.quota + '</strong></td>';
+    html += '<td><strong>' + p.probabilita + '%</strong></td>';
+    html += '<td><strong>' + (p.risultato || 'N/A') + '</strong></td>';
+    html += '<td><span class="badge ' + statusBadge + '">' + p.status + '</span></td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+async function aggiornaRisultati() {
+  if (!fileRisultati) {
+    alert('⚠️ Carica prima il file risultati!');
+    return;
+  }
+
+  if (!firebaseReady) {
+    alert('⚠️ Firebase non pronto!');
+    return;
+  }
+
+  document.getElementById('matching-info').innerHTML = '🔄 Elaborando...';
+
+  await loadAllPredictions();
+  const pending = allPredictions.filter(p => p.status === 'PENDING');
+
+  if (pending.length === 0) {
+    document.getElementById('matching-info').innerHTML = '✅ <strong>Tutti i pronostici sono già aggiornati!</strong>';
+    return;
+  }
+
+  console.log('🎯 Aggiorno ' + pending.length + ' pronostici PENDING');
+
+  let aggiornati = 0;
+  let dettagli = [];
+  let notFound = [];
+
+  for (const pronostico of pending) {
+    console.log('🔍 ' + pronostico.date + ' | ' + pronostico.lega + ' | ' + pronostico.partita + ' | ' + pronostico.tip);
+
+    const risultatiGiorno = fileRisultati.filter(r => r.data === pronostico.date);
+
+    if (risultatiGiorno.length === 0) {
+      notFound.push(pronostico.date + ' - Nessun risultato per questa data');
+      continue;
+    }
+
+    const risultatiLega = risultatiGiorno.filter(r => {
+      const legaRisultato = r.lega.toLowerCase().trim();
+      const legaPronostico = pronostico.lega.toLowerCase().trim();
+
+      if (legaRisultato === legaPronostico) return true;
+      if (legaRisultato.includes(legaPronostico) || legaPronostico.includes(legaRisultato)) return true;
+
+      const paeseRisultato = legaRisultato.split('-')[1] || '';
+      const paesePronostico = legaPronostico.split('-')[1] || '';
+      if (paeseRisultato && paesePronostico && paeseRisultato === paesePronostico) {
+        console.log('✨ Match per paese: ' + paeseRisultato);
+        return true;
+      }
+
+      return false;
+    });
+
+    if (risultatiLega.length === 0) {
+      notFound.push(pronostico.date + ' - ' + pronostico.lega + ' - Lega non trovata');
+      continue;
+    }
+
+    let matched = false;
+
+    for (const risultato of risultatiLega) {
+      function normalizeTip(tip) {
+        return tip.toString().replace(',', '.').replace(/\s+/g, '').toUpperCase();
+      }
+
+      const tipRisNorm = normalizeTip(risultato.tip || '');
+      const tipProNorm = normalizeTip(pronostico.tip || '');
+
+      if (tipRisNorm !== tipProNorm) continue;
+
+      const squadreRisultato = risultato.partita.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 2);
+
+      const squadrePronostico = pronostico.partita.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 2);
+
+      const squadreComuni = squadrePronostico.filter(s => 
+        squadreRisultato.some(r => {
+          if (r === s) return true;
+          if (r.length >= 4 && s.length >= 4) {
+            return r.includes(s) || s.includes(r);
+          }
+          return false;
+        })
+      );
+
+      const matchPercentage = squadreComuni.length / Math.max(squadrePronostico.length, 1);
+      const strongMatch = matchPercentage >= 0.5;
+      const weakMatch = squadreComuni.length >= 1;
+
+      console.log('🔍 Match squadre: ' + squadreComuni.length + '/' + squadrePronostico.length + ' (' + (matchPercentage * 100).toFixed(1) + '%)');
+
+      if (strongMatch || (weakMatch && squadrePronostico.length <= 2)) {
+        let nuovoStatus;
+        if (risultato.esito === 'Vinto') {
+          nuovoStatus = 'WIN';
+        } else if (risultato.esito === 'Perso') {
+          nuovoStatus = 'LOSE';
+        } else {
+          continue;
+        }
+
+        console.log('✅ MATCH TROVATO! ' + pronostico.partita + ' → ' + nuovoStatus);
+
+        await updateDoc(doc(db, 'aipredictions', pronostico.id), {
+          status: nuovoStatus,
+          risultato: risultato.risultato || risultato.Risultato || 'N/A',
+          updatedat: new Date().toISOString()
+        });
+
+        aggiornati++;
+        dettagli.push({
+          data: pronostico.date,
+          user: pronostico.user,
+          partita: pronostico.partita,
+          status: nuovoStatus,
+          risultato: risultato.risultato || risultato.Risultato || 'N/A',
+          matchPercentage: (matchPercentage * 100).toFixed(1)
+        });
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      notFound.push(pronostico.date + ' - ' + pronostico.partita + ' - Partita non trovata (lega: ' + pronostico.lega + ')');
+    }
+  }
+
+  console.log('🎯 COMPLETATO: ' + aggiornati + ' pronostici aggiornati');
+
+  let html = '';
+
+  if (aggiornati > 0) {
+    html += '✅ <strong>Aggiornati ' + aggiornati + ' pronostici!</strong><br><br>';
+    dettagli.slice(0, 5).forEach(d => {
+      html += '📅 ' + d.data + ' - ' + d.user + ': ' + d.partita + ' → ' + d.status + ' (' + d.risultato + ') [Match: ' + d.matchPercentage + '%]<br>';
+    });
+    if (dettagli.length > 5) {
+      html += '<br>... e altri ' + (dettagli.length - 5) + ' aggiornamenti!';
+    }
+  } else {
+    html += '❌ <strong>Nessun match trovato.</strong>';
+  }
+
+  if (notFound.length > 0) {
+    html += '<br><br>🔍 <strong>Partite non trovate (' + notFound.length + '):</strong><br>';
+    notFound.slice(0, 3).forEach(nf => {
+      html += '❓ ' + nf + '<br>';
+    });
+    if (notFound.length > 3) {
+      html += '... e altre ' + (notFound.length - 3) + ' partite non trovate.';
+    }
+  }
+
+  document.getElementById('matching-info').innerHTML = html;
+
+  if (aggiornati > 0) {
+    alert('✅ Completato! Aggiornati ' + aggiornati + ' pronostici su Firebase.');
+    await loadAllPredictions();
+    applicaFiltriEStats();
+  } else {
+    alert('❌ Nessun pronostico aggiornato. Controlla che il file risultati contenga tutte le leghe e date necessarie.');
+  }
+}
+
+function pulisciFiltri() {
+  document.getElementById('filter-status').value = 'all';
+  document.getElementById('filter-tip').value = 'all';
+  document.getElementById('filter-lega').value = 'all';
+  document.getElementById('filter-prob-min').value = '';
+  document.getElementById('filter-quota-min').value = '';
+  applicaFiltriEStats();
+}
+
+// EVENT LISTENERS
+document.getElementById('btn-estrai').addEventListener('click', estraiESalvaPronostici);
+document.getElementById('btn-preview').addEventListener('click', previewScoring);
+
+document.getElementById('btn-view-filtered').addEventListener('click', viewFilteredPredictions);
+document.getElementById('btn-delete-filtered').addEventListener('click', deleteFilteredPredictions);
+document.getElementById('btn-delete-user-all').addEventListener('click', deleteAllUserPredictions);
+
+document.getElementById('btn-applica-filtri').addEventListener('click', applicaFiltriEStats);
+document.getElementById('btn-aggiorna-risultati').addEventListener('click', aggiornaRisultati);
+
+document.getElementById('btn-reset-user').addEventListener('click', function() {
+  document.getElementById('stats-user').value = 'both';
+  applicaFiltriEStats();
+});
+
+document.getElementById('btn-reset-date').addEventListener('click', function() {
+  document.getElementById('data-da').value = '';
+  document.getElementById('data-a').value = '';
+  applicaFiltriEStats();
+});
+
+document.getElementById('btn-clear-filters').addEventListener('click', pulisciFiltri);
+
+['filter-status', 'filter-tip', 'filter-lega'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', applicaFiltriEStats);
+});
+
+['filter-prob-min', 'filter-quota-min'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', function() {
+    clearTimeout(window.filterTimeout);
+    window.filterTimeout = setTimeout(applicaFiltriEStats, 500);
+  });
+});
+
+document.getElementById('input-data').value = new Date().toISOString().split('T')[0];
+
+initFirebase();
+
+console.log('🚀 AI Betting LIMITE-10 caricato!');
+</script>
 </body>
 </html>
