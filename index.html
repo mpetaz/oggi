@@ -156,9 +156,10 @@ button.control-btn.green { background: linear-gradient(135deg, #10b981, #059669)
 button.control-btn.orange { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3); }
 button.control-btn.red { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3); }
 button.control-btn.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3); }
+button.control-btn.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3); }
 button.control-btn:hover { transform: translateY(-3px); }
 
-#estratti-container, #pronostici-container, #statistiche-container {
+#estratti-container, #pronostici-container, #statistiche-container, #roi-container, #multiple-container, #alerts-container {
     background: rgba(248, 250, 252, 0.8); border-radius: 15px; padding: 1.5rem; margin-top: 2rem;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;
 }
@@ -219,6 +220,140 @@ tr:last-child td { border-bottom: none; }
 .alert.success { background: rgba(16, 185, 129, 0.1); border-color: #10b981; color: #065f46; }
 .alert.warning { background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #92400e; }
 .alert.info { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; color: #1e3a8a; }
+.alert.danger { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #991b1b; }
+
+.tab-container {
+    margin-bottom: 1.5rem;
+}
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 1rem;
+}
+
+.tab-button {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    color: #6b7280;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-button.active {
+    color: #667eea;
+    border-bottom: 3px solid #667eea;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.chart-container {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    height: 300px;
+    position: relative;
+}
+
+.chart-canvas-wrapper {
+    height: 250px;
+    width: 100%;
+}
+
+.chart-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #4a5568;
+}
+
+.multiple-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-left: 4px solid #667eea;
+}
+
+.multiple-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+}
+
+.multiple-odds {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+}
+
+.multiple-roi {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.multiple-roi.positive {
+    color: #10b981;
+}
+
+.multiple-roi.negative {
+    color: #ef4444;
+}
+
+.multiple-matches {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.alert-item {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-left: 4px solid;
+}
+
+.alert-item.warning {
+    border-left-color: #f59e0b;
+}
+
+.alert-item.danger {
+    border-left-color: #ef4444;
+}
+
+.alert-item.info {
+    border-left-color: #3b82f6;
+}
+
+.alert-item.success {
+    border-left-color: #10b981;
+}
+
+.alert-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.alert-description {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
 
 @media (max-width: 768px) {
     .container { padding: 1rem; }
@@ -231,6 +366,9 @@ tr:last-child td { border-bottom: none; }
     .date-filters { grid-template-columns: 1fr; }
     .user-filters { grid-template-columns: 1fr; }
     .filters-grid { grid-template-columns: 1fr; }
+    .tab-buttons { flex-wrap: wrap; }
+    .chart-container { height: 250px; }
+    .chart-canvas-wrapper { height: 200px; }
 }
 </style>
 </head>
@@ -247,6 +385,9 @@ tr:last-child td { border-bottom: none; }
 <li><button id="btn-pronostici">📊 Database Pronostici</button></li>
 <li><button id="btn-inserisci" class="active">🎯 Inserisci & Salva</button></li>
 <li><button id="btn-statistiche">📊 Filtri e Statistiche</button></li>
+<li><button id="btn-roi">💰 Analisi ROI</button></li>
+<li><button id="btn-multiple">🎲 Multiple</button></li>
+<li><button id="btn-alerts">⚠️ Alert</button></li>
 </ul>
 </nav>
 
@@ -404,6 +545,14 @@ tr:last-child td { border-bottom: none; }
 <label for="filter-quota-min">Quota Min:</label>
 <input type="number" id="filter-quota-min" placeholder="es: 1.5" step="0.1" min="1"/>
 </div>
+<div class="filter-group">
+<label for="filter-roi-min">ROI Min %:</label>
+<input type="number" id="filter-roi-min" placeholder="es: 10" step="1" min="-100"/>
+</div>
+<div class="filter-group">
+<label for="filter-winrate-min">Win Rate Min %:</label>
+<input type="number" id="filter-winrate-min" placeholder="es: 70" step="1" min="0" max="100"/>
+</div>
 <div class="filter-group" style="align-self: end;">
 <button type="button" id="btn-clear-filters" class="control-btn orange compact">🧹 Pulisci Filtri</button>
 </div>
@@ -450,6 +599,135 @@ tr:last-child td { border-bottom: none; }
 
 </div>
 
+<!-- SEZIONE ROI -->
+<div id="section-roi" class="section" style="display:none;">
+<h2>💰 Analisi ROI</h2>
+
+<div class="tab-container">
+<div class="tab-buttons">
+<button class="tab-button active" data-tab="roi-tip">ROI per Tip</button>
+<button class="tab-button" data-tab="roi-lega">ROI per Lega</button>
+<button class="tab-button" data-tab="roi-periodo">ROI per Periodo</button>
+<button class="tab-button" data-tab="roi-utente">ROI per Utente</button>
+</div>
+
+<div id="roi-tip" class="tab-content active">
+<div class="chart-container">
+<div class="chart-title">ROI per Tip di Scommessa</div>
+<div class="chart-canvas-wrapper">
+<canvas id="roi-tip-chart"></canvas>
+</div>
+</div>
+<div id="roi-tip-table"></div>
+</div>
+
+<div id="roi-lega" class="tab-content">
+<div class="chart-container">
+<div class="chart-title">ROI per Lega</div>
+<div class="chart-canvas-wrapper">
+<canvas id="roi-lega-chart"></canvas>
+</div>
+</div>
+<div id="roi-lega-table"></div>
+</div>
+
+<div id="roi-periodo" class="tab-content">
+<div class="chart-container">
+<div class="chart-title">ROI per Periodo</div>
+<div class="chart-canvas-wrapper">
+<canvas id="roi-periodo-chart"></canvas>
+</div>
+</div>
+<div id="roi-periodo-table"></div>
+</div>
+
+<div id="roi-utente" class="tab-content">
+<div class="chart-container">
+<div class="chart-title">ROI per Utente</div>
+<div class="chart-canvas-wrapper">
+<canvas id="roi-utente-chart"></canvas>
+</div>
+</div>
+<div id="roi-utente-table"></div>
+</div>
+</div>
+
+<div id="roi-container">
+<div style="text-align: center; padding: 2rem; color: #6b7280;">
+<h3>💰 Analisi ROI</h3>
+<p>Seleziona una tab per visualizzare l'analisi del ROI</p>
+</div>
+</div>
+</div>
+
+<!-- SEZIONE MULTIPLE -->
+<div id="section-multiple" class="section" style="display:none;">
+<h2>🎲 Multiple Intelligenti</h2>
+
+<div class="user-selection">
+<h4 style="margin-bottom: 1rem;">⚙️ Configurazione Multiple</h4>
+<div class="scoring-grid">
+<div>
+<label for="multiple-type">Tipo di Multipla:</label>
+<select id="multiple-type">
+<option value="doppia">Doppia</option>
+<option value="tripla">Tripla</option>
+</select>
+</div>
+<div>
+<label for="multiple-strategy">Strategia:</label>
+<select id="multiple-strategy">
+<option value="sicurezza">Sicurezza (ROI basso, win rate alto)</option>
+<option value="valore">Valore (ROI medio, win rate medio)</option>
+<option value="rischio">Rischio (ROI alto, win rate basso)</option>
+</select>
+</div>
+<button type="button" id="btn-generate-multiple" class="control-btn purple compact">🎲 Genera Multipla</button>
+</div>
+</div>
+
+<div id="multiple-container">
+<div style="text-align: center; padding: 2rem; color: #6b7280;">
+<h3>🎲 Multiple Intelligenti</h3>
+<p>Configura e genera multiple basate su performance storica</p>
+</div>
+</div>
+</div>
+
+<!-- SEZIONE ALERT -->
+<div id="section-alerts" class="section" style="display:none;">
+<h2>⚠️ Sistema di Alert</h2>
+
+<div class="user-selection">
+<h4 style="margin-bottom: 1rem;">⚙️ Configurazione Alert</h4>
+<div class="filters-grid">
+<div class="filter-group">
+<label for="alert-threshold">Soglia Alert %:</label>
+<input type="number" id="alert-threshold" value="20" min="5" max="50"/>
+<small style="color: #6b7280;">Scostamento dalla media per generare alert</small>
+</div>
+<div class="filter-group">
+<label for="alert-period">Periodo Analisi:</label>
+<select id="alert-period">
+<option value="7">Ultimi 7 giorni</option>
+<option value="14">Ultimi 14 giorni</option>
+<option value="30">Ultimi 30 giorni</option>
+</select>
+</div>
+<div class="filter-group" style="align-self: end;">
+<button type="button" id="btn-generate-alerts" class="control-btn orange compact">⚠️ Genera Alert</button>
+</div>
+</div>
+</div>
+
+<div id="alerts-container">
+<div style="text-align: center; padding: 2rem; color: #6b7280;">
+<h3>⚠️ Sistema di Alert</h3>
+<p>Configura e genera alert per pattern anomali</p>
+</div>
+</div>
+</div>
+
 </div>
 
 <script type="module">
@@ -457,7 +735,13 @@ let firebaseReady = false;
 let db = null, currentUser = null;
 let collection, addDoc, getDocs, doc, updateDoc, deleteDoc, where, query;
 let allPredictions = [];
+let allResults = [];
 let fileRisultati = null;
+
+// Chart.js per i grafici ROI
+const chartScript = document.createElement('script');
+chartScript.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+document.head.appendChild(chartScript);
 
 async function initFirebase() {
     try {
@@ -547,13 +831,19 @@ function populateFilters() {
 const sections = {
   pronostici: document.getElementById('section-pronostici'),
   inserisci: document.getElementById('section-inserisci'),
-  statistiche: document.getElementById('section-statistiche')
+  statistiche: document.getElementById('section-statistiche'),
+  roi: document.getElementById('section-roi'),
+  multiple: document.getElementById('section-multiple'),
+  alerts: document.getElementById('section-alerts')
 };
 
 const buttons = {
   pronostici: document.getElementById('btn-pronostici'),
   inserisci: document.getElementById('btn-inserisci'),
-  statistiche: document.getElementById('btn-statistiche')
+  statistiche: document.getElementById('btn-statistiche'),
+  roi: document.getElementById('btn-roi'),
+  multiple: document.getElementById('btn-multiple'),
+  alerts: document.getElementById('btn-alerts')
 };
 
 function showSection(section) {
@@ -572,6 +862,30 @@ showSection('inserisci');
 buttons.pronostici.addEventListener('click', () => showSection('pronostici'));
 buttons.inserisci.addEventListener('click', () => showSection('inserisci'));
 buttons.statistiche.addEventListener('click', () => showSection('statistiche'));
+buttons.roi.addEventListener('click', () => showSection('roi'));
+buttons.multiple.addEventListener('click', () => showSection('multiple'));
+buttons.alerts.addEventListener('click', () => showSection('alerts'));
+
+// Tab functionality
+document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', () => {
+        const tabId = button.getAttribute('data-tab');
+        
+        // Remove active class from all tabs and buttons
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Add active class to clicked button and corresponding tab
+        button.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+        
+        // Load data for the selected tab
+        if (tabId === 'roi-tip') loadROITipData();
+        else if (tabId === 'roi-lega') loadROILegaData();
+        else if (tabId === 'roi-periodo') loadROIPeriodoData();
+        else if (tabId === 'roi-utente') loadROIUtenteData();
+    });
+});
 
 let fileStorico = null;
 let fileGiorno = null;
@@ -701,6 +1015,7 @@ document.getElementById('file-risultati').addEventListener('change', function(e)
     const reader = new FileReader();
     reader.onload = function(event) { 
       fileRisultati = parseCSV(event.target.result);
+      allResults = fileRisultati;
       console.log('✅ File risultati caricato:', fileRisultati.length, 'righe');
       document.getElementById('matching-info').innerHTML = '📊 <strong>File caricato:</strong> ' + fileRisultati.length + ' risultati';
     };
@@ -840,8 +1155,8 @@ async function estraiESalvaPronostici() {
   if (esistenti.length > 0) {
     const conferma = confirm(
       '⚠️ ATTENZIONE! Trovate ' + esistenti.length + ' partite già inserite per ' + 
-      selectedDate + ' di ' + currentUserName + '.\n\n' +
-      'Continuando verranno AGGIUNTE alle esistenti (possibili duplicati).\n\n' +
+      selectedDate + ' di ' + currentUserName + '.\\n\\n' +
+      'Continuando verranno AGGIUNTE alle esistenti (possibili duplicati).\\n\\n' +
       'Vuoi CANCELLARE prima le partite esistenti? (CONSIGLIATO)'
     );
 
@@ -856,7 +1171,7 @@ async function estraiESalvaPronostici() {
       alert('🗑️ Cancellate ' + esistenti.length + ' partite esistenti! Ora inserisco le nuove.');
       await loadAllPredictions();
     } else {
-      if (!confirm('⚠️ ATTENZIONE: Le nuove partite verranno AGGIUNTE a quelle esistenti!\nSicuro di continuare?')) {
+      if (!confirm('⚠️ ATTENZIONE: Le nuove partite verranno AGGIUNTE a quelle esistenti!\\nSicuro di continuare?')) {
         return;
       }
     }
@@ -964,21 +1279,31 @@ async function estraiESalvaPronostici() {
 
     const verdiTagliate = partiteVerdi.length - verdiSelezionate.length;
 
+    // Salvataggio su Firebase con feedback
+    let savedCount = 0;
+    let errorCount = 0;
+    
     for (const match of finalSelections) {
-      await addDoc(collection(db, 'aipredictions'), {
-        date: selectedDate,
-        user: currentUserName,
-        lega: match.lega || match.Lega || '',
-        partita: match.partita || match.Partita || '',
-        tip: match.tip || match.Tip || '',
-        quota: parseFloat(String(match.quota || match.Quota || '').replace(',', '.')) || 0,
-        probabilita: match.prob,
-        score: match.totalScore,
-        status: 'PENDING',
-        risultato: '',
-        userid: currentUser.uid,
-        createdat: new Date().toISOString()
-      });
+      try {
+        await addDoc(collection(db, 'aipredictions'), {
+          date: selectedDate,
+          user: currentUserName,
+          lega: match.lega || match.Lega || '',
+          partita: match.partita || match.Partita || '',
+          tip: match.tip || match.Tip || '',
+          quota: parseFloat(String(match.quota || match.Quota || '').replace(',', '.')) || 0,
+          probabilita: match.prob,
+          score: match.totalScore,
+          status: 'PENDING',
+          risultato: '',
+          userid: currentUser.uid,
+          createdat: new Date().toISOString()
+        });
+        savedCount++;
+      } catch (error) {
+        console.error('❌ Errore salvataggio singolo:', error);
+        errorCount++;
+      }
     }
 
     const userBadge = currentUserName === 'moreno' ? 
@@ -987,7 +1312,11 @@ async function estraiESalvaPronostici() {
 
     let html = '<h3>🎯 SELEZIONE INTELLIGENTE - ' + finalSelections.length + ' PARTITE - ' + userBadge + ' - ' + selectedDate + '</h3>';
 
-    html += '<div class="alert success">✅ <strong>Salvate ' + finalSelections.length + ' partite!</strong> (Limite: ' + maxPartite + ') Soglia: ' + scoreThreshold + ' punti</div>';
+    if (errorCount > 0) {
+      html += '<div class="alert danger">❌ <strong>Attenzione:</strong> ' + errorCount + ' partite non sono state salvate correttamente.</div>';
+    } else {
+      html += '<div class="alert success">✅ <strong>Salvate ' + savedCount + ' partite!</strong> (Limite: ' + maxPartite + ') Soglia: ' + scoreThreshold + ' punti</div>';
+    }
 
     if (verdiTagliate > 0) {
       html += '<div class="alert info">⚠️ <strong>LIMITE RAGGIUNTO:</strong> Tagliate ' + verdiTagliate + ' partite VERDI per rispettare il limite di ' + maxPartite + ' partite.</div>';
@@ -1188,6 +1517,8 @@ async function applicaFiltriEStats() {
   const filterLega = document.getElementById('filter-lega').value;
   const filterProbMin = document.getElementById('filter-prob-min').value;
   const filterQuotaMin = document.getElementById('filter-quota-min').value;
+  const filterROIMin = document.getElementById('filter-roi-min').value;
+  const filterWinRateMin = document.getElementById('filter-winrate-min').value;
 
   const container = document.getElementById('statistiche-container');
 
@@ -1223,6 +1554,25 @@ async function applicaFiltriEStats() {
 
   if (filterQuotaMin) {
     predictions = predictions.filter(p => p.quota >= parseFloat(filterQuotaMin));
+  }
+
+  // Nuovi filtri basati su performance storica
+  if (filterROIMin || filterWinRateMin) {
+    const historicalData = calculateHistoricalPerformance(predictions);
+    
+    if (filterROIMin) {
+      predictions = predictions.filter(p => {
+        const key = `${p.tip}_${p.lega}`;
+        return historicalData[key] && historicalData[key].roi >= parseFloat(filterROIMin);
+      });
+    }
+    
+    if (filterWinRateMin) {
+      predictions = predictions.filter(p => {
+        const key = `${p.tip}_${p.lega}`;
+        return historicalData[key] && historicalData[key].winRate >= parseFloat(filterWinRateMin);
+      });
+    }
   }
 
   if (predictions.length === 0) {
@@ -1268,6 +1618,8 @@ async function applicaFiltriEStats() {
   if (filterLega !== 'all') filtriAttivi.push('Lega: ' + filterLega);
   if (filterProbMin) filtriAttivi.push('Prob Min: ' + filterProbMin + '%');
   if (filterQuotaMin) filtriAttivi.push('Quota Min: ' + filterQuotaMin);
+  if (filterROIMin) filtriAttivi.push('ROI Min: ' + filterROIMin + '%');
+  if (filterWinRateMin) filtriAttivi.push('Win Rate Min: ' + filterWinRateMin + '%');
 
   if (filtriAttivi.length > 0) {
     html += '<p style="margin-bottom: 1rem; font-size: 0.9rem; color: #6b7280;"><strong>Filtri attivi:</strong> ' + filtriAttivi.join(', ') + '</p>';
@@ -1296,226 +1648,1003 @@ async function applicaFiltriEStats() {
   container.innerHTML = html;
 }
 
+function calculateHistoricalPerformance(predictions) {
+  const historicalData = {};
+  
+  predictions.forEach(p => {
+    const key = `${p.tip}_${p.lega}`;
+    
+    if (!historicalData[key]) {
+      historicalData[key] = {
+        total: 0,
+        wins: 0,
+        losses: 0,
+        totalOdds: 0,
+        roi: 0,
+        winRate: 0
+      };
+    }
+    
+    historicalData[key].total++;
+    historicalData[key].totalOdds += parseFloat(p.quota);
+    
+    if (p.status === 'WIN') {
+      historicalData[key].wins++;
+    } else if (p.status === 'LOSE') {
+      historicalData[key].losses++;
+    }
+  });
+  
+  // Calcola ROI e win rate per ogni combinazione
+  Object.keys(historicalData).forEach(key => {
+    const data = historicalData[key];
+    const avgOdds = data.totalOdds / data.total;
+    const wins = data.wins;
+    const total = data.total;
+    
+    // ROI = (Vincite * Quota Media - Scommesse Totali) / Scommesse Totali * 100
+    data.roi = ((wins * avgOdds) - total) / total * 100;
+    data.winRate = (wins / total) * 100;
+  });
+  
+  return historicalData;
+}
+
 async function aggiornaRisultati() {
   if (!fileRisultati) {
-    alert('⚠️ Carica prima il file risultati!');
+    alert('⚠️ Carica prima il file dei risultati!');
     return;
   }
 
-  if (!firebaseReady) {
-    alert('⚠️ Firebase non pronto!');
+  // Controlla che il container esista
+  const container = document.getElementById('statistiche-container');
+  if (!container) {
+    console.error('❌ Errore: Container non trovato');
     return;
   }
 
-  document.getElementById('matching-info').innerHTML = '🔄 Elaborando...';
+  container.innerHTML = '<div class="loading"></div> 🔄 Aggiornamento risultati...';
 
-  await loadAllPredictions();
-  const pending = allPredictions.filter(p => p.status === 'PENDING');
-
-  if (pending.length === 0) {
-    document.getElementById('matching-info').innerHTML = '✅ <strong>Tutti i pronostici sono già aggiornati!</strong>';
-    return;
-  }
-
-  console.log('🎯 Aggiorno ' + pending.length + ' pronostici PENDING');
-
-  let aggiornati = 0;
-  let dettagli = [];
-  let notFound = [];
-
-  for (const pronostico of pending) {
-    console.log('🔍 ' + pronostico.date + ' | ' + pronostico.lega + ' | ' + pronostico.partita + ' | ' + pronostico.tip);
-
-    const risultatiGiorno = fileRisultati.filter(r => r.data === pronostico.date);
-
-    if (risultatiGiorno.length === 0) {
-      notFound.push(pronostico.date + ' - Nessun risultato per questa data');
-      continue;
-    }
-
-    const risultatiLega = risultatiGiorno.filter(r => {
-      const legaRisultato = r.lega.toLowerCase().trim();
-      const legaPronostico = pronostico.lega.toLowerCase().trim();
-
-      if (legaRisultato === legaPronostico) return true;
-      if (legaRisultato.includes(legaPronostico) || legaPronostico.includes(legaRisultato)) return true;
-
-      const paeseRisultato = legaRisultato.split('-')[1] || '';
-      const paesePronostico = legaPronostico.split('-')[1] || '';
-      if (paeseRisultato && paesePronostico && paeseRisultato === paesePronostico) {
-        console.log('✨ Match per paese: ' + paeseRisultato);
-        return true;
-      }
-
-      return false;
-    });
-
-    if (risultatiLega.length === 0) {
-      notFound.push(pronostico.date + ' - ' + pronostico.lega + ' - Lega non trovata');
-      continue;
-    }
-
-    let matched = false;
-
-    for (const risultato of risultatiLega) {
-      function normalizeTip(tip) {
-        return tip.toString().replace(',', '.').replace(/\s+/g, '').toUpperCase();
-      }
-
-      const tipRisNorm = normalizeTip(risultato.tip || '');
-      const tipProNorm = normalizeTip(pronostico.tip || '');
-
-      if (tipRisNorm !== tipProNorm) continue;
-
-      const squadreRisultato = risultato.partita.toLowerCase()
-        .replace(/[^a-z0-9\s]/g, ' ')
-        .split(/\s+/)
-        .filter(word => word.length > 2);
-
-      const squadrePronostico = pronostico.partita.toLowerCase()
-        .replace(/[^a-z0-9\s]/g, ' ')
-        .split(/\s+/)
-        .filter(word => word.length > 2);
-
-      const squadreComuni = squadrePronostico.filter(s => 
-        squadreRisultato.some(r => {
-          if (r === s) return true;
-          if (r.length >= 4 && s.length >= 4) {
-            return r.includes(s) || s.includes(r);
-          }
-          return false;
-        })
-      );
-
-      const matchPercentage = squadreComuni.length / Math.max(squadrePronostico.length, 1);
-      const strongMatch = matchPercentage >= 0.5;
-      const weakMatch = squadreComuni.length >= 1;
-
-      console.log('🔍 Match squadre: ' + squadreComuni.length + '/' + squadrePronostico.length + ' (' + (matchPercentage * 100).toFixed(1) + '%)');
-
-      if (strongMatch || (weakMatch && squadrePronostico.length <= 2)) {
-        let nuovoStatus;
-        if (risultato.esito === 'Vinto') {
-          nuovoStatus = 'WIN';
-        } else if (risultato.esito === 'Perso') {
-          nuovoStatus = 'LOSE';
-        } else {
-          continue;
-        }
-
-        console.log('✅ MATCH TROVATO! ' + pronostico.partita + ' → ' + nuovoStatus);
-
-        await updateDoc(doc(db, 'aipredictions', pronostico.id), {
-          status: nuovoStatus,
-          risultato: risultato.risultato || risultato.Risultato || 'N/A',
-          updatedat: new Date().toISOString()
-        });
-
-        aggiornati++;
-        dettagli.push({
-          data: pronostico.date,
-          user: pronostico.user,
-          partita: pronostico.partita,
-          status: nuovoStatus,
-          risultato: risultato.risultato || risultato.Risultato || 'N/A',
-          matchPercentage: (matchPercentage * 100).toFixed(1)
-        });
-        matched = true;
-        break;
-      }
-    }
-
-    if (!matched) {
-      notFound.push(pronostico.date + ' - ' + pronostico.partita + ' - Partita non trovata (lega: ' + pronostico.lega + ')');
-    }
-  }
-
-  console.log('🎯 COMPLETATO: ' + aggiornati + ' pronostici aggiornati');
-
-  let html = '';
-
-  if (aggiornati > 0) {
-    html += '✅ <strong>Aggiornati ' + aggiornati + ' pronostici!</strong><br><br>';
-    dettagli.slice(0, 5).forEach(d => {
-      html += '📅 ' + d.data + ' - ' + d.user + ': ' + d.partita + ' → ' + d.status + ' (' + d.risultato + ') [Match: ' + d.matchPercentage + '%]<br>';
-    });
-    if (dettagli.length > 5) {
-      html += '<br>... e altri ' + (dettagli.length - 5) + ' aggiornamenti!';
-    }
-  } else {
-    html += '❌ <strong>Nessun match trovato.</strong>';
-  }
-
-  if (notFound.length > 0) {
-    html += '<br><br>🔍 <strong>Partite non trovate (' + notFound.length + '):</strong><br>';
-    notFound.slice(0, 3).forEach(nf => {
-      html += '❓ ' + nf + '<br>';
-    });
-    if (notFound.length > 3) {
-      html += '... e altre ' + (notFound.length - 3) + ' partite non trovate.';
-    }
-  }
-
-  document.getElementById('matching-info').innerHTML = html;
-
-  if (aggiornati > 0) {
-    alert('✅ Completato! Aggiornati ' + aggiornati + ' pronostici su Firebase.');
+  try {
     await loadAllPredictions();
-    applicaFiltriEStats();
-  } else {
-    alert('❌ Nessun pronostico aggiornato. Controlla che il file risultati contenga tutte le leghe e date necessarie.');
+    
+    let updatedCount = 0;
+    let notFoundCount = 0;
+    
+    // Funzione di normalizzazione per i nomi delle squadre
+    function normalizeTeamName(str) {
+        if (!str) return '';
+        return str.toLowerCase()
+                  .replace(/[àáâãäå]/g, 'a')
+                  .replace(/[èéêë]/g, 'e')
+                  .replace(/[ìíîï]/g, 'i')
+                  .replace(/[òóôõö]/g, 'o')
+                  .replace(/[ùúûü]/g, 'u')
+                  .replace(/[ýÿ]/g, 'y')
+                  .replace(/[ñ]/g, 'n')
+                  .replace(/[ç]/g, 'c')
+                  .replace(/[^a-z0-9\s]/g, '')
+                  .replace(/\s+/g, ' ')
+                  .trim();
+    }
+    
+    // Funzione per estrarre i nomi delle squadre da una stringa di partita
+    function extractTeams(matchString) {
+        if (!matchString) return [];
+        
+        // Rimuovi eventuali risultati finali (es: "1-0", "2-1")
+        const cleanMatch = matchString.replace(/\s+\d+-\d+\s*$/, '').trim();
+        
+        // Dividi per "-" o "vs" o "v"
+        const parts = cleanMatch.split(/\s*[-–]\s*|\s+vs\s+|\s+v\s+/i);
+        
+        if (parts.length >= 2) {
+            return [
+                normalizeTeamName(parts[0].trim()),
+                normalizeTeamName(parts[1].trim())
+            ];
+        }
+        
+        return [normalizeTeamName(cleanMatch)];
+    }
+    
+    // Funzione per normalizzare e formattare la data
+    function normalizeDate(dateStr) {
+        if (!dateStr) return '';
+        
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            return dateStr;
+        }
+        
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+            return date.toISOString().split('T')[0];
+        }
+        
+        return dateStr;
+    }
+    
+    // Itera su tutte le partite PENDING nel database Firebase
+    const pendingPredictions = allPredictions.filter(p => p.status === 'PENDING');
+    
+    // Itera su tutti i risultati nel file esterno
+    for (const result of fileRisultati) {
+        const resultDate = normalizeDate(result.data || '');
+        const resultPartita = result.partita || '';
+        const resultEsito = (result.esito || '').toLowerCase().trim();
+        const resultRisultato = result.risultato || '';
+        
+        // Estrai le squadre dalla partita del risultato
+        const resultTeams = extractTeams(resultPartita);
+        
+        // Cerca partite PENDING corrispondenti
+        const matchingPredictions = pendingPredictions.filter(p => {
+            const predDate = normalizeDate(p.date || '');
+            const predPartita = p.partita || '';
+            
+            // Matching esatto per data
+            if (predDate !== resultDate) return false;
+            
+            // Estrai le squadre dal pronostico
+            const predTeams = extractTeams(predPartita);
+            
+            // Se non abbiamo squadre nel risultato, non possiamo fare il matching
+            if (resultTeams.length === 0) return false;
+            
+            // Se non abbiamo squadre nel pronostico, non possiamo fare il matching
+            if (predTeams.length === 0) return false;
+            
+            // Controlla se almeno una squadra del pronostico corrisponde a una del risultato
+            const hasTeamMatch = predTeams.some(predTeam => 
+                resultTeams.some(resultTeam => 
+                    predTeam.includes(resultTeam) || resultTeam.includes(predTeam)
+                )
+            );
+            
+            return hasTeamMatch;
+        });
+        
+        // Aggiorna lo stato per ogni pronostico corrispondente
+        for (const pred of matchingPredictions) {
+            let newStatus = 'PENDING';
+            
+            if (resultEsito === 'vinto') {
+                newStatus = 'WIN';
+            } else if (resultEsito === 'perso') {
+                newStatus = 'LOSE';
+            }
+            
+            if (pred.status !== newStatus) {
+                await updateDoc(doc(db, 'aipredictions', pred.id), {
+                    status: newStatus,
+                    risultato: resultRisultato
+                });
+                updatedCount++;
+                console.log(`✅ Aggiornato: ${pred.partita} - ${newStatus}`);
+            }
+        }
+        
+        if (matchingPredictions.length === 0) {
+            notFoundCount++;
+        }
+    }
+    
+    // Dopo aver aggiornato i risultati, ricarica tutti i dati
+    await loadAllPredictions();
+    
+    let html = '<div class="alert success">✅ <strong> Il problema è che il container non esiste nel DOM</strong></div>';
+    html += '<p style="margin: 1rem 0;">Aggiornati ' + updatedCount + ' pronostici.</p>';
+    
+    if (notFoundCount > 0) {
+        html += '<div class="alert warning">⚠️ <strong>Attenzione:</strong> ' + notFoundCount + ' risultati non hanno trovato corrispondenze nei pronostici.</div>';
+    }
+    
+    // Usa setTimeout per assicurarsi che il container sia disponibile
+    setTimeout(() => {
+        container.innerHTML = html;
+        // Aggiorna le statistiche
+        applicaFiltriEStats();
+    }, 100);
+    
+  } catch (error) {
+    // Usa setTimeout per assicurarsi che il container sia disponibile
+    setTimeout(() => {
+        const container = document.getElementById('statistiche-container');
+        if (container) {
+            container.innerHTML = '<div class="alert danger">❌ Errore durante l\'aggiornamento: ' + error.message + '</div>';
+        }
+    }, 100);
+    
+    console.error('❌ Errore aggiornamento risultati:', error);
   }
 }
 
-function pulisciFiltri() {
+// Funzioni per la sezione ROI
+function loadROITipData() {
+  const container = document.getElementById('roi-tip-table');
+  container.innerHTML = '<div class="loading"></div> 🔄 Caricamento dati...';
+  
+  // Calcola ROI per tip
+  const tipData = {};
+  
+  allPredictions.forEach(p => {
+    const tip = p.tip || 'Sconosciuto';
+    
+    if (!tipData[tip]) {
+      tipData[tip] = {
+        total: 0,
+        wins: 0,
+        losses: 0,
+        totalOdds: 0,
+        roi: 0,
+        winRate: 0
+      };
+    }
+    
+    tipData[tip].total++;
+    tipData[tip].totalOdds += parseFloat(p.quota);
+    
+    if (p.status === 'WIN') {
+      tipData[tip].wins++;
+    } else if (p.status === 'LOSE') {
+      tipData[tip].losses++;
+    }
+  });
+  
+  // Calcola ROI e win rate per ogni tip
+  Object.keys(tipData).forEach(tip => {
+    const data = tipData[tip];
+    const avgOdds = data.totalOdds / data.total;
+    const wins = data.wins;
+    const total = data.total;
+    
+    // ROI = (Vincite * Quota Media - Scommesse Totali) / Scommesse Totali * 100
+    data.roi = ((wins * avgOdds) - total) / total * 100;
+    data.winRate = (wins / total) * 100;
+  });
+  
+  // Ordina per ROI decrescente
+  const sortedTips = Object.keys(tipData).sort((a, b) => tipData[b].roi - tipData[a].roi);
+  
+  // Crea tabella
+  let html = '<table><thead><tr><th>Tip</th><th>Totale</th><th>Vinte</th><th>Perse</th><th>Win Rate</th><th>ROI</th></tr></thead><tbody>';
+  
+  sortedTips.forEach(tip => {
+    const data = tipData[tip];
+    const roiClass = data.roi >= 0 ? 'good' : 'bad';
+    const winRateClass = data.winRate >= 70 ? 'good' : 'bad';
+    
+    html += '<tr>';
+    html += '<td><strong>' + tip + '</strong></td>';
+    html += '<td>' + data.total + '</td>';
+    html += '<td>' + data.wins + '</td>';
+    html += '<td>' + data.losses + '</td>';
+    html += '<td class="' + winRateClass + '">' + data.winRate.toFixed(1) + '%</td>';
+    html += '<td class="' + roiClass + '">' + data.roi.toFixed(1) + '%</td>';
+    html += '</tr>';
+  });
+  
+  html += '</tbody></table>';
+  container.innerHTML = html;
+  
+  // Crea grafico
+  createROITipChart(sortedTips, tipData);
+}
+
+function createROITipChart(tips, tipData) {
+  const ctx = document.getElementById('roi-tip-chart').getContext('2d');
+  
+  // Distruggi grafico esistente se presente
+  if (window.roiTipChart) {
+    window.roiTipChart.destroy();
+  }
+  
+  window.roiTipChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: tips.slice(0, 10), // Limita ai primi 10 per leggibilità
+      datasets: [{
+        label: 'ROI (%)',
+        data: tips.slice(0, 10).map(tip => tipData[tip].roi),
+        backgroundColor: tips.slice(0, 10).map(tip => 
+          tipData[tip].roi >= 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)'
+        ),
+        borderColor: tips.slice(0, 10).map(tip => 
+          tipData[tip].roi >= 0 ? 'rgba(16, 185, 129, 1)' : 'rgba(239, 68, 68, 1)'
+        ),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'ROI (%)'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
+    }
+  });
+}
+
+function loadROILegaData() {
+  const container = document.getElementById('roi-lega-table');
+  container.innerHTML = '<div class="loading"></div> 🔄 Caricamento dati...';
+  
+  // Calcola ROI per lega
+  const legaData = {};
+  
+  allPredictions.forEach(p => {
+    const lega = p.lega || 'Sconosciuta';
+    
+    if (!legaData[lega]) {
+      legaData[lega] = {
+        total: 0,
+        wins: 0,
+        losses: 0,
+        totalOdds: 0,
+        roi: 0,
+        winRate: 0
+      };
+    }
+    
+    legaData[lega].total++;
+    legaData[lega].totalOdds += parseFloat(p.quota);
+    
+    if (p.status === 'WIN') {
+      legaData[lega].wins++;
+    } else if (p.status === 'LOSE') {
+      legaData[lega].losses++;
+    }
+  });
+  
+  // Calcola ROI e win rate per ogni lega
+  Object.keys(legaData).forEach(lega => {
+    const data = legaData[lega];
+    const avgOdds = data.totalOdds / data.total;
+    const wins = data.wins;
+    const total = data.total;
+    
+    // ROI = (Vincite * Quota Media - Scommesse Totali) / Scommesse Totali * 100
+    data.roi = ((wins * avgOdds) - total) / total * 100;
+    data.winRate = (wins / total) * 100;
+  });
+  
+  // Ordina per ROI decrescente
+  const sortedLeghe = Object.keys(legaData).sort((a, b) => legaData[b].roi - legaData[a].roi);
+  
+  // Crea tabella
+  let html = '<table><thead><tr><th>Lega</th><th>Totale</th><th>Vinte</th><th>Perse</th><th>Win Rate</th><th>ROI</th></tr></thead><tbody>';
+  
+  sortedLeghe.forEach(lega => {
+    const data = legaData[lega];
+    const roiClass = data.roi >= 0 ? 'good' : 'bad';
+    const winRateClass = data.winRate >= 70 ? 'good' : 'bad';
+    
+    html += '<tr>';
+    html += '<td><strong>' + lega + '</strong></td>';
+    html += '<td>' + data.total + '</td>';
+    html += '<td>' + data.wins + '</td>';
+    html += '<td>' + data.losses + '</td>';
+    html += '<td class="' + winRateClass + '">' + data.winRate.toFixed(1) + '%</td>';
+    html += '<td class="' + roiClass + '">' + data.roi.toFixed(1) + '%</td>';
+    html += '</tr>';
+  });
+  
+  html += '</tbody></table>';
+  container.innerHTML = html;
+  
+  // Crea grafico
+  createROILegaChart(sortedLeghe, legaData);
+}
+
+function createROILegaChart(leghe, legaData) {
+  const ctx = document.getElementById('roi-lega-chart').getContext('2d');
+  
+  // Distruggi grafico esistente se presente
+  if (window.roiLegaChart) {
+    window.roiLegaChart.destroy();
+  }
+  
+  window.roiLegaChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: leghe.slice(0, 10), // Limita alle prime 10 per leggibilità
+      datasets: [{
+        label: 'ROI (%)',
+        data: leghe.slice(0, 10).map(lega => legaData[lega].roi),
+        backgroundColor: leghe.slice(0, 10).map(lega => 
+          legaData[lega].roi >= 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)'
+        ),
+        borderColor: leghe.slice(0, 10).map(lega => 
+          legaData[lega].roi >= 0 ? 'rgba(16, 185, 129, 1)' : 'rgba(239, 68, 68, 1)'
+        ),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'ROI (%)'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
+    }
+  });
+}
+
+function loadROIPeriodoData() {
+  const container = document.getElementById('roi-periodo-table');
+  container.innerHTML = '<div class="loading"></div> 🔄 Caricamento dati...';
+  
+  // Calcola ROI per periodo (mese)
+  const periodoData = {};
+  
+  allPredictions.forEach(p => {
+    const date = new Date(p.date);
+    const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+    
+    if (!periodoData[monthYear]) {
+      periodoData[monthYear] = {
+        total: 0,
+        wins: 0,
+        losses: 0,
+        totalOdds: 0,
+        roi: 0,
+        winRate: 0
+      };
+    }
+    
+    periodoData[monthYear].total++;
+    periodoData[monthYear].totalOdds += parseFloat(p.quota);
+    
+    if (p.status === 'WIN') {
+      periodoData[monthYear].wins++;
+    } else if (p.status === 'LOSE') {
+      periodoData[monthYear].losses++;
+    }
+  });
+  
+  // Calcola ROI e win rate per ogni periodo
+  Object.keys(periodoData).forEach(periodo => {
+    const data = periodoData[periodo];
+    const avgOdds = data.totalOdds / data.total;
+    const wins = data.wins;
+    const total = data.total;
+    
+    // ROI = (Vincite * Quota Media - Scommesse Totali) / Scommesse Totali * 100
+    data.roi = ((wins * avgOdds) - total) / total * 100;
+    data.winRate = (wins / total) * 100;
+  });
+  
+  // Ordina per periodo
+  const sortedPeriodi = Object.keys(periodoData).sort();
+  
+  // Crea tabella
+  let html = '<table><thead><tr><th>Periodo</th><th>Totale</th><th>Vinte</th><th>Perse</th><th>Win Rate</th><th>ROI</th></tr></thead><tbody>';
+  
+  sortedPeriodi.forEach(periodo => {
+    const data = periodoData[periodo];
+    const roiClass = data.roi >= 0 ? 'good' : 'bad';
+    const winRateClass = data.winRate >= 70 ? 'good' : 'bad';
+    
+    html += '<tr>';
+    html += '<td><strong>' + periodo + '</strong></td>';
+    html += '<td>' + data.total + '</td>';
+    html += '<td>' + data.wins + '</td>';
+    html += '<td>' + data.losses + '</td>';
+    html += '<td class="' + winRateClass + '">' + data.winRate.toFixed(1) + '%</td>';
+    html += '<td class="' + roiClass + '">' + data.roi.toFixed(1) + '%</td>';
+    html += '</tr>';
+  });
+  
+  html += '</tbody></table>';
+  container.innerHTML = html;
+  
+  // Crea grafico
+  createROIPeriodoChart(sortedPeriodi, periodoData);
+}
+
+function createROIPeriodoChart(periodi, periodoData) {
+  const ctx = document.getElementById('roi-periodo-chart').getContext('2d');
+  
+  // Distruggi grafico esistente se presente
+  if (window.roiPeriodoChart) {
+    window.roiPeriodoChart.destroy();
+  }
+  
+  window.roiPeriodoChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: periodi,
+      datasets: [{
+        label: 'ROI (%)',
+        data: periodi.map(periodo => periodoData[periodo].roi),
+        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+        borderColor: 'rgba(102, 126, 234, 1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'ROI (%)'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
+    }
+  });
+}
+
+function loadROIUtenteData() {
+  const container = document.getElementById('roi-utente-table');
+  container.innerHTML = '<div class="loading"></div> 🔄 Caricamento dati...';
+  
+  // Calcola ROI per utente
+  const utenteData = {};
+  
+  allPredictions.forEach(p => {
+    const user = p.user || 'Sconosciuto';
+    
+    if (!utenteData[user]) {
+      utenteData[user] = {
+        total: 0,
+        wins: 0,
+        losses: 0,
+        totalOdds: 0,
+        roi: 0,
+        winRate: 0
+      };
+    }
+    
+    utenteData[user].total++;
+    utenteData[user].totalOdds += parseFloat(p.quota);
+    
+    if (p.status === 'WIN') {
+      utenteData[user].wins++;
+    } else if (p.status === 'LOSE') {
+      utenteData[user].losses++;
+    }
+  });
+  
+  // Calcola ROI e win rate per ogni utente
+  Object.keys(utenteData).forEach(user => {
+    const data = utenteData[user];
+    const avgOdds = data.totalOdds / data.total;
+    const wins = data.wins;
+    const total = data.total;
+    
+    // ROI = (Vincite * Quota Media - Scommesse Totali) / Scommesse Totali * 100
+    data.roi = ((wins * avgOdds) - total) / total * 100;
+    data.winRate = (wins / total) * 100;
+  });
+  
+  // Ordina per ROI decrescente
+  const sortedUtenti = Object.keys(utenteData).sort((a, b) => utenteData[b].roi - utenteData[a].roi);
+  
+  // Crea tabella
+  let html = '<table><thead><tr><th>Utente</th><th>Totale</th><th>Vinte</th><th>Perse</th><th>Win Rate</th><th>ROI</th></tr></thead><tbody>';
+  
+  sortedUtenti.forEach(user => {
+    const data = utenteData[user];
+    const roiClass = data.roi >= 0 ? 'good' : 'bad';
+    const winRateClass = data.winRate >= 70 ? 'good' : 'bad';
+    
+    html += '<tr>';
+    html += '<td><strong>' + user + '</strong></td>';
+    html += '<td>' + data.total + '</td>';
+    html += '<td>' + data.wins + '</td>';
+    html += '<td>' + data.losses + '</td>';
+    html += '<td class="' + winRateClass + '">' + data.winRate.toFixed(1) + '%</td>';
+    html += '<td class="' + roiClass + '">' + data.roi.toFixed(1) + '%</td>';
+    html += '</tr>';
+  });
+  
+  html += '</tbody></table>';
+  container.innerHTML = html;
+  
+  // Crea grafico
+  createROIUtenteChart(sortedUtenti, utenteData);
+}
+
+function createROIUtenteChart(utenti, utenteData) {
+  const ctx = document.getElementById('roi-utente-chart').getContext('2d');
+  
+  // Distruggi grafico esistente se presente
+  if (window.roiUtenteChart) {
+    window.roiUtenteChart.destroy();
+  }
+  
+  window.roiUtenteChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: utenti,
+      datasets: [{
+        label: 'ROI (%)',
+        data: utenti.map(user => utenteData[user].roi),
+        backgroundColor: utenti.map(user => 
+          utenteData[user].roi >= 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)'
+        ),
+        borderColor: utenti.map(user => 
+          utenteData[user].roi >= 0 ? 'rgba(16, 185, 129, 1)' : 'rgba(239, 68, 68, 1)'
+        ),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'ROI (%)'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
+    }
+  });
+}
+
+// Funzioni per la sezione Multiple
+function generateMultiple() {
+  const multipleType = document.getElementById('multiple-type').value;
+  const strategy = document.getElementById('multiple-strategy').value;
+  const container = document.getElementById('multiple-container');
+  
+  container.innerHTML = '<div class="loading"></div> 🔄 Generazione multiple...';
+  
+  // Filtra solo pronostici con status PENDING
+  const pendingPredictions = allPredictions.filter(p => p.status === 'PENDING');
+  
+  if (pendingPredictions.length < (multipleType === 'doppia' ? 2 : 3)) {
+    container.innerHTML = '<div class="alert warning">⚠️ Non ci sono abbastanza pronostici pending per generare una ' + multipleType + '.</div>';
+    return;
+  }
+  
+  // Calcola performance storica per tip e leghe
+  const historicalData = calculateHistoricalPerformance(allPredictions);
+  
+  // Assegna un punteggio a ogni pronostico basato su performance storica
+  const scoredPredictions = pendingPredictions.map(p => {
+    const key = `${p.tip}_${p.lega}`;
+    const historical = historicalData[key] || { roi: 0, winRate: 0 };
+    
+    // Punteggio combinato basato su ROI e win rate storici
+    let score = 0;
+    
+    if (strategy === 'sicurezza') {
+      // Priorità a win rate alto
+      score = historical.winRate * 0.7 + Math.max(0, historical.roi) * 0.3;
+    } else if (strategy === 'valore') {
+      // Bilanciato tra ROI e win rate
+      score = historical.winRate * 0.5 + Math.max(0, historical.roi) * 0.5;
+    } else if (strategy === 'rischio') {
+      // Priorità a ROI alto
+      score = Math.max(0, historical.roi) * 0.7 + historical.winRate * 0.3;
+    }
+    
+    return {
+      ...p,
+      score: score || 0,
+      historicalROI: historical.roi,
+      historicalWinRate: historical.winRate
+    };
+  });
+  
+  // Ordina per punteggio decrescente
+  scoredPredictions.sort((a, b) => b.score - a.score);
+  
+  // Genera multiple
+  const numMultiples = Math.min(5, Math.floor(scoredPredictions.length / (multipleType === 'doppia' ? 2 : 3)));
+  const multiples = [];
+  
+  for (let i = 0; i < numMultiples; i++) {
+    const startIndex = i * (multipleType === 'doppia' ? 2 : 3);
+    const endIndex = startIndex + (multipleType === 'doppia' ? 2 : 3);
+    
+    if (endIndex > scoredPredictions.length) break;
+    
+    const selectedMatches = scoredPredictions.slice(startIndex, endIndex);
+    
+    // Calcola quota totale
+    let totalOdds = 1;
+    selectedMatches.forEach(m => {
+      totalOdds *= parseFloat(m.quota);
+    });
+    
+    // Calcola ROI potenziale basato su performance storica
+    let expectedWinRate = 1;
+    selectedMatches.forEach(m => {
+      expectedWinRate *= (m.historicalWinRate / 100);
+    });
+    
+    const expectedROI = (expectedWinRate * totalOdds - 1) * 100;
+    
+    multiples.push({
+      matches: selectedMatches,
+      totalOdds: totalOdds.toFixed(2),
+      expectedWinRate: (expectedWinRate * 100).toFixed(1),
+      expectedROI: expectedROI.toFixed(1)
+    });
+  }
+  
+  // Visualizza le multiple
+  let html = '<h3>🎲 Multiple ' + (multipleType === 'doppia' ? 'Doppie' : 'Triple') + ' - Strategia: ' + strategy + '</h3>';
+  
+  if (multiples.length === 0) {
+    html += '<div class="alert warning">⚠️ Non è stato possibile generare multiple con i criteri selezionati.</div>';
+    container.innerHTML = html;
+    return;
+  }
+  
+  multiples.forEach((multiple, index) => {
+    const roiClass = parseFloat(multiple.expectedROI) >= 0 ? 'positive' : 'negative';
+    
+    html += '<div class="multiple-card">';
+    html += '<div class="multiple-title">' + (multipleType === 'doppia' ? 'Doppia' : 'Tripla') + ' #' + (index + 1) + '</div>';
+    html += '<div class="multiple-odds">Quota: ' + multiple.totalOdds + '</div>';
+    html += '<div class="multiple-roi ' + roiClass + '">ROI Atteso: ' + multiple.expectedROI + '%</div>';
+    html += '<div class="multiple-matches">Win Rate Atteso: ' + multiple.expectedWinRate + '%</div>';
+    
+    html += '<table style="margin-top: 1rem; font-size: 0.8rem;">';
+    html += '<thead><tr><th>Partita</th><th>Tip</th><th>Quota</th><th>Win Rate Storico</th></tr></thead><tbody>';
+    
+    multiple.matches.forEach(match => {
+      html += '<tr>';
+      html += '<td>' + match.partita + '</td>';
+      html += '<td>' + match.tip + '</td>';
+      html += '<td>' + match.quota + '</td>';
+      html += '<td>' + match.historicalWinRate.toFixed(1) + '%</td>';
+      html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    html += '</div>';
+  });
+  
+  container.innerHTML = html;
+}
+
+// Funzioni per la sezione Alert
+function generateAlerts() {
+  const threshold = parseInt(document.getElementById('alert-threshold').value) || 20;
+  const period = parseInt(document.getElementById('alert-period').value) || 7;
+  const container = document.getElementById('alerts-container');
+  
+  container.innerHTML = '<div class="loading"></div> 🔄 Generazione alert...';
+  
+  // Calcola data di inizio periodo
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - period);
+  const startDateStr = startDate.toISOString().split('T')[0];
+  
+  // Filtra pronostici nel periodo
+  const periodPredictions = allPredictions.filter(p => p.date >= startDateStr);
+  
+  if (periodPredictions.length === 0) {
+    container.innerHTML = '<div class="alert warning">⚠️ Nessun pronostico trovato nel periodo selezionato.</div>';
+    return;
+  }
+  
+  // Calcola performance storica complessiva
+  const historicalData = calculateHistoricalPerformance(allPredictions);
+  
+  // Calcola performance nel periodo
+  const periodData = calculateHistoricalPerformance(periodPredictions);
+  
+  // Genera alert per anomalie
+  const alerts = [];
+  
+  // Alert per leghe con performance anomala
+  Object.keys(periodData).forEach(key => {
+    const [tip, lega] = key.split('_');
+    const periodPerf = periodData[key];
+    const historicalPerf = historicalData[key] || { roi: 0, winRate: 0 };
+    
+    // Calcola differenza di ROI
+    const roiDiff = periodPerf.roi - historicalPerf.roi;
+    
+    if (Math.abs(roiDiff) >= threshold) {
+      alerts.push({
+        type: roiDiff > 0 ? 'success' : 'danger',
+        title: lega + ' - ' + tip,
+        description: 'ROI nel periodo: ' + periodPerf.roi.toFixed(1) + '% (Media storica: ' + historicalPerf.roi.toFixed(1) + '%)',
+        value: roiDiff.toFixed(1) + '%'
+      });
+    }
+    
+    // Calcola differenza di win rate
+    const winRateDiff = periodPerf.winRate - historicalPerf.winRate;
+    
+    if (Math.abs(winRateDiff) >= threshold) {
+      alerts.push({
+        type: winRateDiff > 0 ? 'success' : 'warning',
+        title: lega + ' - ' + tip,
+        description: 'Win rate nel periodo: ' + periodPerf.winRate.toFixed(1) + '% (Media storica: ' + historicalPerf.winRate.toFixed(1) + '%)',
+        value: winRateDiff.toFixed(1) + '%'
+      });
+    }
+  });
+  
+  // Alert per sequenze di risultati anomale
+  const userSequences = {};
+  
+  // Raggruppa per utente e data
+  periodPredictions.forEach(p => {
+    if (!userSequences[p.user]) {
+      userSequences[p.user] = {};
+    }
+    
+    if (!userSequences[p.user][p.date]) {
+      userSequences[p.user][p.date] = {
+        total: 0,
+        wins: 0,
+        losses: 0
+      };
+    }
+    
+    userSequences[p.user][p.date].total++;
+    
+    if (p.status === 'WIN') {
+      userSequences[p.user][p.date].wins++;
+    } else if (p.status === 'LOSE') {
+      userSequences[p.user][p.date].losses++;
+    }
+  });
+  
+  // Controlla sequenze di vittorie/sconfitte
+  Object.keys(userSequences).forEach(user => {
+    const dates = Object.keys(userSequences[user]).sort();
+    
+    let winStreak = 0;
+    let loseStreak = 0;
+    let maxWinStreak = 0;
+    let maxLoseStreak = 0;
+    
+    dates.forEach(date => {
+      const dayData = userSequences[user][date];
+      const winRate = dayData.wins / dayData.total;
+      
+      if (winRate >= 0.7) {
+        winStreak++;
+        loseStreak = 0;
+        maxWinStreak = Math.max(maxWinStreak, winStreak);
+      } else if (winRate <= 0.3) {
+        loseStreak++;
+        winStreak = 0;
+        maxLoseStreak = Math.max(maxLoseStreak, loseStreak);
+      } else {
+        winStreak = 0;
+        loseStreak = 0;
+      }
+    });
+    
+    if (maxWinStreak >= 3) {
+      alerts.push({
+        type: 'success',
+        title: user + ' - Sequenza Positiva',
+        description: 'Sequenza di ' + maxWinStreak + ' giorni con win rate ≥ 70%',
+        value: maxWinStreak + ' giorni'
+      });
+    }
+    
+    if (maxLoseStreak >= 3) {
+      alerts.push({
+        type: 'danger',
+        title: user + ' - Sequenza Negativa',
+        description: 'Sequenza di ' + maxLoseStreak + ' giorni con win rate ≤ 30%',
+        value: maxLoseStreak + ' giorni'
+      });
+    }
+  });
+  
+  // Visualizza gli alert con spiegazioni dettagliate
+  let html = '<h3>⚠️ Alert Pattern Anomali (Ultimi ' + period + ' giorni)</h3>';
+  
+  // Aggiungi spiegazione del funzionamento degli alert
+  html += '<div class="alert info">';
+  html += '<h4>📖 Come Funzionano gli Alert</h4>';
+  html += '<p>Gli alert identificano pattern anomali confrontando la performance recente con quella storica:</p>';
+  html += '<ul>';
+  html += '<li><strong>ROI Anomalo:</strong> Quando il ROI nel periodo selezionato differisce significativamente dalla media storica</li>';
+  html += '<li><strong>Win Rate Anomalo:</strong> Quando la percentuale di vittorie nel periodo differisce dalla media storica</li>';
+  html += '<li><strong>Sequenze Positive/Negative:</strong> Quando si verificano 3+ giorni consecutivi con performance eccezionalmente positive o negative</li>';
+  html += '</ul>';
+  html += '<p>La soglia di ' + threshold + '% indica il minimo scostamento dalla media per generare un alert.</p>';
+  html += '</div>';
+  
+  if (alerts.length === 0) {
+    html += '<div class="alert info">ℹ️ Nessun pattern anomalo rilevato nel periodo selezionato.</div>';
+    container.innerHTML = html;
+    return;
+  }
+  
+  // Ordina gli alert per gravità
+  alerts.sort((a, b) => {
+    const severityOrder = { danger: 0, warning: 1, info: 2, success: 3 };
+    return severityOrder[a.type] - severityOrder[b.type];
+  });
+  
+  alerts.forEach(alert => {
+    html += '<div class="alert-item ' + alert.type + '">';
+    html += '<div class="alert-title">' + alert.title + ' <span style="float: right; font-weight: bold;">' + alert.value + '</span></div>';
+    html += '<div class="alert-description">' + alert.description + '</div>';
+    html += '</div>';
+  });
+  
+  container.innerHTML = html;
+}
+
+// Event listeners
+document.getElementById('btn-preview').addEventListener('click', previewScoring);
+document.getElementById('btn-estrai').addEventListener('click', estraiESalvaPronostici);
+document.getElementById('btn-view-filtered').addEventListener('click', viewFilteredPredictions);
+document.getElementById('btn-delete-filtered').addEventListener('click', deleteFilteredPredictions);
+document.getElementById('btn-delete-user-all').addEventListener('click', deleteAllUserPredictions);
+document.getElementById('btn-applica-filtri').addEventListener('click', applicaFiltriEStats);
+document.getElementById('btn-reset-user').addEventListener('click', () => {
+  document.getElementById('stats-user').value = 'both';
+  applicaFiltriEStats();
+});
+document.getElementById('btn-reset-date').addEventListener('click', () => {
+  document.getElementById('data-da').value = '';
+  document.getElementById('data-a').value = '';
+  applicaFiltriEStats();
+});
+document.getElementById('btn-clear-filters').addEventListener('click', () => {
   document.getElementById('filter-status').value = 'all';
   document.getElementById('filter-tip').value = 'all';
   document.getElementById('filter-lega').value = 'all';
   document.getElementById('filter-prob-min').value = '';
   document.getElementById('filter-quota-min').value = '';
+  document.getElementById('filter-roi-min').value = '';
+  document.getElementById('filter-winrate-min').value = '';
   applicaFiltriEStats();
-}
-
-// EVENT LISTENERS
-document.getElementById('btn-estrai').addEventListener('click', estraiESalvaPronostici);
-document.getElementById('btn-preview').addEventListener('click', previewScoring);
-
-document.getElementById('btn-view-filtered').addEventListener('click', viewFilteredPredictions);
-document.getElementById('btn-delete-filtered').addEventListener('click', deleteFilteredPredictions);
-document.getElementById('btn-delete-user-all').addEventListener('click', deleteAllUserPredictions);
-
-document.getElementById('btn-applica-filtri').addEventListener('click', applicaFiltriEStats);
+});
 document.getElementById('btn-aggiorna-risultati').addEventListener('click', aggiornaRisultati);
+document.getElementById('btn-generate-multiple').addEventListener('click', generateMultiple);
+document.getElementById('btn-generate-alerts').addEventListener('click', generateAlerts);
 
-document.getElementById('btn-reset-user').addEventListener('click', function() {
-  document.getElementById('stats-user').value = 'both';
-  applicaFiltriEStats();
-});
-
-document.getElementById('btn-reset-date').addEventListener('click', function() {
-  document.getElementById('data-da').value = '';
-  document.getElementById('data-a').value = '';
-  applicaFiltriEStats();
-});
-
-document.getElementById('btn-clear-filters').addEventListener('click', pulisciFiltri);
-
-['filter-status', 'filter-tip', 'filter-lega'].forEach(function(id) {
-  document.getElementById(id).addEventListener('change', applicaFiltriEStats);
-});
-
-['filter-prob-min', 'filter-quota-min'].forEach(function(id) {
-  document.getElementById(id).addEventListener('input', function() {
-    clearTimeout(window.filterTimeout);
-    window.filterTimeout = setTimeout(applicaFiltriEStats, 500);
-  });
-});
-
-document.getElementById('input-data').value = new Date().toISOString().split('T')[0];
-
+// Inizializzazione
 initFirebase();
-
-console.log('🚀 AI Betting LIMITE-10 caricato!');
 </script>
 </body>
 </html>
