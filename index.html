@@ -145,11 +145,6 @@
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
         }
-
-        .btn-warning {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-            color: white;
-        }
         
         .results-container {
             margin-top: 20px;
@@ -256,19 +251,6 @@
             padding: 15px;
             margin: 20px 0;
             border-radius: 5px;
-        }
-
-        .migration-box {
-            background: #fff3e0;
-            border: 3px solid #ff9800;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 10px;
-        }
-
-        .migration-box h3 {
-            color: #e65100;
-            margin-bottom: 10px;
         }
         
         .connection-status {
@@ -393,18 +375,6 @@
             <section id="dashboard" class="section active">
                 <h2>📊 Dashboard</h2>
                 <p class="info-box">Statistiche generali del sistema</p>
-
-                <!-- MIGRAZIONE DATABASE -->
-                <div class="migration-box">
-                    <h3>🔄 Migrazione Database (Solo prima volta)</h3>
-                    <p style="margin: 10px 0;">
-                        Se hai dati vecchi con "moreno" e "marco", clicca qui per convertirli automaticamente in "SELEZIONE" e "ESTESO"
-                    </p>
-                    <button class="btn btn-warning" onclick="migraDatabaseNomiStrategie()">
-                        🔄 Converti moreno→SELEZIONE e marco→ESTESO
-                    </button>
-                    <div id="migration-result"></div>
-                </div>
                 
                 <div class="stats-grid" id="stats-container">
                     <div class="stat-card">
@@ -604,77 +574,6 @@
             } else {
                 statusEl.className = 'connection-status status-disconnected';
                 statusEl.textContent = '⚠️ Non connesso';
-            }
-        }
-
-        // FUNZIONE MIGRAZIONE DATABASE
-        async function migraDatabaseNomiStrategie() {
-            if (!firebaseReady) {
-                alert('⏳ Attendi che Firebase sia connesso...');
-                return;
-            }
-
-            const resultDiv = document.getElementById('migration-result');
-            
-            const conferma = confirm(
-                '🔄 MIGRAZIONE DATABASE\n\n' +
-                'Questa operazione convertirà:\n' +
-                '• "moreno" → "SELEZIONE"\n' +
-                '• "marco" → "ESTESO"\n\n' +
-                'in tutti i record esistenti.\n\n' +
-                'Vuoi procedere?'
-            );
-
-            if (!conferma) {
-                resultDiv.innerHTML = '<div class="info-box" style="margin-top: 10px;">❌ Migrazione annullata</div>';
-                return;
-            }
-
-            resultDiv.innerHTML = '<div class="loading">🔄 Migrazione in corso...</div>';
-
-            try {
-                await loadAllPredictions();
-                
-                let morenoCount = 0;
-                let marcoCount = 0;
-                let errorCount = 0;
-
-                for (const pred of allPredictions) {
-                    try {
-                        if (pred.user === 'moreno') {
-                            await db.collection('aipredictions').doc(pred.id).update({
-                                user: 'SELEZIONE'
-                            });
-                            morenoCount++;
-                        } else if (pred.user === 'marco') {
-                            await db.collection('aipredictions').doc(pred.id).update({
-                                user: 'ESTESO'
-                            });
-                            marcoCount++;
-                        }
-                    } catch (error) {
-                        console.error('Errore su record:', pred.id, error);
-                        errorCount++;
-                    }
-                }
-
-                resultDiv.innerHTML = `
-                    <div class="success-message" style="margin-top: 10px;">
-                        ✅ Migrazione completata!<br><br>
-                        📌 ${morenoCount} record convertiti da "moreno" a "SELEZIONE"<br>
-                        📊 ${marcoCount} record convertiti da "marco" a "ESTESO"<br>
-                        ${errorCount > 0 ? `⚠️ ${errorCount} errori` : '✅ Nessun errore'}
-                    </div>
-                `;
-
-                // Ricarica dashboard
-                setTimeout(() => {
-                    loadDashboardStats();
-                }, 1000);
-
-            } catch (error) {
-                console.error('❌ Errore migrazione:', error);
-                resultDiv.innerHTML = `<div class="error-message" style="margin-top: 10px;">❌ Errore: ${error.message}</div>`;
             }
         }
 
