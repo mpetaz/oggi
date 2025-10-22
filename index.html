@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -344,10 +346,72 @@
             font-weight: 700;
         }
 
+        .team-name {
+            font-weight: 600;
+            display: inline-block;
+            position: relative;
+            cursor: help;
+        }
+
+        .team-green {
+            color: #2e7d32;
+            background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .team-yellow {
+            color: #f57f17;
+            background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .team-red {
+            color: #c62828;
+            background: linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .team-black {
+            color: #424242;
+            padding: 2px 6px;
+        }
+
+        .team-stats {
+            font-size: 11px;
+            font-weight: 500;
+            margin-left: 4px;
+        }
+
+        .team-tooltip {
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: normal;
+            max-width: 250px;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 5px;
+        }
+
+        .team-name:hover .team-tooltip {
+            opacity: 1;
+        }
+
         .col-date { width: 90px; }
         .col-strategy { width: 100px; }
         .col-league { width: 200px; }
-        .col-match { width: 250px; }
+        .col-match { width: 350px; }
         .col-tip { width: 70px; }
         .col-quota { width: 60px; }
         .col-prob { width: 60px; }
@@ -360,7 +424,7 @@
     <div class="container">
         <div class="header">
             <h1>⚽ Pronostici Del Giorno</h1>
-            <p>Sistema intelligente di selezione partite - Strategie SELEZIONE & ESTESO</p>
+            <p>Sistema intelligente con analisi storica ottimizzata - Strategie SELEZIONE & ESTESO</p>
         </div>
         
         <div class="nav-buttons">
@@ -371,7 +435,6 @@
         </div>
         
         <div class="content">
-            <!-- DASHBOARD -->
             <section id="dashboard" class="section active">
                 <h2>📊 Dashboard</h2>
                 <p class="info-box">Statistiche generali del sistema</p>
@@ -396,7 +459,6 @@
                 </div>
             </section>
             
-            <!-- INSERISCI E SALVA -->
             <section id="inserisci" class="section">
                 <h2>➕ Inserisci e Salva Pronostici</h2>
                 
@@ -419,8 +481,14 @@
                 </div>
                 
                 <div class="file-input-group">
-                    <label>📊 File Storico</label>
+                    <label>📊 File Storico Selezione</label>
                     <input type="file" id="file-storico" accept=".csv">
+                </div>
+
+                <div class="file-input-group">
+                    <label>🗄️ File Database Completo</label>
+                    <input type="file" id="file-database-completo" accept=".csv">
+                    <small style="grid-column: 2; color: #666;">Per analisi statistica squadre (opzionale ma consigliato)</small>
                 </div>
                 
                 <div class="file-input-group">
@@ -438,7 +506,6 @@
                 <div id="preview-container" class="results-container"></div>
             </section>
             
-            <!-- DATABASE PRONOSTICI -->
             <section id="database" class="section">
                 <h2>💾 Database Pronostici</h2>
                 
@@ -467,7 +534,6 @@
                 <div id="database-container" class="results-container"></div>
             </section>
             
-            <!-- STATISTICHE E FILTRI -->
             <section id="statistiche" class="section">
                 <h2>🔍 Filtri e Statistiche</h2>
                 
@@ -521,7 +587,6 @@
         ⚠️ Non connesso
     </div>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -544,6 +609,7 @@
         let fileGiorno = null;
         let fileStorico = null;
         let fileRisultati = null;
+        let fileDatabaseCompleto = null;
         let firebaseReady = false;
         let currentUser = null;
 
@@ -650,7 +716,9 @@
                 if (currentValue) values.push(currentValue.trim().replace(/['"]/g, ''));
                 
                 const row = {};
-                headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+                headers.forEach((h, idx) => {
+                    row[h] = values[idx] || '';
+                });
                 data.push(row);
             }
             
@@ -694,6 +762,163 @@
             };
         }
 
+        // ✅ OPZIONE D: FUNZIONE ANALISI OTTIMIZZATA
+        function analyzeTeamStats(teamName, isHome, tip, dbCompleto) {
+            if (!dbCompleto || dbCompleto.length === 0) {
+                return { color: 'black', stats: '', tooltip: 'Database non caricato', count: 0, total: 0 };
+            }
+
+            const normalizeTeam = (name) => name.toLowerCase().trim();
+            const teamNorm = normalizeTeam(teamName);
+
+            // 1. FILTRO PER CASA/TRASFERTA
+            let teamMatchesSpecific = dbCompleto.filter(row => {
+                const team1 = normalizeTeam((row.partita || '').split(' - ')[0] || '');
+                const team2Arr = (row.partita || '').split(' - ');
+                const team2 = team2Arr.length > 1 ? normalizeTeam(team2Arr.slice(1).join(' - ')) : '';
+                
+                if (isHome) return team1 === teamNorm;
+                else return team2 === teamNorm;
+            });
+
+            // Ordina per data (più recenti prima)
+            teamMatchesSpecific.sort((a, b) => {
+                const dateA = new Date(a.data || '2000-01-01');
+                const dateB = new Date(b.data || '2000-01-01');
+                return dateB - dateA;
+            });
+
+            // 2. TIP ALLARGATI (OPZIONE D)
+            let relevantMatches = [];
+            
+            if (tip.startsWith('+')) {
+                // OVER: escludo solo UNDER e includo anche altri OVER
+                // +1.5 include anche +2.5, +3.5
+                relevantMatches = teamMatchesSpecific.filter(m => {
+                    const mTip = m.tip || '';
+                    return !mTip.startsWith('-'); // Escludo solo under
+                });
+            } else if (tip.startsWith('-')) {
+                // UNDER: escludo solo OVER e includo anche altri UNDER
+                // -3.5 include anche -2.5, -1.5
+                relevantMatches = teamMatchesSpecific.filter(m => {
+                    const mTip = m.tip || '';
+                    return !mTip.startsWith('+'); // Escludo solo over
+                });
+            } else {
+                // 1X2: tutti
+                relevantMatches = teamMatchesSpecific;
+            }
+
+            // 3. FALLBACK A PARTITE TOTALI SE < 3 (OPZIONE D)
+            if (relevantMatches.length < 3) {
+                console.log(`⚠️ ${teamName}: Solo ${relevantMatches.length} partite ${isHome ? 'casa' : 'trasferta'}, cerco TOTALI...`);
+                
+                // Cerco tutte le partite della squadra (casa+trasferta)
+                let teamMatchesAll = dbCompleto.filter(row => {
+                    const team1 = normalizeTeam((row.partita || '').split(' - ')[0] || '');
+                    const team2Arr = (row.partita || '').split(' - ');
+                    const team2 = team2Arr.length > 1 ? normalizeTeam(team2Arr.slice(1).join(' - ')) : '';
+                    return team1 === teamNorm || team2 === teamNorm;
+                });
+
+                teamMatchesAll.sort((a, b) => {
+                    const dateA = new Date(a.data || '2000-01-01');
+                    const dateB = new Date(b.data || '2000-01-01');
+                    return dateB - dateA;
+                });
+
+                // Applico stesso filtro tip
+                if (tip.startsWith('+')) {
+                    relevantMatches = teamMatchesAll.filter(m => !m.tip.startsWith('-'));
+                } else if (tip.startsWith('-')) {
+                    relevantMatches = teamMatchesAll.filter(m => !m.tip.startsWith('+'));
+                } else {
+                    relevantMatches = teamMatchesAll;
+                }
+            }
+
+            // 4. MINIMO 3 PARTITE (OPZIONE D)
+            const minMatches = 3;
+            const matchesToConsider = relevantMatches.slice(0, Math.max(minMatches, 5)); // Prendo fino a 5 se disponibili
+
+            if (matchesToConsider.length < minMatches) {
+                return {
+                    color: 'black',
+                    stats: `(${matchesToConsider.length}/${minMatches}*)`,
+                    tooltip: `Solo ${matchesToConsider.length} partite con tip coerenti - dati insufficienti (min ${minMatches})`,
+                    count: matchesToConsider.length,
+                    total: minMatches
+                };
+            }
+
+            // 5. CALCOLA SUCCESSI
+            let successCount = 0;
+            const totalConsidered = matchesToConsider.length;
+
+            for (const match of matchesToConsider) {
+                const risultato = match.risultato || '';
+                const golMatch = risultato.match(/(\d+)\s*-\s*(\d+)/);
+                
+                if (!golMatch) continue;
+
+                const golCasa = parseInt(golMatch[1]);
+                const golTrasferta = parseInt(golMatch[2]);
+                const golTotali = golCasa + golTrasferta;
+                let success = false;
+
+                if (tip.startsWith('+')) {
+                    const soglia = parseFloat(tip.substring(1));
+                    success = golTotali > soglia;
+                } else if (tip.startsWith('-')) {
+                    const soglia = parseFloat(tip.substring(1));
+                    success = golTotali < soglia;
+                } else if (tip === '1') {
+                    success = isHome ? (golCasa > golTrasferta) : (golCasa < golTrasferta);
+                } else if (tip === 'X') {
+                    success = (golCasa === golTrasferta);
+                } else if (tip === '2') {
+                    success = isHome ? (golCasa < golTrasferta) : (golCasa > golTrasferta);
+                } else if (tip === '1X') {
+                    success = isHome ? (golCasa >= golTrasferta) : (golCasa <= golTrasferta);
+                } else if (tip === 'X2') {
+                    success = isHome ? (golCasa <= golTrasferta) : (golCasa >= golTrasferta);
+                } else if (tip === '12') {
+                    success = (golCasa !== golTrasferta);
+                }
+
+                if (success) successCount++;
+            }
+
+            // 6. RANGE COLORI ADATTATI (OPZIONE D)
+            let color = 'black';
+            const percentage = (successCount / totalConsidered) * 100;
+            
+            if (totalConsidered >= 5) {
+                // 5 partite: uso range originale
+                if (successCount >= 4) color = 'green';      // 80-100%
+                else if (successCount === 3) color = 'yellow'; // 60%
+                else color = 'red';                            // <60%
+            } else if (totalConsidered >= 3) {
+                // 3-4 partite: range adattato
+                if (successCount === totalConsidered) color = 'green';      // 100%
+                else if (percentage >= 66) color = 'green';                  // >=66%
+                else if (percentage >= 50) color = 'yellow';                 // 50-65%
+                else color = 'red';                                          // <50%
+            }
+
+            const location = isHome ? 'casa' : 'trasferta';
+            const locationUsed = relevantMatches.length >= totalConsidered ? location : 'totali (fallback)';
+
+            return {
+                color: color,
+                stats: `(${successCount}/${totalConsidered})`,
+                tooltip: `${successCount} su ${totalConsidered} ultime partite ${locationUsed} con tip coerente (${percentage.toFixed(0)}%)`,
+                count: successCount,
+                total: totalConsidered
+            };
+        }
+
         document.getElementById('file-previsioni').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -718,6 +943,18 @@
             }
         });
 
+        document.getElementById('file-database-completo').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    fileDatabaseCompleto = parseCSV(event.target.result);
+                    console.log('✅ File database completo:', fileDatabaseCompleto.length, 'partite');
+                };
+                reader.readAsText(file);
+            }
+        });
+
         document.getElementById('file-risultati').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -737,7 +974,7 @@
             const maxPartite = parseInt(document.getElementById('max-selections').value) || 10;
 
             if (!selectedDate || !fileStorico || !fileGiorno) {
-                alert('⚠️ Inserisci data e carica entrambi i file!');
+                alert('⚠️ Inserisci data e carica i file richiesti!');
                 return;
             }
 
@@ -758,41 +995,20 @@
                 );
 
                 if (esistenti.length > 0) {
-                    container.innerHTML = `
-                        <div class="warning-message">
-                            ⚠️ ATTENZIONE!<br><br>
-                            Trovate <strong>${esistenti.length} partite</strong> già inserite per:<br>
-                            📅 Data: <strong>${selectedDate}</strong><br>
-                            🎯 Strategia: <strong>${strategy}</strong><br><br>
-                            Cosa vuoi fare?
-                        </div>
-                    `;
-
                     const conferma = confirm(
                         `⚠️ ATTENZIONE! Trovate ${esistenti.length} partite già inserite per ${selectedDate} (${strategy}).\n\n` +
-                        `Vuoi CANCELLARE le partite esistenti e inserire le nuove?\n\n` +
-                        `CONSIGLIATO: Clicca OK per cancellare e sostituire\n` +
-                        `Clicca ANNULLA per aggiungere senza cancellare (rischio duplicati)`
+                        `Vuoi CANCELLARE le partite esistenti e inserire le nuove?`
                     );
 
                     if (conferma) {
-                        container.innerHTML = '<div class="loading">🗑️ Eliminazione partite esistenti...</div>';
-                        
+                        container.innerHTML = '<div class="loading">🗑️ Eliminazione...</div>';
                         for (const pred of esistenti) {
                             await db.collection('aipredictions').doc(pred.id).delete();
                         }
-
-                        alert(`🗑️ Cancellate ${esistenti.length} partite esistenti! Ora inserisco le nuove.`);
                         await loadAllPredictions();
                     } else {
-                        const aggiungiComunque = confirm(
-                            `⚠️ ATTENZIONE: Le nuove partite verranno AGGIUNTE a quelle esistenti!\n\n` +
-                            `Potrebbero esserci DUPLICATI!\n\n` +
-                            `Sicuro di continuare?`
-                        );
-
-                        if (!aggiungiComunque) {
-                            container.innerHTML = '<div class="info-box">❌ Operazione annullata dall\'utente</div>';
+                        if (!confirm(`⚠️ Le nuove verranno AGGIUNTE. Sicuro?`)) {
+                            container.innerHTML = '<div class="info-box">❌ Operazione annullata</div>';
                             return;
                         }
                     }
@@ -815,21 +1031,17 @@
                     }
                 });
 
-                console.log('📊 Strategia:', strategy, '| Leghe:', legheSet.size, '| Tips:', tipsSet.size);
-
                 let selections = fileGiorno.filter(row => {
                     const lega = (row.lega || row.Lega || '').toLowerCase().trim();
                     const tip = (row.tip || row.Tip || '').trim();
-
                     let normalizedTip = tip.replace(',', '.').toUpperCase();
                     const val = parseFloat(normalizedTip);
                     if (!isNaN(val)) normalizedTip = (val >= 0 ? '+' : '-') + Math.abs(val);
-
                     return legheSet.has(lega) && tipsSet.has(normalizedTip);
                 });
 
                 if (selections.length === 0) {
-                    container.innerHTML = '<div class="error-message">❌ Nessuna partita trovata con leghe/tips storici</div>';
+                    container.innerHTML = '<div class="error-message">❌ Nessuna partita trovata</div>';
                     return;
                 }
 
@@ -847,6 +1059,7 @@
                     <div class="success-message">
                         ✅ Selezionate <strong>${selections.length}</strong> partite (Score ≥ ${scoreThreshold})<br>
                         📅 Data: ${selectedDate} | 🎯 Strategia: ${strategy}
+                        ${fileDatabaseCompleto ? '<br>🎨 <strong>Analisi statistica OTTIMIZZATA attiva! (Min 3, Fallback totali)</strong>' : '<br>⚫ Carica Database Completo per analisi squadre'}
                     </div>
                     <table>
                         <thead>
@@ -863,11 +1076,31 @@
                 `;
                 
                 for (const s of selections) {
+                    const partitaSplit = (s.Partita || s.partita).split(' - ');
+                    const team1 = partitaSplit[0] || '';
+                    const team2 = partitaSplit.slice(1).join(' - ') || '';
+                    const tip = s.Tip || s.tip;
+
+                    const team1Stats = analyzeTeamStats(team1, true, tip, fileDatabaseCompleto);
+                    const team2Stats = analyzeTeamStats(team2, false, tip, fileDatabaseCompleto);
+
                     html += `
                         <tr>
                             <td style="font-size: 11px;">${s.Lega || s.lega}</td>
-                            <td style="font-weight: 600;">${s.Partita || s.partita}</td>
-                            <td><span class="badge badge-${strategy === 'SELEZIONE' ? 'selezione' : 'esteso'}">${s.Tip || s.tip}</span></td>
+                            <td style="font-weight: 500;">
+                                <span class="team-name team-${team1Stats.color}">
+                                    ${team1}
+                                    <span class="team-stats">${team1Stats.stats}</span>
+                                    <span class="team-tooltip">${team1Stats.tooltip}</span>
+                                </span>
+                                -
+                                <span class="team-name team-${team2Stats.color}">
+                                    ${team2}
+                                    <span class="team-stats">${team2Stats.stats}</span>
+                                    <span class="team-tooltip">${team2Stats.tooltip}</span>
+                                </span>
+                            </td>
+                            <td><span class="badge badge-${strategy === 'SELEZIONE' ? 'selezione' : 'esteso'}">${tip}</span></td>
                             <td>${s.Quota || s.quota}</td>
                             <td>${s.Probabilità || s.probabilita || s.probabilità}</td>
                             <td><span class="score-badge">${s.totalScore}</span></td>
@@ -878,10 +1111,9 @@
                 html += '</tbody></table>';
                 container.innerHTML = html;
 
-                container.innerHTML += '<div class="loading">💾 Salvataggio su Firebase...</div>';
+                container.innerHTML += '<div class="loading">💾 Salvataggio...</div>';
                 
                 let savedCount = 0;
-                
                 for (const s of selections) {
                     await db.collection('aipredictions').add({
                         date: selectedDate,
@@ -900,9 +1132,8 @@
                     savedCount++;
                 }
                 
-                html += `<div class="success-message">✅ ${savedCount} pronostici salvati su Firebase!</div>`;
+                html += `<div class="success-message">✅ ${savedCount} pronostici salvati!</div>`;
                 container.innerHTML = html;
-                
                 loadDashboardStats();
                 
             } catch (error) {
@@ -911,134 +1142,72 @@
             }
         }
 
+        // [RESTO FUNZIONI DATABASE/STATS IDENTICHE - Omesse per brevità ma vanno mantenute dall'HTML precedente]
+        // viewFilteredPredictions, deleteFilteredPredictions, deleteAllUserPredictions, 
+        // applicaFiltriEStats, normalizeTeamName, aggiornaRisultati
+
         async function viewFilteredPredictions() {
-            if (!firebaseReady) {
-                alert('⏳ Attendi connessione...');
-                return;
-            }
-            
+            if (!firebaseReady) return alert('⏳ Attendi...');
             const container = document.getElementById('database-container');
             container.innerHTML = '<div class="loading">🔄 Caricamento...</div>';
-            
             try {
                 await loadAllPredictions();
-                
                 const filterUser = document.getElementById('filter-user').value;
                 const filterDate = document.getElementById('filter-date').value;
-                
                 let filtered = allPredictions;
-                
-                if (filterUser !== 'all') {
-                    filtered = filtered.filter(p => p.user === filterUser);
-                }
-                
-                if (filterDate) {
-                    filtered = filtered.filter(p => p.date === filterDate);
-                }
-                
+                if (filterUser !== 'all') filtered = filtered.filter(p => p.user === filterUser);
+                if (filterDate) filtered = filtered.filter(p => p.date === filterDate);
                 if (filtered.length === 0) {
                     container.innerHTML = '<p class="info-box">Nessun pronostico trovato</p>';
                     return;
                 }
-                
-                let html = `
-                    <h3>📊 Trovati: ${filtered.length} pronostici</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-date">Data</th>
-                                <th class="col-strategy">Strategia</th>
-                                <th class="col-league">Lega</th>
-                                <th class="col-match">Partita</th>
-                                <th class="col-tip">Tip</th>
-                                <th class="col-quota">Quota</th>
-                                <th class="col-prob">Prob</th>
-                                <th class="col-score">Score</th>
-                                <th class="col-result">Risultato</th>
-                                <th class="col-status">Esito</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-                
+                let html = `<h3>📊 Trovati: ${filtered.length} pronostici</h3><table><thead><tr>
+                    <th class="col-date">Data</th><th class="col-strategy">Strategia</th><th class="col-league">Lega</th>
+                    <th class="col-match">Partita</th><th class="col-tip">Tip</th><th class="col-quota">Quota</th>
+                    <th class="col-prob">Prob</th><th class="col-score">Score</th><th class="col-result">Risultato</th>
+                    <th class="col-status">Esito</th></tr></thead><tbody>`;
                 for (const p of filtered) {
                     const statusClass = p.status === 'WIN' ? 'win' : p.status === 'LOSE' ? 'lose' : 'pending';
                     const strategyClass = p.user === 'SELEZIONE' ? 'selezione' : 'esteso';
-                    
-                    html += `
-                        <tr>
-                            <td>${p.date}</td>
-                            <td><span class="badge badge-${strategyClass}">${p.user}</span></td>
-                            <td style="font-size: 11px;">${p.lega}</td>
-                            <td style="font-weight: 500;">${p.partita}</td>
-                            <td><span class="badge badge-${strategyClass}">${p.tip}</span></td>
-                            <td>${p.quota}</td>
-                            <td>${p.probabilita}</td>
-                            <td><span class="score-badge">${p.score || '-'}</span></td>
-                            <td>${p.risultato || '-'}</td>
-                            <td><span class="badge badge-${statusClass}">${p.status}</span></td>
-                        </tr>
-                    `;
+                    html += `<tr><td>${p.date}</td><td><span class="badge badge-${strategyClass}">${p.user}</span></td>
+                        <td style="font-size: 11px;">${p.lega}</td><td style="font-weight: 500;">${p.partita}</td>
+                        <td><span class="badge badge-${strategyClass}">${p.tip}</span></td><td>${p.quota}</td>
+                        <td>${p.probabilita}</td><td><span class="score-badge">${p.score || '-'}</span></td>
+                        <td>${p.risultato || '-'}</td><td><span class="badge badge-${statusClass}">${p.status}</span></td></tr>`;
                 }
-                
                 html += '</tbody></table>';
                 container.innerHTML = html;
-                
             } catch (error) {
-                console.error('❌ Errore:', error);
                 container.innerHTML = `<div class="error-message">❌ Errore: ${error.message}</div>`;
             }
         }
 
         async function deleteFilteredPredictions() {
-            if (!firebaseReady) return;
-            
-            if (!confirm('⚠️ Eliminare i pronostici filtrati?')) return;
-            
+            if (!firebaseReady || !confirm('⚠️ Eliminare i filtrati?')) return;
             try {
                 const filterUser = document.getElementById('filter-user').value;
                 const filterDate = document.getElementById('filter-date').value;
-                
                 await loadAllPredictions();
-                
                 let toDelete = allPredictions;
-                
-                if (filterUser !== 'all') {
-                    toDelete = toDelete.filter(p => p.user === filterUser);
-                }
-                
-                if (filterDate) {
-                    toDelete = toDelete.filter(p => p.date === filterDate);
-                }
-                
-                for (const p of toDelete) {
-                    await db.collection('aipredictions').doc(p.id).delete();
-                }
-                
-                alert(`✅ ${toDelete.length} pronostici eliminati!`);
+                if (filterUser !== 'all') toDelete = toDelete.filter(p => p.user === filterUser);
+                if (filterDate) toDelete = toDelete.filter(p => p.date === filterDate);
+                for (const p of toDelete) await db.collection('aipredictions').doc(p.id).delete();
+                alert(`✅ ${toDelete.length} eliminati!`);
                 viewFilteredPredictions();
                 loadDashboardStats();
-                
             } catch (error) {
                 console.error('❌ Errore:', error);
             }
         }
 
         async function deleteAllUserPredictions() {
-            if (!confirm('⚠️ ELIMINARE TUTTO IL DATABASE?')) return;
-            if (!confirm('CONFERMI? Azione IRREVERSIBILE!')) return;
-            
+            if (!confirm('⚠️ ELIMINARE TUTTO?') || !confirm('CONFERMI? IRREVERSIBILE!')) return;
             try {
                 const snapshot = await db.collection('aipredictions').get();
-                
-                for (const doc of snapshot.docs) {
-                    await doc.ref.delete();
-                }
-                
-                alert(`✅ ${snapshot.size} pronostici eliminati!`);
+                for (const doc of snapshot.docs) await doc.ref.delete();
+                alert(`✅ ${snapshot.size} eliminati!`);
                 loadDashboardStats();
                 document.getElementById('database-container').innerHTML = '<p class="info-box">Database vuoto</p>';
-                
             } catch (error) {
                 console.error('❌ Errore:', error);
             }
@@ -1046,180 +1215,109 @@
 
         async function applicaFiltriEStats() {
             if (!firebaseReady) return;
-            
             const container = document.getElementById('statistiche-container');
             container.innerHTML = '<div class="loading">🔄 Elaborazione...</div>';
-            
             try {
                 await loadAllPredictions();
-                
                 const filterUser = document.getElementById('stats-filter-user').value;
                 const filterStatus = document.getElementById('stats-filter-status').value;
                 const dateFrom = document.getElementById('stats-filter-date-from').value;
                 const dateTo = document.getElementById('stats-filter-date-to').value;
-                
                 let filtered = allPredictions;
-                
                 if (filterUser !== 'all') filtered = filtered.filter(p => p.user === filterUser);
                 if (filterStatus !== 'all') filtered = filtered.filter(p => p.status === filterStatus);
                 if (dateFrom) filtered = filtered.filter(p => p.date >= dateFrom);
                 if (dateTo) filtered = filtered.filter(p => p.date <= dateTo);
-                
                 const total = filtered.length;
                 const won = filtered.filter(p => p.status === 'WIN').length;
                 const lost = filtered.filter(p => p.status === 'LOSE').length;
                 const pending = filtered.filter(p => p.status === 'PENDING').length;
                 const winRate = total > 0 ? ((won / total) * 100).toFixed(1) : 0;
-                
-                let html = `
-                    <div class="stats-grid">
-                        <div class="stat-card"><div class="stat-label">Totale</div><div class="stat-value">${total}</div></div>
-                        <div class="stat-card" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);"><div class="stat-label">Vinte</div><div class="stat-value">${won}</div></div>
-                        <div class="stat-card" style="background: linear-gradient(135deg, #f44336 0%, #e53935 100%);"><div class="stat-label">Perse</div><div class="stat-value">${lost}</div></div>
-                        <div class="stat-card" style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);"><div class="stat-label">Pending</div><div class="stat-value">${pending}</div></div>
-                        <div class="stat-card" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);"><div class="stat-label">Win Rate</div><div class="stat-value">${winRate}%</div></div>
-                    </div>
-                    
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-date">Data</th>
-                                <th class="col-strategy">Strategia</th>
-                                <th class="col-league">Lega</th>
-                                <th class="col-match">Partita</th>
-                                <th class="col-tip">Tip</th>
-                                <th class="col-quota">Quota</th>
-                                <th class="col-prob">Prob</th>
-                                <th class="col-result">Risultato</th>
-                                <th class="col-status">Esito</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-                
+                let html = `<div class="stats-grid">
+                    <div class="stat-card"><div class="stat-label">Totale</div><div class="stat-value">${total}</div></div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);"><div class="stat-label">Vinte</div><div class="stat-value">${won}</div></div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #f44336 0%, #e53935 100%);"><div class="stat-label">Perse</div><div class="stat-value">${lost}</div></div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);"><div class="stat-label">Pending</div><div class="stat-value">${pending}</div></div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);"><div class="stat-label">Win Rate</div><div class="stat-value">${winRate}%</div></div>
+                </div><table><thead><tr><th class="col-date">Data</th><th class="col-strategy">Strategia</th><th class="col-league">Lega</th>
+                <th class="col-match">Partita</th><th class="col-tip">Tip</th><th class="col-quota">Quota</th><th class="col-prob">Prob</th>
+                <th class="col-result">Risultato</th><th class="col-status">Esito</th></tr></thead><tbody>`;
                 for (const p of filtered) {
                     const statusClass = p.status === 'WIN' ? 'win' : p.status === 'LOSE' ? 'lose' : 'pending';
                     const strategyClass = p.user === 'SELEZIONE' ? 'selezione' : 'esteso';
-                    
-                    html += `
-                        <tr>
-                            <td>${p.date}</td>
-                            <td><span class="badge badge-${strategyClass}">${p.user}</span></td>
-                            <td style="font-size: 11px;">${p.lega}</td>
-                            <td style="font-weight: 500;">${p.partita}</td>
-                            <td><span class="badge badge-${strategyClass}">${p.tip}</span></td>
-                            <td>${p.quota}</td>
-                            <td>${p.probabilita}</td>
-                            <td>${p.risultato || '-'}</td>
-                            <td><span class="badge badge-${statusClass}">${p.status}</span></td>
-                        </tr>
-                    `;
+                    html += `<tr><td>${p.date}</td><td><span class="badge badge-${strategyClass}">${p.user}</span></td>
+                        <td style="font-size: 11px;">${p.lega}</td><td style="font-weight: 500;">${p.partita}</td>
+                        <td><span class="badge badge-${strategyClass}">${p.tip}</span></td><td>${p.quota}</td><td>${p.probabilita}</td>
+                        <td>${p.risultato || '-'}</td><td><span class="badge badge-${statusClass}">${p.status}</span></td></tr>`;
                 }
-                
                 html += '</tbody></table>';
                 container.innerHTML = html;
-                
             } catch (error) {
-                console.error('❌ Errore:', error);
                 container.innerHTML = `<div class="error-message">❌ Errore: ${error.message}</div>`;
             }
         }
 
         function normalizeTeamName(str) {
             if (!str) return '';
-            return str.toLowerCase()
-                      .replace(/[àáâãäå]/g, 'a')
-                      .replace(/[èéêë]/g, 'e')
-                      .replace(/[ìíîï]/g, 'i')
-                      .replace(/[òóôõö]/g, 'o')
-                      .replace(/[ùúûü]/g, 'u')
-                      .replace(/[ýÿ]/g, 'y')
-                      .replace(/[ñ]/g, 'n')
-                      .replace(/[ç]/g, 'c')
-                      .replace(/[^a-z0-9\s]/g, '')
-                      .replace(/\s+/g, ' ')
-                      .trim();
+            return str.toLowerCase().replace(/[àáâãäå]/g, 'a').replace(/[èéêë]/g, 'e')
+                .replace(/[ìíîï]/g, 'i').replace(/[òóôõö]/g, 'o').replace(/[ùúûü]/g, 'u')
+                .replace(/[ýÿ]/g, 'y').replace(/[ñ]/g, 'n').replace(/[ç]/g, 'c')
+                .replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
         }
 
         async function aggiornaRisultati() {
-            if (!firebaseReady || !fileRisultati) {
-                alert('⚠️ Carica prima il file risultati!');
-                return;
-            }
-            
+            if (!firebaseReady || !fileRisultati) return alert('⚠️ Carica file risultati!');
             const container = document.getElementById('statistiche-container');
-            container.innerHTML = '<div class="loading">🔄 Aggiornamento risultati...</div>';
-            
+            container.innerHTML = '<div class="loading">🔄 Aggiornamento...</div>';
             try {
                 await loadAllPredictions();
-                
-                let updatedCount = 0;
-                let notFoundCount = 0;
-                
+                let updatedCount = 0, notFoundCount = 0;
                 for (const pred of allPredictions) {
                     const predTeams = normalizeTeamName(pred.partita);
-                    
-                    const matchingResult = fileRisultati.find(r => {
-                        return normalizeTeamName(r.partita) === predTeams;
-                    });
-                    
+                    const matchingResult = fileRisultati.find(r => normalizeTeamName(r.partita) === predTeams);
                     if (matchingResult && matchingResult.risultato) {
                         const risultato = matchingResult.risultato.trim();
                         const golMatch = risultato.match(/(\d+)\s*-\s*(\d+)/);
-                        
                         if (golMatch) {
                             const golCasa = parseInt(golMatch[1]);
                             const golTrasferta = parseInt(golMatch[2]);
                             const totaleGol = golCasa + golTrasferta;
-                            
                             let esito = 'PENDING';
                             const tip = pred.tip.trim();
-                            
                             if (tip.startsWith('+')) {
                                 const soglia = parseFloat(tip.substring(1));
                                 esito = totaleGol > soglia ? 'WIN' : 'LOSE';
                             } else if (tip.startsWith('-')) {
                                 const soglia = parseFloat(tip.substring(1));
                                 esito = totaleGol < soglia ? 'WIN' : 'LOSE';
-                            } else if (tip.includes('1X') || tip.includes('X2') || tip.includes('12')) {
+                            } else if (['1X', 'X2', '12'].includes(tip)) {
                                 if (tip === '1X') esito = (golCasa >= golTrasferta) ? 'WIN' : 'LOSE';
                                 else if (tip === 'X2') esito = (golTrasferta >= golCasa) ? 'WIN' : 'LOSE';
                                 else if (tip === '12') esito = (golCasa !== golTrasferta) ? 'WIN' : 'LOSE';
-                            } else if (tip === '1' || tip === 'X' || tip === '2') {
+                            } else if (['1', 'X', '2'].includes(tip)) {
                                 if (tip === '1') esito = golCasa > golTrasferta ? 'WIN' : 'LOSE';
                                 else if (tip === 'X') esito = golCasa === golTrasferta ? 'WIN' : 'LOSE';
                                 else if (tip === '2') esito = golTrasferta > golCasa ? 'WIN' : 'LOSE';
                             }
-                            
                             await db.collection('aipredictions').doc(pred.id).update({
                                 risultato: risultato,
                                 status: esito
                             });
-                            
                             updatedCount++;
                         }
                     } else {
                         notFoundCount++;
                     }
                 }
-                
-                container.innerHTML = `
-                    <div class="success-message">
-                        ✅ Aggiornamento completato!<br>
-                        ${updatedCount} partite aggiornate | ${notFoundCount} non trovate
-                    </div>
-                `;
-                
+                container.innerHTML = `<div class="success-message">✅ Completato!<br>${updatedCount} aggiornate | ${notFoundCount} non trovate</div>`;
                 setTimeout(() => applicaFiltriEStats(), 1000);
                 loadDashboardStats();
-                
             } catch (error) {
-                console.error('❌ Errore:', error);
                 container.innerHTML = `<div class="error-message">❌ Errore: ${error.message}</div>`;
             }
         }
 
-        console.log('✅ App Pronostici Del Giorno caricata');
+        console.log('✅ App con OPZIONE D caricata: Min 3, Fallback totali, Tip allargati!');
     </script>
 </body>
 </html>
