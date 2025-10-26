@@ -882,7 +882,7 @@
             const specificAnalysis = analyzeSpecificLocationTendencies(teamNorm, isHome, tip, dbCompleto);
             
             // 3. COMBINAZIONE INTELLIGENTE DEI RISULTATI
-            return combineAnalysisResults(generalAnalysis, specificAnalysis, isHome);
+            return combineAnalysisResults(general, specific, isHome);
         }
 
         // NUOVA: Analisi delle tendenze generali over/under
@@ -1424,7 +1424,7 @@
                     // Aggiungi alla lista dei duplicati evitati
                     duplicateKeys.add(duplicateKey);
                     
-                     // Salva su Firebase con statistiche colori
+                    // Salva su Firebase con statistiche colori
                     await db.collection('aipredictions').add({
                         date: selectedDate,
                         user: strategy,
@@ -1700,6 +1700,100 @@
                         .trim();
         }
 
+        // NUOVA: Funzione per normalizzare date in vari formati
+        function normalizeDate(dateStr) {
+            if (!dateStr) return null;
+            
+            // Rimuovi spazi extra
+            dateStr = dateStr.trim();
+            
+            // Formato YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                return dateStr;
+            }
+            
+            // Formato DD/MM/YYYY o DD-MM-YYYY
+            if (/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(dateStr)) {
+                const parts = dateStr.split(/[\/\-]/);
+                return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+            
+            // Formato MM/DD/YYYY o MM-DD-YYYY
+            if (/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(dateStr)) {
+                const parts = dateStr.split(/[\/\-]/);
+                // Se il primo numero è > 12, probabilmente è DD/MM/YYYY
+                if (parseInt(parts[0]) > 12) {
+                    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                } else {
+                    return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+                }
+            }
+            
+            return null;
+        }
+
+        // NUOVA: Funzione di matching migliorata per gestire caratteri speciali
+        function findMatchInResults(prediction, resultsFile) {
+            const predTeams = prediction.partita.split(' - ');
+            const predTeam1 = predTeams[0].trim();
+            const predTeam2 = predTeams[1].trim();
+            const predDate = normalizeDate(prediction.date);
+            
+            // Prova diversi metodi di matching
+            let bestMatch = null;
+            let bestScore = 0;
+            
+            for (const result of resultsFile) {
+                const resultMatch = (result.partita || result.Partita || '').trim();
+                const resultTeams = resultMatch.split(' - ');
+                const resultDate = normalizeDate(result.data || result.Data || '');
+                
+                if (resultTeams.length !== 2) continue;
+                
+                const resultTeam1 = resultTeams[0].trim();
+                const resultTeam2 = resultTeams[1].trim();
+                
+                // Controllo date - devono essere uguali o mancanti
+                if (predDate && resultDate && predDate !== resultDate) {
+                    continue;
+                }
+                
+                let score = 0;
+                
+                // Metodo 1: Corrispondenza esatta (case-insensitive)
+                if ((predTeam1.toLowerCase() === resultTeam1.toLowerCase() && predTeam2.toLowerCase() === resultTeam2.toLowerCase()) ||
+                    (predTeam1.toLowerCase() === resultTeam2.toLowerCase() && predTeam2.toLowerCase() === resultTeam1.toLowerCase())) {
+                    score = 100;
+                }
+                
+                // Metodo 2: Corrispondenza parziale (contiene) - case-insensitive
+                else if ((predTeam1.toLowerCase().includes(resultTeam1.toLowerCase()) || resultTeam1.toLowerCase().includes(predTeam1.toLowerCase())) &&
+                         (predTeam2.toLowerCase().includes(resultTeam2.toLowerCase()) || resultTeam2.toLowerCase().includes(predTeam2.toLowerCase()))) {
+                    score = 80;
+                }
+                
+                // Metodo 3: Rimuovi solo spazi extra e caratteri non alfanumerici
+                else {
+                    const cleanPred1 = predTeam1.toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '');
+                    const cleanPred2 = predTeam2.toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '');
+                    const cleanResult1 = resultTeam1.toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '');
+                    const cleanResult2 = resultTeam2.toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '');
+                    
+                    if ((cleanPred1 === cleanResult1 && cleanResult2 === cleanResult2) ||
+                        (cleanPred1 === cleanResult2 && cleanResult2 === cleanResult1)) {
+                        score = 60;
+                    }
+                }
+                
+                // Se trovato un match con punteggio alto, controlliamo se è il migliore
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMatch = result;
+                }
+            }
+            
+            return bestMatch;
+        }
         async function aggiornaRisultati() {
             if (!fileRisultati) {
                 alert('⚠️ Carica prima il file risultati!');
@@ -1719,15 +1813,23 @@
                 
                 let updatedCount = 0;
                 let notFoundCount = 0;
+                let debugInfo = [];
+                
+                // DEBUG: Mostra alcuni esempi per capire il problema
+                console.log('🔍 DEBUG - Prime 5 predizioni pending:');
+                allPredictions.filter(p => p.status === 'PENDING').slice(0, 5).forEach(p => {
+                    console.log('Predizione:', p.partita, '- Data:', p.date, '- Data normalizzata:', normalizeDate(p.date));
+                });
+                
+                console.log('🔍 DEBUG - Prime 5 righe file risultati:');
+                fileRisultati.slice(0, 5).forEach(r => {
+                    console.log('Risultato:', r.partita || r.Partita, '- Data:', r.data || r.Data, '- Data normalizzata:', normalizeDate(r.data || r.Data));
+                });
                 
                 for (const prediction of allPredictions) {
                     if (prediction.status !== 'PENDING') continue;
                     
-                    const matchResult = fileRisultati.find(r => {
-                        const resultMatch = normalizeTeamName(r.partita || r.Partita || '');
-                        const predMatch = normalizeTeamName(prediction.partita);
-                        return resultMatch === predMatch;
-                    });
+                    const matchResult = findMatchInResults(prediction, fileRisultati);
                     
                     if (matchResult) {
                         const risultato = matchResult.risultato || matchResult.Risultato || '';
@@ -1748,19 +1850,27 @@
                                 const soglia = parseFloat(tip.substring(1));
                                 status = golTotali < soglia ? 'WIN' : 'LOSE';
                             } else if (tip === '1') {
-                                const partitaSplit = prediction.partita.split(' - ');
-                                const team1 = normalizeTeamName(partitaSplit[0]);
-                                const fileMatch = normalizeTeamName(matchResult.partita || matchResult.Partita || '');
-                                const isHome = fileMatch.startsWith(team1);
-                                status = isHome ? (golCasa > golTrasferta ? 'WIN' : 'LOSE') : (golCasa < golTrasferta ? 'WIN' : 'LOSE');
+                                const predTeams = prediction.partita.split(' - ');
+                                const resultTeams = (matchResult.partita || matchResult.Partita || '').split(' - ');
+                                
+                                if (resultTeams.length >= 2) {
+                                    const predTeam1 = predTeams[0].trim().toLowerCase();
+                                    const resultTeam1 = resultTeams[0].trim().toLowerCase();
+                                    const isHome = predTeam1 === resultTeam1 || predTeam1.includes(resultTeam1) || resultTeam1.includes(predTeam1);
+                                    status = isHome ? (golCasa > golTrasferta ? 'WIN' : 'LOSE') : (golCasa < golTrasferta ? 'WIN' : 'LOSE');
+                                }
                             } else if (tip === 'X') {
                                 status = (golCasa === golTrasferta) ? 'WIN' : 'LOSE';
                             } else if (tip === '2') {
-                                const partitaSplit = prediction.partita.split(' - ');
-                                const team1 = normalizeTeamName(partitaSplit[0]);
-                                const fileMatch = normalizeTeamName(matchResult.partita || matchResult.Partita || '');
-                                const isHome = fileMatch.startsWith(team1);
-                                status = isHome ? (golCasa < golTrasferta ? 'WIN' : 'LOSE') : (golCasa > golTrasferta ? 'WIN' : 'LOSE');
+                                const predTeams = prediction.partita.split(' - ');
+                                const resultTeams = (matchResult.partita || matchResult.Partita || '').split(' - ');
+                                
+                                if (resultTeams.length >= 2) {
+                                    const predTeam1 = predTeams[0].trim().toLowerCase();
+                                    const resultTeam1 = resultTeams[0].trim().toLowerCase();
+                                    const isHome = predTeam1 === resultTeam1 || predTeam1.includes(resultTeam1) || resultTeam1.includes(predTeam1);
+                                    status = isHome ? (golCasa < golTrasferta ? 'WIN' : 'LOSE') : (golCasa > golTrasferta ? 'WIN' : 'LOSE');
+                                }
                             }
                             
                             await db.collection('aipredictions').doc(prediction.id).update({
@@ -1769,16 +1879,23 @@
                             });
                             
                             updatedCount++;
+                            debugInfo.push(`✅ ${prediction.partita} (${prediction.date}) -> ${status} - Match: ${matchResult.partita || matchResult.Partita}`);
                         }
                     } else {
                         notFoundCount++;
+                        debugInfo.push(`❌ Non trovato: ${prediction.partita} (${prediction.date})`);
                     }
                 }
+                
+                // Mostra debug info in console
+                console.log('🔍 Debug aggiornamento risultati:');
+                debugInfo.forEach(info => console.log(info));
                 
                 container.innerHTML = `
                     <div class="success-message">
                         ✅ Aggiornati ${updatedCount} risultati<br>
                         ${notFoundCount > 0 ? `⚠️ ${notFoundCount} partite non trovate nel file risultati` : ''}
+                        <br><small>Controlla la console per i dettagli di debug</small>
                     </div>
                 `;
                 
