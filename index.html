@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -488,7 +486,7 @@
                 <div class="file-input-group">
                     <label>🗄️ File Database Completo</label>
                     <input type="file" id="file-database-completo" accept=".csv">
-                    <small style="grid-column: 2; color: #666;">Per analisi statistica squadre (opzionale ma consigliato)</small>
+                    <small style="grid-column: 2; color: #666;">Per analisi statistica squadre e leghe (opzionale ma consigliato)</small>
                 </div>
                 
                 <div class="file-input-group">
@@ -725,7 +723,7 @@
             return data;
         }
 
-        function calculateScore(partita, legheSet, tipsSet) {
+        function calculateScore(partita, legheSet, tipsSet, leaguePerformance = {}) {
             let legaScore = 0, tipScore = 0, probScore = 0, quotaValid = true;
 
             const lega = (partita.lega || partita.Lega || '').toLowerCase().trim();
@@ -741,6 +739,26 @@
 
             if (tipsSet.has(tipNorm)) tipScore = 20;
             else if (lega.startsWith('eu-')) tipScore = 5;
+
+            // NUOVO: Bonus per leghe performanti
+            if (leaguePerformance[lega]) {
+                const leagueStats = leaguePerformance[lega];
+                
+                // Bonus per leghe golose se tip over
+                if (tipNorm.startsWith('+') && parseFloat(leagueStats.over25Percentage) > 60) {
+                    legaScore += 5;
+                }
+                
+                // Bonus per leghe chiuse se tip under
+                if (tipNorm.startsWith('-') && parseFloat(leagueStats.under25Percentage) > 60) {
+                    legaScore += 5;
+                }
+                
+                // Bonus per performance specifica del tip nella lega
+                if (leagueStats.tips[tipNorm] && parseFloat(leagueStats.tips[tipNorm].successRate) > 55) {
+                    tipScore += 5;
+                }
+            }
 
             const quota = parseFloat(String(partita.quota || partita.Quota || '').replace(',', '.')) || 0;
             if (quota < 1.20) quotaValid = false;
@@ -762,101 +780,259 @@
             };
         }
 
-        // ✅ OPZIONE D: FUNZIONE ANALISI OTTIMIZZATA
+        // NUOVA: Analisi performance leghe
+        function analyzeLeaguePerformance(dbCompleto) {
+            if (!dbCompleto || dbCompleto.length === 0) {
+                return {};
+            }
+
+            const leagueStats = {};
+            
+            // Raggruppa partite per lega
+            dbCompleto.forEach(match => {
+                const lega = (match.lega || match.Lega || '').toLowerCase().trim();
+                if (!lega) return;
+                
+                if (!leagueStats[lega]) {
+                    leagueStats[lega] = {
+                        totalMatches: 0,
+                        over25Count: 0,
+                        under25Count: 0,
+                        avgGoals: 0,
+                        totalGoals: 0,
+                        tips: {}
+                    };
+                }
+                
+                leagueStats[lega].totalMatches++;
+                
+                const risultato = match.risultato || '';
+                const golMatch = risultato.match(/(\d+)\s*-\s*(\d+)/);
+                
+                // Inizializza golTotali fuori dal blocco if
+                let golTotali = 0;
+                
+                if (golMatch) {
+                    const golCasa = parseInt(golMatch[1]);
+                    const golTrasferta = parseInt(golMatch[2]);
+                    golTotali = golCasa + golTrasferta;
+                    
+                    leagueStats[lega].totalGoals += golTotali;
+                    
+                    if (golTotali > 2.5) leagueStats[lega].over25Count++;
+                    else leagueStats[lega].under25Count++;
+                }
+                
+                // Analisi per tip
+                const tip = (match.tip || match.Tip || '').trim();
+                if (tip) {
+                    if (!leagueStats[lega].tips[tip]) {
+                        leagueStats[lega].tips[tip] = { total: 0, success: 0 };
+                    }
+                    
+                    leagueStats[lega].tips[tip].total++;
+                    
+                    // Calcola successo solo se abbiamo i gol
+                    let success = false;
+                    if (golMatch && golTotali > 0) {
+                        if (tip.startsWith('+')) {
+                            const soglia = parseFloat(tip.substring(1));
+                            success = golTotali > soglia;
+                        } else if (tip.startsWith('-')) {
+                            const soglia = parseFloat(tip.substring(1));
+                            success = golTotali < soglia;
+                        }
+                    }
+                    
+                    if (success) leagueStats[lega].tips[tip].success++;
+                }
+            });
+            
+            // Calcola statistiche finali
+            Object.keys(leagueStats).forEach(lega => {
+                const stats = leagueStats[lega];
+                stats.avgGoals = (stats.totalGoals / stats.totalMatches).toFixed(2);
+                stats.over25Percentage = (stats.over25Count / stats.totalMatches * 100).toFixed(0);
+                stats.under25Percentage = (stats.under25Count / stats.totalMatches * 100).toFixed(0);
+                
+                // Calcola performance per tip
+                Object.keys(stats.tips).forEach(tip => {
+                    const tipStats = stats.tips[tip];
+                    tipStats.successRate = (tipStats.success / tipStats.total * 100).toFixed(0);
+                });
+            });
+            
+            return leagueStats;
+        }
+
+        // Funzione globale di normalizzazione
+        const normalizeTeam = (name) => name.toLowerCase().trim();
+
         function analyzeTeamStats(teamName, isHome, tip, dbCompleto) {
             if (!dbCompleto || dbCompleto.length === 0) {
                 return { color: 'black', stats: '', tooltip: 'Database non caricato', count: 0, total: 0 };
             }
 
-            const normalizeTeam = (name) => name.toLowerCase().trim();
             const teamNorm = normalizeTeam(teamName);
 
-            // 1. FILTRO PER CASA/TRASFERTA
-            let teamMatchesSpecific = dbCompleto.filter(row => {
+            // 1. ANALISI GENERALE OVER/UNDER (nuovo approccio)
+            const generalAnalysis = analyzeGeneralOverUnderTendencies(teamNorm, tip, dbCompleto);
+            
+            // 2. ANALISI SPECIFICA CASA/TRASFERTA
+            const specificAnalysis = analyzeSpecificLocationTendencies(teamNorm, isHome, tip, dbCompleto);
+            
+            // 3. COMBINAZIONE INTELLIGENTE DEI RISULTATI
+            return combineAnalysisResults(generalAnalysis, specificAnalysis, isHome);
+        }
+
+        // NUOVA: Analisi delle tendenze generali over/under
+        function analyzeGeneralOverUnderTendencies(teamNorm, tip, dbCompleto) {
+            // Filtra tutte le partite della squadra (casa + trasferta)
+            let allMatches = dbCompleto.filter(row => {
                 const team1 = normalizeTeam((row.partita || '').split(' - ')[0] || '');
-                const team2Arr = (row.partita || '').split(' - ');
-                const team2 = team2Arr.length > 1 ? normalizeTeam(team2Arr.slice(1).join(' - ')) : '';
+                const team2 = normalizeTeam((row.partita || '').split(' - ').slice(1).join(' - ') || '');
+                return team1 === teamNorm || team2 === teamNorm;
+            });
+
+            // Ordina per data (più recenti prima)
+            allMatches.sort((a, b) => new Date(b.data || '2000-01-01') - new Date(a.data || '2000-01-01'));
+
+            // Calcola statistiche gol generali
+            const goalsStats = calculateGoalsStatistics(allMatches, teamNorm);
+            
+            // Filtra per tip specifici over/under
+            const relevantMatches = filterMatchesByTipRange(allMatches, tip);
+            
+            // Calcola success rate
+            const successData = calculateSuccessRate(relevantMatches, tip, teamNorm);
+            
+            return {
+                matches: relevantMatches,
+                goalsStats: goalsStats,
+                successRate: successData,
+                analysisType: 'general'
+            };
+        }
+
+        // NUOVA: Analisi specifica per location
+        function analyzeSpecificLocationTendencies(teamNorm, isHome, tip, dbCompleto) {
+            // Filtra solo partite casa o trasferta
+            let locationMatches = dbCompleto.filter(row => {
+                const team1 = normalizeTeam((row.partita || '').split(' - ')[0] || '');
+                const team2 = normalizeTeam((row.partita || '').split(' - ').slice(1).join(' - ') || '');
                 
                 if (isHome) return team1 === teamNorm;
                 else return team2 === teamNorm;
             });
 
-            // Ordina per data (più recenti prima)
-            teamMatchesSpecific.sort((a, b) => {
-                const dateA = new Date(a.data || '2000-01-01');
-                const dateB = new Date(b.data || '2000-01-01');
-                return dateB - dateA;
-            });
+            locationMatches.sort((a, b) => new Date(b.data || '2000-01-01') - new Date(a.data || '2000-01-01'));
 
-            // 2. TIP ALLARGATI (OPZIONE D)
-            let relevantMatches = [];
+            const goalsStats = calculateGoalsStatistics(locationMatches, teamNorm);
+            const relevantMatches = filterMatchesByTipRange(locationMatches, tip);
+            const successData = calculateSuccessRate(relevantMatches, tip, teamNorm);
             
-            if (tip.startsWith('+')) {
-                // OVER: escludo solo UNDER e includo anche altri OVER
-                // +1.5 include anche +2.5, +3.5
-                relevantMatches = teamMatchesSpecific.filter(m => {
-                    const mTip = m.tip || '';
-                    return !mTip.startsWith('-'); // Escludo solo under
-                });
-            } else if (tip.startsWith('-')) {
-                // UNDER: escludo solo OVER e includo anche altri UNDER
-                // -3.5 include anche -2.5, -1.5
-                relevantMatches = teamMatchesSpecific.filter(m => {
-                    const mTip = m.tip || '';
-                    return !mTip.startsWith('+'); // Escludo solo over
-                });
-            } else {
-                // 1X2: tutti
-                relevantMatches = teamMatchesSpecific;
-            }
+            return {
+                matches: relevantMatches,
+                goalsStats: goalsStats,
+                successRate: successData,
+                analysisType: isHome ? 'home' : 'away'
+            };
+        }
 
-            // 3. FALLBACK A PARTITE TOTALI SE < 3 (OPZIONE D)
-            if (relevantMatches.length < 3) {
-                console.log(`⚠️ ${teamName}: Solo ${relevantMatches.length} partite ${isHome ? 'casa' : 'trasferta'}, cerco TOTALI...`);
-                
-                // Cerco tutte le partite della squadra (casa+trasferta)
-                let teamMatchesAll = dbCompleto.filter(row => {
-                    const team1 = normalizeTeam((row.partita || '').split(' - ')[0] || '');
-                    const team2Arr = (row.partita || '').split(' - ');
-                    const team2 = team2Arr.length > 1 ? normalizeTeam(team2Arr.slice(1).join(' - ')) : '';
-                    return team1 === teamNorm || team2 === teamNorm;
-                });
-
-                teamMatchesAll.sort((a, b) => {
-                    const dateA = new Date(a.data || '2000-01-01');
-                    const dateB = new Date(b.data || '2000-01-01');
-                    return dateB - dateA;
-                });
-
-                // Applico stesso filtro tip
-                if (tip.startsWith('+')) {
-                    relevantMatches = teamMatchesAll.filter(m => !m.tip.startsWith('-'));
-                } else if (tip.startsWith('-')) {
-                    relevantMatches = teamMatchesAll.filter(m => !m.tip.startsWith('+'));
-                } else {
-                    relevantMatches = teamMatchesAll;
-                }
-            }
-
-            // 4. MINIMO 3 PARTITE (OPZIONE D)
-            const minMatches = 3;
-            const matchesToConsider = relevantMatches.slice(0, Math.max(minMatches, 5)); // Prendo fino a 5 se disponibili
-
-            if (matchesToConsider.length < minMatches) {
+        // NUOVA: Calcolo statistiche gol dettagliate
+        function calculateGoalsStatistics(matches, teamNorm) {
+            if (matches.length === 0) {
                 return {
-                    color: 'black',
-                    stats: `(${matchesToConsider.length}/${minMatches}*)`,
-                    tooltip: `Solo ${matchesToConsider.length} partite con tip coerenti - dati insufficienti (min ${minMatches})`,
-                    count: matchesToConsider.length,
-                    total: minMatches
+                    avgGoalsScored: 0,
+                    avgGoalsConceded: 0,
+                    avgTotalGoals: 0,
+                    overTendency: 0,
+                    underTendency: 0
                 };
             }
 
-            // 5. CALCOLA SUCCESSI
-            let successCount = 0;
-            const totalConsidered = matchesToConsider.length;
+            let totalScored = 0, totalConceded = 0, totalGoals = 0;
+            let overCount = 0, underCount = 0;
 
-            for (const match of matchesToConsider) {
+            matches.forEach(match => {
+                const risultato = match.risultato || '';
+                const golMatch = risultato.match(/(\d+)\s*-\s*(\d+)/);
+                
+                if (!golMatch) return;
+
+                const golCasa = parseInt(golMatch[1]);
+                const golTrasferta = parseInt(golMatch[2]);
+                const team1 = normalizeTeam((match.partita || '').split(' - ')[0] || '');
+                const team2 = normalizeTeam((match.partita || '').split(' - ').slice(1).join(' - ') || '');
+
+                let scored = 0, conceded = 0;
+                
+                if (team1 === teamNorm) {
+                    scored = golCasa;
+                    conceded = golTrasferta;
+                } else {
+                    scored = golTrasferta;
+                    conceded = golCasa;
+                }
+
+                totalScored += scored;
+                totalConceded += conceded;
+                totalGoals += golCasa + golTrasferta;
+
+                if (golCasa + golTrasferta > 2.5) overCount++;
+                else underCount++;
+            });
+
+            const validMatches = matches.filter(m => m.risultato && m.risultato.match(/\d+\s*-\s*\d+/)).length;
+
+            return {
+                avgGoalsScored: (totalScored / validMatches).toFixed(2),
+                avgGoalsConceded: (totalConceded / validMatches).toFixed(2),
+                avgTotalGoals: (totalGoals / validMatches).toFixed(2),
+                overTendency: (overCount / validMatches * 100).toFixed(0),
+                underTendency: (underCount / validMatches * 100).toFixed(0),
+                sampleSize: validMatches
+            };
+        }
+
+        // NUOVA: Filtro tips più specifico per range
+        function filterMatchesByTipRange(matches, tip) {
+            if (!tip.startsWith('+') && !tip.startsWith('-')) {
+                // Per 1X2, prendi tutto
+                return matches;
+            }
+
+            const soglia = parseFloat(tip.substring(1));
+            
+            return matches.filter(m => {
+                const mTip = m.tip || '';
+                
+                if (tip.startsWith('+')) {
+                    // OVER: includi solo over con range simile
+                    if (!mTip.startsWith('+')) return false;
+                    const mSoglia = parseFloat(mTip.substring(1));
+                    // Includi range simili (es. per +2.5 includi +1.5, +2.5, +3.5)
+                    return Math.abs(mSoglia - soglia) <= 1.0;
+                } else {
+                    // UNDER: includi solo under con range simile
+                    if (!mTip.startsWith('-')) return false;
+                    const mSoglia = parseFloat(mTip.substring(1));
+                    return Math.abs(mSoglia - soglia) <= 1.0;
+                }
+            });
+        }
+
+        // NUOVA: Calcolo success rate migliorato
+        function calculateSuccessRate(matches, tip, teamNorm) {
+            if (matches.length === 0) {
+                return { count: 0, total: 0, percentage: 0 };
+            }
+
+            let successCount = 0;
+            const totalConsidered = Math.min(matches.length, 5); // Max 5 partite più recenti
+
+            for (let i = 0; i < totalConsidered && i < matches.length; i++) {
+                const match = matches[i];
                 const risultato = match.risultato || '';
                 const golMatch = risultato.match(/(\d+)\s*-\s*(\d+)/);
                 
@@ -865,6 +1041,10 @@
                 const golCasa = parseInt(golMatch[1]);
                 const golTrasferta = parseInt(golMatch[2]);
                 const golTotali = golCasa + golTrasferta;
+                
+                const team1 = normalizeTeam((match.partita || '').split(' - ')[0] || '');
+                const isHome = team1 === teamNorm;
+                
                 let success = false;
 
                 if (tip.startsWith('+')) {
@@ -879,43 +1059,72 @@
                     success = (golCasa === golTrasferta);
                 } else if (tip === '2') {
                     success = isHome ? (golCasa < golTrasferta) : (golCasa > golTrasferta);
-                } else if (tip === '1X') {
-                    success = isHome ? (golCasa >= golTrasferta) : (golCasa <= golTrasferta);
-                } else if (tip === 'X2') {
-                    success = isHome ? (golCasa <= golTrasferta) : (golCasa >= golTrasferta);
-                } else if (tip === '12') {
-                    success = (golCasa !== golTrasferta);
                 }
 
                 if (success) successCount++;
             }
 
-            // 6. RANGE COLORI ADATTATI (OPZIONE D)
-            let color = 'black';
-            const percentage = (successCount / totalConsidered) * 100;
+            return {
+                count: successCount,
+                total: totalConsidered,
+                percentage: (successCount / totalConsidered * 100).toFixed(0)
+            };
+        }
+
+        // NUOVA: Combinazione intelligente dei risultati
+        function combineAnalysisResults(general, specific, isHome) {
+            const minMatches = 3;
             
-            if (totalConsidered >= 5) {
-                // 5 partite: uso range originale
-                if (successCount >= 4) color = 'green';      // 80-100%
-                else if (successCount === 3) color = 'yellow'; // 60%
-                else color = 'red';                            // <60%
-            } else if (totalConsidered >= 3) {
-                // 3-4 partite: range adattato
-                if (successCount === totalConsidered) color = 'green';      // 100%
-                else if (percentage >= 66) color = 'green';                  // >=66%
-                else if (percentage >= 50) color = 'yellow';                 // 50-65%
-                else color = 'red';                                          // <50%
+            // Priorità all'analisi specifica se ha dati sufficienti
+            if (specific.matches.length >= minMatches) {
+                return createResultObject(specific, isHome ? 'casa' : 'trasferta');
+            }
+            
+            // Fallback all'analisi generale
+            if (general.matches.length >= minMatches) {
+                return createResultObject(general, 'totali (fallback)');
+            }
+            
+            // Dati insufficienti - NERO (non rosso)
+            return {
+                color: 'black',
+                stats: `(${Math.max(specific.matches.length, general.matches.length)}/${minMatches}*)`,
+                tooltip: `Solo ${Math.max(specific.matches.length, general.matches.length)} partite pertinenti - dati insufficienti (min ${minMatches})\n⚠️ Valutazione manuale consigliata`,
+                count: 0,
+                total: minMatches
+            };
+        }
+
+        // NUOVA: Creazione oggetto risultato
+        function createResultObject(analysis, location) {
+            const { successRate, goalsStats } = analysis;
+            
+            // Calcolo colore basato su success rate e tendenze gol
+            let color = 'black';
+            const percentage = parseFloat(successRate.percentage);
+            
+            if (analysis.matches.length >= 5) {
+                if (successRate.count >= 4) color = 'green';
+                else if (successRate.count === 3) color = 'yellow';
+                else color = 'red';
+            } else if (analysis.matches.length >= 3) {
+                if (percentage > 45) color = 'green';      // Solo sopra 45% verde
+                else if (percentage >= 20) color = 'yellow'; // 20-45% giallo
+                else color = 'red';                         // Sotto 20% rosso
             }
 
-            const location = isHome ? 'casa' : 'trasferta';
-            const locationUsed = relevantMatches.length >= totalConsidered ? location : 'totali (fallback)';
+            // Tooltip migliorato con statistiche gol
+            const tooltip = `${successRate.count} su ${successRate.total} (${successRate.percentage}%) - ${location}\n` +
+                           `Media gol: ${goalsStats.avgTotalGoals} (Fatti: ${goalsStats.avgGoalsScored}, Subiti: ${goalsStats.avgGoalsConceded})\n` +
+                           `Tendenza: Over ${goalsStats.overTendency}% / Under ${goalsStats.underTendency}%`;
 
             return {
                 color: color,
-                stats: `(${successCount}/${totalConsidered})`,
-                tooltip: `${successCount} su ${totalConsidered} ultime partite ${locationUsed} con tip coerente (${percentage.toFixed(0)}%)`,
-                count: successCount,
-                total: totalConsidered
+                stats: `(${successRate.count}/${successRate.total})`,
+                tooltip: tooltip,
+                count: successRate.count,
+                total: successRate.total,
+                goalsStats: goalsStats
             };
         }
 
@@ -1014,6 +1223,44 @@
                     }
                 }
 
+                // Aggiungi questo controllo dopo aver caricato i file ma prima di applicare i filtri
+                // Rimuovi duplicati dal fileGiorno basandoti su partita e tip
+                const uniqueMatches = [];
+                const seenMatches = new Set();
+                
+                fileGiorno.forEach(row => {
+                    // Aggiungi controlli per campi mancanti
+                    const partita = (row.Partita || row.partita || '').toString().trim();
+                    const tip = (row.Tip || row.tip || '').toString().trim();
+                    
+                    // Salta righe con dati mancanti
+                    if (!partita || !tip) {
+                        console.log('⚠️ Riga saltata - dati mancanti:', row);
+                        return;
+                    }
+                    
+                    const matchKey = `${partita}_${tip}`;
+                    if (!seenMatches.has(matchKey)) {
+                        seenMatches.add(matchKey);
+                        uniqueMatches.push(row);
+                    }
+                });
+                
+                fileGiorno = uniqueMatches;
+                console.log('✅ Rimossi duplicati:', fileGiorno.length, 'partite uniche');
+                
+                // Filtra righe con dati incompleti
+                fileGiorno = fileGiorno.filter(row => {
+                    const partita = (row.Partita || row.partita || '').toString().trim();
+                    const tip = (row.Tip || row.tip || '').toString().trim();
+                    const lega = (row.Lega || row.lega || '').toString().trim();
+                    const quota = (row.Quota || row.quota || '').toString().trim();
+                    
+                    return partita && tip && lega && quota;
+                });
+                
+                console.log('✅ File filtrato:', fileGiorno.length, 'partite complete');
+
                 container.innerHTML = '<div class="loading">🔄 Selezione intelligente...</div>';
 
                 const legheSet = new Set();
@@ -1030,6 +1277,13 @@
                         tipsSet.add(normalizedTip);
                     }
                 });
+                
+                // NUOVO: Analizza performance leghe se disponibile database completo
+                let leaguePerformance = {};
+                if (fileDatabaseCompleto && fileDatabaseCompleto.length > 0) {
+                    leaguePerformance = analyzeLeaguePerformance(fileDatabaseCompleto);
+                    console.log('✅ Analizzate performance leghe:', Object.keys(leaguePerformance).length, 'leghe');
+                }
 
                 let selections = fileGiorno.filter(row => {
                     const lega = (row.lega || row.Lega || '').toLowerCase().trim();
@@ -1045,7 +1299,7 @@
                     return;
                 }
 
-                selections.forEach(s => Object.assign(s, calculateScore(s, legheSet, tipsSet)));
+                selections.forEach(s => Object.assign(s, calculateScore(s, legheSet, tipsSet, leaguePerformance)));
                 selections.sort((a, b) => b.totalScore - a.totalScore);
                 selections = selections.filter(s => s.totalScore >= scoreThreshold && s.quotaValid);
                 selections = selections.slice(0, maxPartite);
@@ -1060,6 +1314,7 @@
                         ✅ Selezionate <strong>${selections.length}</strong> partite (Score ≥ ${scoreThreshold})<br>
                         📅 Data: ${selectedDate} | 🎯 Strategia: ${strategy}
                         ${fileDatabaseCompleto ? '<br>🎨 <strong>Analisi statistica OTTIMIZZATA attiva! (Min 3, Fallback totali)</strong>' : '<br>⚫ Carica Database Completo per analisi squadre'}
+                        ${Object.keys(leaguePerformance).length > 0 ? '<br>🏆 <strong>Analisi performance leghe attiva!</strong>' : ''}
                     </div>
                     <table>
                         <thead>
@@ -1083,18 +1338,36 @@
 
                     const team1Stats = analyzeTeamStats(team1, true, tip, fileDatabaseCompleto);
                     const team2Stats = analyzeTeamStats(team2, false, tip, fileDatabaseCompleto);
+                    
+                    // Calcola percentuale di successo per colorazione
+                    const team1Percentage = team1Stats.total > 0 ? (team1Stats.count / team1Stats.total * 100) : 0;
+                    const team2Percentage = team2Stats.total > 0 ? (team2Stats.count / team2Stats.total * 100) : 0;
+                    
+                    // Determina colore per team1
+                    let team1ColorClass = 'team-black';
+                    if (team1Percentage > 45) team1ColorClass = 'team-green';      // Solo sopra 45% verde
+                    else if (team1Percentage >= 20) team1ColorClass = 'team-yellow'; // 20-45% giallo
+                    else if (team1Percentage > 0) team1ColorClass = 'team-red';     // Sotto 20% rosso
+                    // altrimenti rimane nero per dati insufficienti
+                    
+                    // Determina colore per team2
+                    let team2ColorClass = 'team-black';
+                    if (team2Percentage > 45) team2ColorClass = 'team-green';      // Solo sopra 45% verde
+                    else if (team2Percentage >= 20) team2ColorClass = 'team-yellow'; // 20-45% giallo
+                    else if (team2Percentage > 0) team2ColorClass = 'team-red';     // Sotto 20% rosso
+                    // altrimenti rimane nero per dati insufficienti
 
                     html += `
                         <tr>
                             <td style="font-size: 11px;">${s.Lega || s.lega}</td>
                             <td style="font-weight: 500;">
-                                <span class="team-name team-${team1Stats.color}">
+                                <span class="team-name ${team1ColorClass}">
                                     ${team1}
                                     <span class="team-stats">${team1Stats.stats}</span>
                                     <span class="team-tooltip">${team1Stats.tooltip}</span>
                                 </span>
                                 -
-                                <span class="team-name team-${team2Stats.color}">
+                                <span class="team-name ${team2ColorClass}">
                                     ${team2}
                                     <span class="team-stats">${team2Stats.stats}</span>
                                     <span class="team-tooltip">${team2Stats.tooltip}</span>
@@ -1114,7 +1387,44 @@
                 container.innerHTML += '<div class="loading">💾 Salvataggio...</div>';
                 
                 let savedCount = 0;
+                const duplicateKeys = new Set();
+
                 for (const s of selections) {
+                    // Calcola le statistiche per questa partita
+                    const partitaSplit = (s.Partita || s.partita).split(' - ');
+                    const team1 = partitaSplit[0] || '';
+                    const team2 = partitaSplit.slice(1).join(' - ') || '';
+                    const tip = s.Tip || s.tip;
+
+                    const team1Stats = analyzeTeamStats(team1, true, tip, fileDatabaseCompleto);
+                    const team2Stats = analyzeTeamStats(team2, false, tip, fileDatabaseCompleto);
+                    
+                    // Crea una chiave unica per identificare duplicati
+                    const duplicateKey = `${selectedDate}_${strategy}_${(s.Partita || s.partita).trim()}_${(s.Tip || s.tip).trim()}`;
+                    
+                    // Verifica se questa partita è già stata salvata in questa sessione
+                    if (duplicateKeys.has(duplicateKey)) {
+                        console.log('⚠️ Duplicato ignorato:', duplicateKey);
+                        continue;
+                    }
+                    
+                    // Verifica se esiste già su Firebase
+                    const existingDoc = await db.collection('aipredictions')
+                        .where('date', '==', selectedDate)
+                        .where('user', '==', strategy)
+                        .where('partita', '==', (s.Partita || s.partita).trim())
+                        .where('tip', '==', (s.Tip || s.tip).trim())
+                        .get();
+                    
+                    if (!existingDoc.empty) {
+                        console.log('⚠️ Partita già esistente su Firebase:', duplicateKey);
+                        continue;
+                    }
+                    
+                    // Aggiungi alla lista dei duplicati evitati
+                    duplicateKeys.add(duplicateKey);
+                    
+                     // Salva su Firebase con statistiche colori
                     await db.collection('aipredictions').add({
                         date: selectedDate,
                         user: strategy,
@@ -1127,7 +1437,28 @@
                         score: s.totalScore,
                         status: 'PENDING',
                         risultato: '',
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        // NUOVO: Statistiche per colori con controlli null
+                        team1Stats: {
+                            count: team1Stats.count || 0,
+                            total: team1Stats.total || 0,
+                            percentage: team1Stats.total > 0 ? (team1Stats.count / team1Stats.total * 100) : 0,
+                            avgGoalsScored: (team1Stats.goalsStats && team1Stats.goalsStats.avgGoalsScored) || 0,
+                            avgGoalsConceded: (team1Stats.goalsStats && team1Stats.goalsStats.avgGoalsConceded) || 0,
+                            avgTotalGoals: (team1Stats.goalsStats && team1Stats.goalsStats.avgTotalGoals) || 0,
+                            overTendency: (team1Stats.goalsStats && team1Stats.goalsStats.overTendency) || 0,
+                            underTendency: (team1Stats.goalsStats && team1Stats.goalsStats.underTendency) || 0
+                        },
+                        team2Stats: {
+                            count: team2Stats.count || 0,
+                            total: team2Stats.total || 0,
+                            percentage: team2Stats.total > 0 ? (team2Stats.count / team2Stats.total * 100) : 0,
+                            avgGoalsScored: (team2Stats.goalsStats && team2Stats.goalsStats.avgGoalsScored) || 0,
+                            avgGoalsConceded: (team2Stats.goalsStats && team2Stats.goalsStats.avgGoalsConceded) || 0,
+                            avgTotalGoals: (team2Stats.goalsStats && team2Stats.goalsStats.avgTotalGoals) || 0,
+                            overTendency: (team2Stats.goalsStats && team2Stats.goalsStats.overTendency) || 0,
+                            underTendency: (team2Stats.goalsStats && team2Stats.goalsStats.underTendency) || 0
+                        }
                     });
                     savedCount++;
                 }
@@ -1141,10 +1472,6 @@
                 container.innerHTML = `<div class="error-message">❌ Errore: ${error.message}</div>`;
             }
         }
-
-        // [RESTO FUNZIONI DATABASE/STATS IDENTICHE - Omesse per brevità ma vanno mantenute dall'HTML precedente]
-        // viewFilteredPredictions, deleteFilteredPredictions, deleteAllUserPredictions, 
-        // applicaFiltriEStats, normalizeTeamName, aggiornaRisultati
 
         async function viewFilteredPredictions() {
             if (!firebaseReady) return alert('⏳ Attendi...');
@@ -1169,11 +1496,67 @@
                 for (const p of filtered) {
                     const statusClass = p.status === 'WIN' ? 'win' : p.status === 'LOSE' ? 'lose' : 'pending';
                     const strategyClass = p.user === 'SELEZIONE' ? 'selezione' : 'esteso';
-                    html += `<tr><td>${p.date}</td><td><span class="badge badge-${strategyClass}">${p.user}</span></td>
-                        <td style="font-size: 11px;">${p.lega}</td><td style="font-weight: 500;">${p.partita}</td>
-                        <td><span class="badge badge-${strategyClass}">${p.tip}</span></td><td>${p.quota}</td>
-                        <td>${p.probabilita}</td><td><span class="score-badge">${p.score || '-'}</span></td>
-                        <td>${p.risultato || '-'}</td><td><span class="badge badge-${statusClass}">${p.status}</span></td></tr>`;
+                    
+                    // Calcola colori basati su statistiche memorizzate
+                    const partitaSplit = p.partita.split(' - ');
+                    const team1 = partitaSplit[0] || '';
+                    const team2 = partitaSplit.slice(1).join(' - ') || '';
+                    
+                    // Team 1
+                    let team1ColorClass = 'team-black';
+                    if (p.team1Stats && p.team1Stats.total > 0) {
+                        const percentage = p.team1Stats.percentage;
+                        if (percentage > 45) team1ColorClass = 'team-green';
+                        else if (percentage >= 20) team1ColorClass = 'team-yellow';
+                        else if (percentage > 0) team1ColorClass = 'team-red';
+                    }
+                    
+                    // Team 2
+                    let team2ColorClass = 'team-black';
+                    if (p.team2Stats && p.team2Stats.total > 0) {
+                        const percentage = p.team2Stats.percentage;
+                        if (percentage > 45) team2ColorClass = 'team-green';
+                        else if (percentage >= 20) team2ColorClass = 'team-yellow';
+                        else if (percentage > 0) team2ColorClass = 'team-red';
+                    }
+                    
+                    // Tooltip con statistiche
+                    const team1Tooltip = p.team1Stats ? 
+                        `${p.team1Stats.count}/${p.team1Stats.total} (${p.team1Stats.percentage}%)\n` +
+                        `Media gol: ${p.team1Stats.avgTotalGoals} (Fatti: ${p.team1Stats.avgGoalsScored}, Subiti: ${p.team1Stats.avgGoalsConceded})\n` +
+                        `Tendenza: Over ${p.team1Stats.overTendency}% / Under ${p.team1Stats.underTendency}%` : 
+                        'Statistiche non disponibili';
+                        
+                    const team2Tooltip = p.team2Stats ? 
+                        `${p.team2Stats.count}/${p.team2Stats.total} (${p.team2Stats.percentage}%)\n` +
+                        `Media gol: ${p.team2Stats.avgTotalGoals} (Fatti: ${p.team2Stats.avgGoalsScored}, Subiti: ${p.team2Stats.avgGoalsConceded})\n` +
+                        `Tendenza: Over ${p.team2Stats.overTendency}% / Under ${p.team2Stats.underTendency}%` : 
+                        'Statistiche non disponibili';
+                    
+                    html += `<tr>
+                        <td>${p.date}</td>
+                        <td><span class="badge badge-${strategyClass}">${p.user}</span></td>
+                        <td style="font-size: 11px;">${p.lega}</td>
+                        <td style="font-weight: 500;">
+                            <span class="team-name ${team1ColorClass}">
+                                ${team1}
+                                <span class="team-stats">(${p.team1Stats ? p.team1Stats.count + '/' + p.team1Stats.total : '?/?'})</span>
+                                <span class="team-tooltip">${team1Tooltip}</span>
+                            </span>
+                            -
+                            <span class="team-name ${team2ColorClass}">
+                                ${team2}
+                                <span class="team-stats">(${p.team2Stats ? p.team2Stats.count + '/' + p.team2Stats.total : '?/?'})</span>
+                                <span class="team-tooltip">${team2Tooltip}</span>
+                            </span>
+                        </td>
+                        <td><span class="badge badge-${strategyClass}">${p.tip}</span></td>
+                        <td>${p.quota}</td>
+                        <td>${p.probabilita}</td>
+                        <td><span class="score-badge">${p.score || '-'}</span></td>
+                        <td>${p.risultato || '-'}</td>
+                        <td><span class="badge badge-${statusClass}">${p.status}</span></td>
+                    </tr>`;
                 }
                 html += '</tbody></table>';
                 container.innerHTML = html;
@@ -1221,103 +1604,193 @@
                 await loadAllPredictions();
                 const filterUser = document.getElementById('stats-filter-user').value;
                 const filterStatus = document.getElementById('stats-filter-status').value;
-                const dateFrom = document.getElementById('stats-filter-date-from').value;
-                const dateTo = document.getElementById('stats-filter-date-to').value;
+                const filterDateFrom = document.getElementById('stats-filter-date-from').value;
+                const filterDateTo = document.getElementById('stats-filter-date-to').value;
+                
                 let filtered = allPredictions;
                 if (filterUser !== 'all') filtered = filtered.filter(p => p.user === filterUser);
                 if (filterStatus !== 'all') filtered = filtered.filter(p => p.status === filterStatus);
-                if (dateFrom) filtered = filtered.filter(p => p.date >= dateFrom);
-                if (dateTo) filtered = filtered.filter(p => p.date <= dateTo);
+                if (filterDateFrom) filtered = filtered.filter(p => p.date >= filterDateFrom);
+                if (filterDateTo) filtered = filtered.filter(p => p.date <= filterDateTo);
+                
+                if (filtered.length === 0) {
+                    container.innerHTML = '<p class="info-box">Nessun pronostico trovato con i filtri selezionati</p>';
+                    return;
+                }
+                
                 const total = filtered.length;
                 const won = filtered.filter(p => p.status === 'WIN').length;
                 const lost = filtered.filter(p => p.status === 'LOSE').length;
                 const pending = filtered.filter(p => p.status === 'PENDING').length;
                 const winRate = total > 0 ? ((won / total) * 100).toFixed(1) : 0;
-                let html = `<div class="stats-grid">
-                    <div class="stat-card"><div class="stat-label">Totale</div><div class="stat-value">${total}</div></div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);"><div class="stat-label">Vinte</div><div class="stat-value">${won}</div></div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #f44336 0%, #e53935 100%);"><div class="stat-label">Perse</div><div class="stat-value">${lost}</div></div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);"><div class="stat-label">Pending</div><div class="stat-value">${pending}</div></div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);"><div class="stat-label">Win Rate</div><div class="stat-value">${winRate}%</div></div>
-                </div><table><thead><tr><th class="col-date">Data</th><th class="col-strategy">Strategia</th><th class="col-league">Lega</th>
-                <th class="col-match">Partita</th><th class="col-tip">Tip</th><th class="col-quota">Quota</th><th class="col-prob">Prob</th>
-                <th class="col-result">Risultato</th><th class="col-status">Esito</th></tr></thead><tbody>`;
+                
+                let html = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Partite Totali</div>
+                            <div class="stat-value">${total}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Vinte</div>
+                            <div class="stat-value">${won}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Perse</div>
+                            <div class="stat-value">${lost}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Pending</div>
+                            <div class="stat-value">${pending}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Win-Rate</div>
+                            <div class="stat-value">${winRate}%</div>
+                        </div>
+                    </div>
+                    
+                    <h3>📊 Dettaglio Pronostici</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="col-date">Data</th>
+                                <th class="col-strategy">Strategia</th>
+                                <th class="col-league">Lega</th>
+                                <th class="col-match">Partita</th>
+                                <th class="col-tip">Tip</th>
+                                <th class="col-quota">Quota</th>
+                                <th class="col-prob">Prob</th>
+                                <th class="col-score">Score</th>
+                                <th class="col-result">Risultato</th>
+                                <th class="col-status">Esito</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
                 for (const p of filtered) {
                     const statusClass = p.status === 'WIN' ? 'win' : p.status === 'LOSE' ? 'lose' : 'pending';
                     const strategyClass = p.user === 'SELEZIONE' ? 'selezione' : 'esteso';
-                    html += `<tr><td>${p.date}</td><td><span class="badge badge-${strategyClass}">${p.user}</span></td>
-                        <td style="font-size: 11px;">${p.lega}</td><td style="font-weight: 500;">${p.partita}</td>
-                        <td><span class="badge badge-${strategyClass}">${p.tip}</span></td><td>${p.quota}</td><td>${p.probabilita}</td>
-                        <td>${p.risultato || '-'}</td><td><span class="badge badge-${statusClass}">${p.status}</span></td></tr>`;
+                    html += `<tr>
+                        <td>${p.date}</td>
+                        <td><span class="badge badge-${strategyClass}">${p.user}</span></td>
+                        <td style="font-size: 11px;">${p.lega}</td>
+                        <td style="font-weight: 500;">${p.partita}</td>
+                        <td><span class="badge badge-${strategyClass}">${p.tip}</span></td>
+                        <td>${p.quota}</td>
+                        <td>${p.probabilita}</td>
+                        <td><span class="score-badge">${p.score || '-'}</span></td>
+                        <td>${p.risultato || '-'}</td>
+                        <td><span class="badge badge-${statusClass}">${p.status}</span></td>
+                    </tr>`;
                 }
+                
                 html += '</tbody></table>';
                 container.innerHTML = html;
+                
             } catch (error) {
+                console.error('❌ Errore:', error);
                 container.innerHTML = `<div class="error-message">❌ Errore: ${error.message}</div>`;
             }
         }
 
-        function normalizeTeamName(str) {
-            if (!str) return '';
-            return str.toLowerCase().replace(/[àáâãäå]/g, 'a').replace(/[èéêë]/g, 'e')
-                .replace(/[ìíîï]/g, 'i').replace(/[òóôõö]/g, 'o').replace(/[ùúûü]/g, 'u')
-                .replace(/[ýÿ]/g, 'y').replace(/[ñ]/g, 'n').replace(/[ç]/g, 'c')
-                .replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+        function normalizeTeamName(teamName) {
+            return teamName.toLowerCase()
+                        .replace(/\s+/g, ' ')
+                        .replace(/[^\w\s-]/g, '')
+                        .trim();
         }
 
         async function aggiornaRisultati() {
-            if (!firebaseReady || !fileRisultati) return alert('⚠️ Carica file risultati!');
+            if (!fileRisultati) {
+                alert('⚠️ Carica prima il file risultati!');
+                return;
+            }
+            
+            if (!firebaseReady) {
+                alert('⚠️ Firebase non pronto!');
+                return;
+            }
+            
             const container = document.getElementById('statistiche-container');
-            container.innerHTML = '<div class="loading">🔄 Aggiornamento...</div>';
+            container.innerHTML = '<div class="loading">🔄 Aggiornamento risultati...</div>';
+            
             try {
                 await loadAllPredictions();
-                let updatedCount = 0, notFoundCount = 0;
-                for (const pred of allPredictions) {
-                    const predTeams = normalizeTeamName(pred.partita);
-                    const matchingResult = fileRisultati.find(r => normalizeTeamName(r.partita) === predTeams);
-                    if (matchingResult && matchingResult.risultato) {
-                        const risultato = matchingResult.risultato.trim();
+                
+                let updatedCount = 0;
+                let notFoundCount = 0;
+                
+                for (const prediction of allPredictions) {
+                    if (prediction.status !== 'PENDING') continue;
+                    
+                    const matchResult = fileRisultati.find(r => {
+                        const resultMatch = normalizeTeamName(r.partita || r.Partita || '');
+                        const predMatch = normalizeTeamName(prediction.partita);
+                        return resultMatch === predMatch;
+                    });
+                    
+                    if (matchResult) {
+                        const risultato = matchResult.risultato || matchResult.Risultato || '';
                         const golMatch = risultato.match(/(\d+)\s*-\s*(\d+)/);
+                        
                         if (golMatch) {
                             const golCasa = parseInt(golMatch[1]);
                             const golTrasferta = parseInt(golMatch[2]);
-                            const totaleGol = golCasa + golTrasferta;
-                            let esito = 'PENDING';
-                            const tip = pred.tip.trim();
+                            const golTotali = golCasa + golTrasferta;
+                            
+                            let status = 'LOSE';
+                            const tip = prediction.tip;
+                            
                             if (tip.startsWith('+')) {
                                 const soglia = parseFloat(tip.substring(1));
-                                esito = totaleGol > soglia ? 'WIN' : 'LOSE';
+                                status = golTotali > soglia ? 'WIN' : 'LOSE';
                             } else if (tip.startsWith('-')) {
                                 const soglia = parseFloat(tip.substring(1));
-                                esito = totaleGol < soglia ? 'WIN' : 'LOSE';
-                            } else if (['1X', 'X2', '12'].includes(tip)) {
-                                if (tip === '1X') esito = (golCasa >= golTrasferta) ? 'WIN' : 'LOSE';
-                                else if (tip === 'X2') esito = (golTrasferta >= golCasa) ? 'WIN' : 'LOSE';
-                                else if (tip === '12') esito = (golCasa !== golTrasferta) ? 'WIN' : 'LOSE';
-                            } else if (['1', 'X', '2'].includes(tip)) {
-                                if (tip === '1') esito = golCasa > golTrasferta ? 'WIN' : 'LOSE';
-                                else if (tip === 'X') esito = golCasa === golTrasferta ? 'WIN' : 'LOSE';
-                                else if (tip === '2') esito = golTrasferta > golCasa ? 'WIN' : 'LOSE';
+                                status = golTotali < soglia ? 'WIN' : 'LOSE';
+                            } else if (tip === '1') {
+                                const partitaSplit = prediction.partita.split(' - ');
+                                const team1 = normalizeTeamName(partitaSplit[0]);
+                                const fileMatch = normalizeTeamName(matchResult.partita || matchResult.Partita || '');
+                                const isHome = fileMatch.startsWith(team1);
+                                status = isHome ? (golCasa > golTrasferta ? 'WIN' : 'LOSE') : (golCasa < golTrasferta ? 'WIN' : 'LOSE');
+                            } else if (tip === 'X') {
+                                status = (golCasa === golTrasferta) ? 'WIN' : 'LOSE';
+                            } else if (tip === '2') {
+                                const partitaSplit = prediction.partita.split(' - ');
+                                const team1 = normalizeTeamName(partitaSplit[0]);
+                                const fileMatch = normalizeTeamName(matchResult.partita || matchResult.Partita || '');
+                                const isHome = fileMatch.startsWith(team1);
+                                status = isHome ? (golCasa < golTrasferta ? 'WIN' : 'LOSE') : (golCasa > golTrasferta ? 'WIN' : 'LOSE');
                             }
-                            await db.collection('aipredictions').doc(pred.id).update({
-                                risultato: risultato,
-                                status: esito
+                            
+                            await db.collection('aipredictions').doc(prediction.id).update({
+                                status: status,
+                                risultato: risultato
                             });
+                            
                             updatedCount++;
                         }
                     } else {
                         notFoundCount++;
                     }
                 }
-                container.innerHTML = `<div class="success-message">✅ Completato!<br>${updatedCount} aggiornate | ${notFoundCount} non trovate</div>`;
-                setTimeout(() => applicaFiltriEStats(), 1000);
+                
+                container.innerHTML = `
+                    <div class="success-message">
+                        ✅ Aggiornati ${updatedCount} risultati<br>
+                        ${notFoundCount > 0 ? `⚠️ ${notFoundCount} partite non trovate nel file risultati` : ''}
+                    </div>
+                `;
+                
                 loadDashboardStats();
+                
             } catch (error) {
+                console.error('❌ Errore:', error);
                 container.innerHTML = `<div class="error-message">❌ Errore: ${error.message}</div>`;
             }
         }
 
-        console.log('✅ App con OPZIONE D caricata: Min 3, Fallback totali, Tip allargati!');
+        console.log('✅ App con OPZIONE D caricata: Min 3, Fallback totali, Tip allargati, Analisi Leghe!');
     </script>
 </body>
 </html>
