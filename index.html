@@ -882,7 +882,7 @@
             const specificAnalysis = analyzeSpecificLocationTendencies(teamNorm, isHome, tip, dbCompleto);
             
             // 3. COMBINAZIONE INTELLIGENTE DEI RISULTATI
-            return combineAnalysisResults(general, specific, isHome);
+            return combineAnalysisResults(generalAnalysis, specificAnalysis, isHome);
         }
 
         // NUOVA: Analisi delle tendenze generali over/under
