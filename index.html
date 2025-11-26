@@ -197,14 +197,14 @@
 
     <div class="min-h-full flex flex-col">
         <!-- Header -->
-        <header class="bg-white shadow-sm">
+        <header class="bg-white shadow-sm sticky top-0 z-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
                         <img src="logo.png" alt="Tipster-AI Logo" class="h-10 w-10 mr-3 rounded-lg">
                         <h1 class="text-2xl font-bold text-gray-900">Tipster-AI</h1>
                     </div>
-                    <div class="flex items-center space-x-4 flex-wrap">
+                    <div class="flex items-center space-x-4 flex-wrap hidden md:flex">
                         <button data-page="page-dashboard"
                             class="nav-button bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-sm hover:bg-blue-700 transition-colors text-sm">
                             <i class="fa-solid fa-chart-bar mr-1"></i>Dashboard
@@ -227,13 +227,13 @@
         </header>
 
         <!-- Main Content -->
-        <main class="flex-grow">
+        <main class="flex-grow pb-20 md:pb-0">
 
             <!-- PAGINA DASHBOARD -->
-            <div id="page-dashboard" class="page active max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div id="page-dashboard" class="page active max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 md:py-8">
                 <!-- Sticky Stats -->
                 <div id="stats-container"
-                    class="sticky top-0 z-10 bg-gray-50/80 backdrop-blur-sm py-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                    class="sticky top-16 md:top-0 z-40 bg-gray-50/95 backdrop-blur-sm py-2 md:py-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4 mb-4 md:mb-8 shadow-sm md:shadow-none border-b md:border-none border-gray-200 px-2 md:px-0 -mx-2 md:mx-0">
                 </div>
 
                 <!-- MODALE PROFILO -->
@@ -294,9 +294,9 @@
                 <!-- Filters -->
                 <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200 mb-8">
                     <div class="flex flex-col md:flex-row gap-4 mb-4 items-center">
-                        <div class="relative flex-grow w-full">
-                            <input type="text" id="search-input" placeholder="Cerca lega o squadra..."
-                                class="w-full p-2 pl-10 border rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <div class="relative w-full md:w-64 hidden"> <!-- Search moved below -->
+                            <input type="text" id="search-input-hidden" placeholder="Cerca lega o squadra..."
+                                class="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <i
                                 class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         </div>
@@ -415,10 +415,21 @@
 
                 <!-- Match List -->
                 <div id="match-list-container" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                    <!-- Search Bar Row -->
+                    <div class="mb-4">
+                        <div class="relative w-full">
+                            <input type="text" id="search-input" placeholder="🔍 Cerca lega, squadra o tip..."
+                                class="w-full pl-10 pr-4 py-2 border-2 border-blue-100 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50/30">
+                            <i
+                                class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-blue-400"></i>
+                        </div>
+                    </div>
+
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-bold">Partite filtrate (<span id="filtered-count">0</span>)</h3>
+
                         <div class="flex items-center space-x-2">
-                            <label class="text-sm font-medium text-gray-700">Ordina per:</label>
+                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Ordina per:</label>
                             <select id="dashboard-sort-select" class="p-2 border rounded-lg text-sm">
                                 <option value="data-desc">📅 Data (recente)</option>
                                 <option value="orario-asc">⏰ Orario (cronologico)</option>
@@ -437,19 +448,18 @@
                                             class="fa-solid fa-sort sort-icon"></i></th>
                                     <th class="p-3 font-semibold sortable-header" data-sort="partita">Partita <i
                                             class="fa-solid fa-sort sort-icon"></i></th>
-                                    <th class="p-3 font-semibold sortable-header" data-sort="mercato">Mercato <i
-                                            class="fa-solid fa-sort sort-icon"></i></th>
+                                    <!-- Mercato Removed -->
                                     <th class="p-3 font-semibold sortable-header" data-sort="tip">Tip <i
                                             class="fa-solid fa-sort sort-icon"></i></th>
                                     <th class="p-3 font-semibold text-center">Ris.</th>
                                     <th class="p-3 font-semibold sortable-header text-center" data-sort="probabilita">
                                         Prob. <i class="fa-solid fa-sort sort-icon"></i></th>
-                                    <th class="p-3 font-semibold sortable-header text-center" data-sort="quota">Quota <i
-                                            class="fa-solid fa-sort sort-icon"></i></th>
+                                    <th class="p-3 font-semibold sortable-header text-center" data-sort="quota">
+                                        Quota <i class="fa-solid fa-sort sort-icon"></i></th>
                                     <th class="p-3 font-semibold text-center" title="Over 0.5 HT - Info primo tempo">HT
                                     </th>
-                                    <th class="p-3 font-semibold sortable-header text-center" data-sort="esito">Esito <i
-                                            class="fa-solid fa-sort sort-icon"></i></th>
+                                    <th class="p-3 font-semibold sortable-header text-center" data-sort="esito">
+                                        Esito <i class="fa-solid fa-sort sort-icon"></i></th>
                                 </tr>
                             </thead>
                             <tbody id="match-list-body" class="divide-y"></tbody>
@@ -463,36 +473,49 @@
             <!-- PAGINA RANKING -->
             <div id="page-ranking" class="page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <!-- Filtri Ranking -->
-                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200 mb-6">
-                    <h2 class="text-2xl font-bold mb-4">🏆 Ranking Partite del Giorno</h2>
-                    <p class="text-sm text-gray-600 mb-6">Seleziona un filtro salvato e genera il ranking delle migliori
-                        partite</p>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <!-- Prima riga -->
+                <!-- Filtri Ranking (Collapsible on Mobile) -->
+                <div class="bg-white rounded-2xl shadow-md border border-gray-200 mb-6 overflow-hidden">
+                    <div class="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center cursor-pointer"
+                        onclick="document.getElementById('ranking-filters-content').classList.toggle('hidden'); document.getElementById('ranking-filters-arrow').classList.toggle('rotate-180')">
                         <div>
-                            <label class="block text-sm font-medium mb-1">Data Partite</label>
-                            <input type="date" id="ranking-date" class="w-full p-3 border rounded-lg">
+                            <h2 class="text-xl md:text-2xl font-bold text-gray-800">🏆 Ranking Partite</h2>
+                            <p class="text-xs md:text-sm text-gray-500">Filtra e genera pronostici</p>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Filtro Strategia</label>
-                            <select id="ranking-filter-select" class="w-full p-3 border rounded-lg bg-white">
-                                <option value="">Nessun filtro (tutte le partite)</option>
-                            </select>
-                        </div>
+                        <i id="ranking-filters-arrow"
+                            class="fa-solid fa-chevron-down text-gray-400 transition-transform duration-300"></i>
                     </div>
 
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium mb-1">Max Partite da Mostrare</label>
-                        <input type="number" id="ranking-max-matches" value="20" min="1" max="50"
-                            class="w-full p-3 border rounded-lg">
-                        <p class="text-xs text-gray-500 mt-1">Numero massimo di partite per ogni tip nel ranking</p>
-                    </div>
+                    <div id="ranking-filters-content" class="p-4 md:p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <!-- Prima riga -->
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Data
+                                    Partite</label>
+                                <input type="date" id="ranking-date"
+                                    class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Strategia</label>
+                                <select id="ranking-filter-select"
+                                    class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    <option value="">Nessun filtro (tutte le partite)</option>
+                                </select>
+                            </div>
+                        </div>
 
-                    <button id="generate-ranking-btn"
-                        class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-bold hover:opacity-90">
-                        <i class="fa-solid fa-magic mr-2"></i>Applica e Genera Ranking
-                    </button>
+                        <div class="mb-6">
+                            <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Max
+                                Partite</label>
+                            <input type="number" id="ranking-max-matches" value="20" min="1" max="50"
+                                class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+
+                        <button id="generate-ranking-btn"
+                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] transition-all active:scale-95">
+                            <i class="fa-solid fa-magic mr-2"></i>Genera Ranking
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Toggle Visualizzazione v3.5.3 -->
@@ -518,6 +541,26 @@
 
 
         </main>
+
+        <!-- BOTTOM NAVIGATION (Mobile Only) -->
+        <div
+            class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around items-center py-3 z-50 md:hidden shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+            <button data-page="page-dashboard"
+                class="nav-button flex flex-col items-center text-gray-500 hover:text-blue-600 transition-colors w-full">
+                <i class="fa-solid fa-chart-bar text-xl mb-1"></i>
+                <span class="text-xs font-medium">Dashboard</span>
+            </button>
+            <button data-page="page-ranking"
+                class="nav-button flex flex-col items-center text-gray-500 hover:text-blue-600 transition-colors w-full">
+                <i class="fa-solid fa-trophy text-xl mb-1"></i>
+                <span class="text-xs font-medium">Ranking</span>
+            </button>
+            <button id="mobile-profile-btn"
+                class="flex flex-col items-center text-gray-500 hover:text-blue-600 transition-colors w-full">
+                <i class="fa-solid fa-user text-xl mb-1"></i>
+                <span class="text-xs font-medium">Profilo</span>
+            </button>
+        </div>
     </div>
 
     <!-- Modal -->
@@ -536,7 +579,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, getDocs, query, where, doc, getDoc, setDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, updatePassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, updatePassword, sendEmailVerification, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
 
         // ==================== GLOBAL ERROR HANDLER ====================
         window.onerror = function (msg, url, line, col, error) {
@@ -996,6 +1039,7 @@
                 if (isLoginMode) {
                     // LOGIN FLOW
                     try {
+                        await setPersistence(auth, browserLocalPersistence);
                         await signInWithEmailAndPassword(auth, email, password);
                         // onAuthStateChanged handles the rest (including verification check)
                     } catch (error) {
@@ -1135,9 +1179,11 @@
 
 
             // --- START APP LOGIC ---
+            let lastLoadTime = 0;
             async function startApp() {
                 try {
                     await loadAllMatches();
+                    lastLoadTime = Date.now();
                     await loadFavorites();
                     setupFilters();
                     populateFilters();
@@ -1271,16 +1317,35 @@
                 document.getElementById(pageId).classList.add('active');
 
                 navButtons.forEach(btn => {
+                    // Reset styles
+                    btn.classList.remove('bg-blue-600', 'text-white', 'text-blue-600');
+                    btn.classList.add('text-gray-500', 'text-gray-700', 'bg-gray-200'); // Reset generic
+
+                    // Check if button matches page
                     if (btn.dataset.page === pageId) {
-                        btn.classList.remove('bg-gray-200', 'text-gray-700');
-                        btn.classList.add('bg-blue-600', 'text-white');
+                        // Desktop style
+                        if (btn.classList.contains('shadow-sm')) {
+                            btn.classList.remove('bg-gray-200', 'text-gray-700');
+                            btn.classList.add('bg-blue-600', 'text-white');
+                        }
+                        // Mobile style (icon + text)
+                        else {
+                            btn.classList.remove('text-gray-500');
+                            btn.classList.add('text-blue-600');
+                        }
                     } else {
-                        btn.classList.remove('bg-blue-600', 'text-white');
-                        btn.classList.add('bg-gray-200', 'text-gray-700');
+                        // Inactive Desktop
+                        if (btn.classList.contains('shadow-sm')) {
+                            btn.classList.remove('bg-blue-600', 'text-white');
+                            btn.classList.add('bg-gray-200', 'text-gray-700');
+                        }
+                        // Inactive Mobile
+                        else {
+                            btn.classList.remove('text-blue-600');
+                            btn.classList.add('text-gray-500');
+                        }
                     }
                 });
-
-
             }
 
             navButtons.forEach(btn => btn.addEventListener('click', (e) => showPage(e.currentTarget.dataset.page)));
@@ -1345,8 +1410,8 @@
 
                     const details = document.createElement('details');
                     details.className = 'group bg-gray-50 border rounded-lg overflow-hidden shadow-sm';
-                    // Open Favorites by default
-                    if (category === '⭐ Preferiti') details.open = true;
+                    // Open Favorites by default - DISABLED per user request
+                    // if (category === '⭐ Preferiti') details.open = true;
 
                     const leaguesInCategory = categorized[category].sort().map(league => `
                         <div class="flex items-center justify-between p-2 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors">
@@ -1568,12 +1633,12 @@
                             <td class="p-3 text-xs">${m.data}</td>
                             <td class="p-3 text-xs">${m.lega}</td>
                             <td class="p-3 text-xs font-medium">${m.partita}</td>
-                            <td class="p-3 text-xs">${m.mercato}</td>
+                            <!-- Mercato Removed -->
                             <td class="p-3 text-xs font-semibold">${m.tip}</td>
                             <td class="p-3 text-xs text-center">${m.risultato || '-'}</td>
                             <td class="p-3 text-xs text-center">${m.probabilita}%</td>
                             <td class="p-3 text-xs text-center font-bold">${m.quota}</td>
-                            <td class="p-3 text-xs text-center">${htDisplay}</td>
+                            <td class="p-3 text-xs text-center w-48 whitespace-nowrap">${htDisplay}</td> <!-- Expanded HT -->
                             <td class="p-3 text-xs text-center ${esitoClass}">${m.esito || '-'}</td>
                         </tr>
                     `;
@@ -1665,8 +1730,34 @@
             };
             updateFavoritesBtn.addEventListener('click', handleUpdateFavorites);
 
+            // Mobile Profile Button
+            document.getElementById('mobile-profile-btn').addEventListener('click', () => {
+                profileModal.classList.remove('hidden');
+                profileModal.classList.add('flex');
+            });
+
             // TOP LEAGUES FILTER
-            const handleSelectTopLeagues = () => {
+            const handleSelectTopLeagues = async () => {
+                // CHECK FOR UPDATES
+                try {
+                    const metadataDoc = await getDoc(doc(db, "system", "metadata"));
+                    if (metadataDoc.exists()) {
+                        const serverTime = metadataDoc.data().lastUpdated;
+                        if (serverTime && serverTime > lastLoadTime) {
+                            showModal("Dati Aggiornati Disponibili",
+                                "Sono state rilevate modifiche al database (es. correzione nomi leghe).<br>Vuoi ricaricare i dati per avere statistiche precise?",
+                                async () => {
+                                    await loadAllMatches(); // Reloads data
+                                    handleSelectTopLeagues(); // Retry filter
+                                }
+                            );
+                            return; // Stop execution until reload
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error checking metadata:", e);
+                }
+
                 // 1. Calculate stats based on ALL matches
                 const stats = analyzeLeaguePerformance(allMatches);
 
@@ -2842,10 +2933,14 @@
                         storicoDateTitle.textContent = `Previsioni del ${date}`;
                         storicoCount.textContent = 'Nessuna previsione salvata';
                         storicoContainer.innerHTML = `
-                            <div class="text-center py-8 text-gray-500">
-                                <i class="fa-solid fa-inbox text-4xl mb-3"></i>
-                                <p>Nessuna previsione salvata per questa data.</p>
-                                <p class="text-sm mt-2">Vai su Ranking o Magic per generare e salvare previsioni.</p>
+                            <th class="p-3 text-left cursor-pointer hover:bg-gray-100" onclick="updateSort('data')">DATA <i class="fa-solid fa-sort text-gray-400 ml-1"></i></th>
+                            <th class="p-3 text-left cursor-pointer hover:bg-gray-100" onclick="updateSort('lega')">LEGA <i class="fa-solid fa-sort text-gray-400 ml-1"></i></th>
+                            <th class="p-3 text-left cursor-pointer hover:bg-gray-100" onclick="updateSort('partita')">PARTITA <i class="fa-solid fa-sort text-gray-400 ml-1"></i></th>
+                            <!-- Mercato Removed -->
+                            <th class="p-3 text-left cursor-pointer hover:bg-gray-100" onclick="updateSort('tip')">TIP <i class="fa-solid fa-sort text-gray-400 ml-1"></i></th>
+                            <th class="p-3 text-center cursor-pointer hover:bg-gray-100" onclick="updateSort('quota')">QUOTA <i class="fa-solid fa-sort text-gray-400 ml-1"></i></th>
+                            <th class="p-3 text-center cursor-pointer hover:bg-gray-100 w-48" onclick="updateSort('info_ht')">HT <i class="fa-solid fa-sort text-gray-400 ml-1"></i></th> <!-- Expanded HT -->
+                            <th class="p-3 text-center cursor-pointer hover:bg-gray-100" onclick="updateSort('esito')">ESITO <i class="fa-solid fa-sort text-gray-400 ml-1"></i></th>
                             </div>
                         `;
                         return;
