@@ -1180,9 +1180,9 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
             // Initialize Model (Lazy Load)
             if (!chatHistory) {
                 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-                // Use gemini-1.5-flash which is faster and often has better availability for free tier
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                
+                // Reverting to gemini-pro as 1.5-flash requires newer API version
+                const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
                 chatHistory = model.startChat({
                     history: [
                         {
@@ -1201,7 +1201,7 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
             const result = await chatHistory.sendMessage(text);
             const response = await result.response;
             const markdownText = response.text();
-            
+
             // Simple Markdown to HTML (Bold only for safety)
             const htmlText = markdownText
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -1212,10 +1212,10 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
 
         } catch (error) {
             console.error("AI Error Details:", error);
-     removeLoading();
-            
+            removeLoading();
+
             let errorMsg = "⚠️ Scusa, ho avuto un problema tecnico.";
-            
+
             if (error.message.includes("API key not valid")) {
                 errorMsg += " La API Key sembra non valida.";
             } else if (error.message.includes("fetch failed")) {
@@ -1223,7 +1223,7 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
             } else {
                 errorMsg += " Controlla la Console per i dettagli.";
             }
-            
+
             appendMessage(errorMsg, 'ai');
         }
     });
