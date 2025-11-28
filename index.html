@@ -1029,4 +1029,205 @@
     </script>
 </body>
 
+<!-- AI CHATBOT WIDGET -->
+<div id="ai-chat-widget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
+    <!-- Chat Window -->
+    <div id="ai-chat-window"
+        class="hidden bg-white w-80 h-96 rounded-2xl shadow-2xl border border-gray-200 flex flex-col mb-4 overflow-hidden transition-all transform origin-bottom-right">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-600 to-blue-600 p-4 flex justify-between items-center text-white">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-robot"></i>
+                <span class="font-bold text-sm">Antigravity AI</span>
+            </div>
+            <button id="close-chat-btn" class="hover:text-gray-200 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-3 text-sm">
+            <!-- Welcome Message -->
+            <div class="flex justify-start">
+                <div class="bg-white border border-gray-200 rounded-2xl rounded-tl-none p-3 shadow-sm max-w-[85%]">
+                    <p class="text-gray-800">Ciao! 👋 Sono l'assistente AI di Antigravity. Chiedimi pure come funzionano
+                        le strategie o come gestire le tue partite!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-3 bg-white border-t border-gray-100">
+            <form id="chat-form" class="flex gap-2">
+                <input type="text" id="chat-input" placeholder="Scrivi una domanda..."
+                    class="flex-1 p-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+                <button type="submit"
+                    class="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition shadow-sm disabled:opacity-50">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toggle Button -->
+    <button id="toggle-chat-btn"
+        class="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition transform hover:scale-105 flex items-center justify-center text-2xl">
+        <i class="fa-solid fa-comment-dots"></i>
+    </button>
+</div>
+
+<!-- AI Chatbot Logic -->
+<script type="module">
+    import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
+    // CONFIGURATION
+    const GEMINI_API_KEY = "AIzaSyD-LIUEzitcMVddDaHNqrl8OY_DcLgl8UE"; // ⚠️ Replace with User's Key
+
+    const SYSTEM_PROMPT = `
+Sei l'assistente virtuale di Antigravity, un'app per analisi e pronostici calcistici.
+Il tuo obiettivo è aiutare gli utenti a navigare l'app e capire le funzionalità.
+Rispondi in italiano, in modo conciso (max 2-3 frasi), amichevole e professionale. Usa emoji.
+
+INFO SULL'APP:
+1. **Mie Partite**: Salva le partite con la stella ⭐. Le partite >24h vengono cancellate automaticamente al login. Puoi anche usare "Cancella Tutte".
+2. **Strategie**: Filtri intelligenti (es. "Over 2.5", "Gol"). Selezionale dal menu a tendina in alto.
+3. **Badge**: I numeri rossi indicano quante partite corrispondono ai filtri.
+4. **Registrazione**: Serve per salvare le tue partite personali.
+5. **Disclaimer**: Forniamo statistiche, non consigli finanziari. Gioca responsabilmente.
+
+Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnologia Google Gemini".
+`;
+
+    // UI Elements
+    const widget = document.getElementById('ai-chat-widget');
+    const window = document.getElementById('ai-chat-window');
+    const toggleBtn = document.getElementById('toggle-chat-btn');
+    const closeBtn = document.getElementById('close-chat-btn');
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('chat-input');
+    const messagesContainer = document.getElementById('chat-messages');
+
+    // State
+    let isOpen = false;
+    let chatHistory = null; // Will be initialized with model
+
+    // Toggle Chat
+    function toggleChat() {
+        isOpen = !isOpen;
+        if (isOpen) {
+            window.classList.remove('hidden');
+            toggleBtn.classList.add('hidden');
+            setTimeout(() => input.focus(), 100);
+        } else {
+            window.classList.add('hidden');
+            toggleBtn.classList.remove('hidden');
+        }
+    }
+
+    toggleBtn.addEventListener('click', toggleChat);
+    closeBtn.addEventListener('click', toggleChat);
+
+    // Append Message to UI
+    function appendMessage(text, sender) {
+        const div = document.createElement('div');
+        div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+
+        const bubble = document.createElement('div');
+        bubble.className = sender === 'user'
+            ? 'bg-purple-600 text-white rounded-2xl rounded-tr-none p-3 shadow-sm max-w-[85%]'
+            : 'bg-white border border-gray-200 rounded-2xl rounded-tl-none p-3 shadow-sm max-w-[85%] text-gray-800';
+
+        bubble.innerHTML = text; // Allow basic HTML if needed
+        div.appendChild(bubble);
+        messagesContainer.appendChild(div);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Show Loading
+    function showLoading() {
+        const div = document.createElement('div');
+        div.id = 'ai-loading';
+        div.className = 'flex justify-start';
+        div.innerHTML = `
+                <div class="bg-white border border-gray-200 rounded-2xl rounded-tl-none p-3 shadow-sm">
+                    <div class="flex gap-1">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                    </div>
+                </div>`;
+        messagesContainer.appendChild(div);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function removeLoading() {
+        const loading = document.getElementById('ai-loading');
+        if (loading) loading.remove();
+    }
+
+    // Handle Submit
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+
+        // UI Updates
+        input.value = '';
+        appendMessage(text, 'user');
+        showLoading();
+
+        try {
+            // Initialize Model (Lazy Load)
+            if (!chatHistory) {
+                const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+                // Use gemini-1.5-flash which is faster and often has better availability for free tier
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                
+                chatHistory = model.startChat({
+                    history: [
+                        {
+                            role: "user",
+                            parts: [{ text: SYSTEM_PROMPT }],
+                        },
+                        {
+                            role: "model",
+                            parts: [{ text: "Capito! Sono pronto ad aiutare gli utenti di Antigravity. Dimmi pure." }],
+                        },
+                    ],
+                });
+            }
+
+            // Send Message
+            const result = await chatHistory.sendMessage(text);
+            const response = await result.response;
+            const markdownText = response.text();
+            
+            // Simple Markdown to HTML (Bold only for safety)
+            const htmlText = markdownText
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+
+            removeLoading();
+            appendMessage(htmlText, 'ai');
+
+        } catch (error) {
+            console.error("AI Error Details:", error);
+     removeLoading();
+            
+            let errorMsg = "⚠️ Scusa, ho avuto un problema tecnico.";
+            
+            if (error.message.includes("API key not valid")) {
+                errorMsg += " La API Key sembra non valida.";
+            } else if (error.message.includes("fetch failed")) {
+                errorMsg += " Problema di connessione (forse CORS/locale).";
+            } else {
+                errorMsg += " Controlla la Console per i dettagli.";
+            }
+            
+            appendMessage(errorMsg, 'ai');
+        }
+    });
+</script>
+</body>
+
 </html>
