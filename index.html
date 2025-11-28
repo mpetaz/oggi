@@ -1100,7 +1100,7 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
 
     // UI Elements
     const widget = document.getElementById('ai-chat-widget');
-    const window = document.getElementById('ai-chat-window');
+    const chatWindow = document.getElementById('ai-chat-window'); // Renamed from window
     const toggleBtn = document.getElementById('toggle-chat-btn');
     const closeBtn = document.getElementById('close-chat-btn');
     const form = document.getElementById('chat-form');
@@ -1115,11 +1115,11 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
     function toggleChat() {
         isOpen = !isOpen;
         if (isOpen) {
-            window.classList.remove('hidden');
+            chatWindow.classList.remove('hidden');
             toggleBtn.classList.add('hidden');
             setTimeout(() => input.focus(), 100);
         } else {
-            window.classList.add('hidden');
+            chatWindow.classList.add('hidden');
             toggleBtn.classList.remove('hidden');
         }
     }
