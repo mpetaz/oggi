@@ -1078,7 +1078,8 @@
 
 <!-- AI Chatbot Logic -->
 <script type="module">
-    import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+    // Use specific version that supports 1.5 models
+    import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai@0.12.0";
 
     // CONFIGURATION
     const GEMINI_API_KEY = "AIzaSyD-LIUEzitcMVddDaHNqrl8OY_DcLgl8UE"; // ⚠️ Replace with User's Key
@@ -1180,8 +1181,8 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
             // Initialize Model (Lazy Load)
             if (!chatHistory) {
                 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-                // Reverting to gemini-pro as 1.5-flash requires newer API version
-                const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+                // Use gemini-1.5-flash which is faster and often has better availability for free tier
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
                 chatHistory = model.startChat({
                     history: [
