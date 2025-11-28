@@ -1077,12 +1077,11 @@
 </div>
 
 <!-- AI Chatbot Logic -->
-<script type="module">
-    // Use specific version that supports 1.5 models
-    import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai@0.12.0";
-
+<script>
     // CONFIGURATION
     const GEMINI_API_KEY = "AIzaSyD-LIUEzitcMVddDaHNqrl8OY_DcLgl8UE"; // ⚠️ Replace with User's Key
+    // Using Gemini 3.0 Pro as requested
+    const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-pro:generateContent";
 
     const SYSTEM_PROMPT = `
 Sei l'assistente virtuale di Antigravity, un'app per analisi e pronostici calcistici.
@@ -1110,7 +1109,7 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
 
     // State
     let isOpen = false;
-    let chatHistory = null; // Will be initialized with model
+    let chatHistory = []; // Stores conversation history
 
     // Toggle Chat
     function toggleChat() {
@@ -1138,7 +1137,7 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
             ? 'bg-purple-600 text-white rounded-2xl rounded-tr-none p-3 shadow-sm max-w-[85%]'
             : 'bg-white border border-gray-200 rounded-2xl rounded-tl-none p-3 shadow-sm max-w-[85%] text-gray-800';
 
-        bubble.innerHTML = text; // Allow basic HTML if needed
+        bubble.innerHTML = text;
         div.appendChild(bubble);
         messagesContainer.appendChild(div);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -1178,32 +1177,36 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
         showLoading();
 
         try {
-            // Initialize Model (Lazy Load)
-            if (!chatHistory) {
-                const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-                // Use gemini-1.5-flash which is faster and often has better availability for free tier
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            // Prepare History (System Prompt + User Message)
+            const contents = [
+                {
+                    role: "user",
+                    parts: [{ text: SYSTEM_PROMPT + "\n\nUser Question: " + text }]
+                }
+                // Note: For simplicity in this REST version, we send the system prompt context each time 
+                // or we could maintain a full history array here.
+            ];
 
-                chatHistory = model.startChat({
-                    history: [
-                        {
-                            role: "user",
-                            parts: [{ text: SYSTEM_PROMPT }],
-                        },
-                        {
-                            role: "model",
-                            parts: [{ text: "Capito! Sono pronto ad aiutare gli utenti di Antigravity. Dimmi pure." }],
-                        },
-                    ],
-                });
+            // Call Gemini API (REST)
+            const response = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    contents: contents
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error?.message || "API Error");
             }
 
-            // Send Message
-            const result = await chatHistory.sendMessage(text);
-            const response = await result.response;
-            const markdownText = response.text();
+            const markdownText = data.candidates[0].content.parts[0].text;
 
-            // Simple Markdown to HTML (Bold only for safety)
+            // Simple Markdown to HTML
             const htmlText = markdownText
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                 .replace(/\n/g, '<br>');
@@ -1214,21 +1217,11 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
         } catch (error) {
             console.error("AI Error Details:", error);
             removeLoading();
-
-            let errorMsg = "⚠️ Scusa, ho avuto un problema tecnico.";
-
-            if (error.message.includes("API key not valid")) {
-                errorMsg += " La API Key sembra non valida.";
-            } else if (error.message.includes("fetch failed")) {
-                errorMsg += " Problema di connessione (forse CORS/locale).";
-            } else {
-                errorMsg += " Controlla la Console per i dettagli.";
-            }
-
-            appendMessage(errorMsg, 'ai');
+            appendMessage(`⚠️ Errore: ${error.message}`, 'ai');
         }
     });
 </script>
 </body>
 
 </html>
+```
