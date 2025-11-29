@@ -299,6 +299,12 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // Expose Firebase helpers to window for AI functions
+        window.db = db;
+        window.setDoc = setDoc;
+        window.doc = doc;
+        window.currentUser = null; // Will be updated by auth listener
+
         // State
         let currentUser = null;
         let strategiesData = null;
@@ -722,7 +728,7 @@
             ` : '';
 
             const betfairHTML = match.betfairBadge ? `
-                <div class="text-xs ${match.betfairBadge.color} mt-2 font-semibold">${match.betfairBadge.text}</div>
+                <div class="text-xs ${match.betfairBadge.color} mt-2 font-semibold">Trading Sportivo: ${match.betfairBadge.text}</div>
             ` : '';
 
             // HT Info section (when available and significant)
@@ -908,8 +914,21 @@
 
                         try {
                             const card = createMatchCard(m, matchIndex, null, false);
+
+                            // Replace Flag Button with Delete Button
                             const flagBtn = card.querySelector('.flag-btn');
                             if (flagBtn) flagBtn.remove();
+
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.className = 'absolute top-4 right-4 text-gray-400 hover:text-red-500 transition p-2';
+                            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                            deleteBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                removeMatch(`${m.data}_${m.partita}`);
+                            };
+                            card.style.position = 'relative';
+                            card.appendChild(deleteBtn);
+
                             container.appendChild(card);
                         } catch (e) {
                             console.error('[Client] Error creating match card:', e, m);
@@ -923,8 +942,21 @@
                     sortedMatches.forEach((m, idx) => {
                         try {
                             const card = createMatchCard(m, idx, null, true);
+
+                            // Replace Flag Button with Delete Button
                             const flagBtn = card.querySelector('.flag-btn');
                             if (flagBtn) flagBtn.remove();
+
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.className = 'absolute top-4 right-4 text-gray-400 hover:text-red-500 transition p-2';
+                            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                            deleteBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                removeMatch(`${m.data}_${m.partita}`);
+                            };
+                            card.style.position = 'relative';
+                            card.appendChild(deleteBtn);
+
                             container.appendChild(card);
                         } catch (e) {
                             console.error('[Client] Error creating match card:', e, m);
@@ -932,10 +964,35 @@
                     });
                 }
             }
-
             // Update button states
             updateMyMatchesSortButtons(sortMode);
             // DON'T call showPage here - it's already called by the navigation button!
+        }
+
+        // Remove Single Match
+        async function removeMatch(matchId) {
+            if (!confirm('Vuoi rimuovere questa partita dai preferiti?')) return;
+
+            const index = window.selectedMatches.findIndex(sm => sm.id === matchId);
+            if (index > -1) {
+                window.selectedMatches.splice(index, 1);
+
+                // Save to Firebase
+                try {
+                    await setDoc(doc(db, "users", currentUser.uid, "data", "selected_matches"), {
+                        matches: window.selectedMatches,
+                        updated: Date.now()
+                    });
+
+                    // Update UI
+                    updateMyMatchesCount();
+                    showMyMatches(); // Refresh list
+
+                } catch (e) {
+                    console.error("Error removing match:", e);
+                    alert("Errore durante la rimozione");
+                }
+            }
         }
 
         // Update My Matches sort button states
@@ -960,10 +1017,11 @@
             if (window.selectedMatches.length > 0) {
                 if (!countBadge) {
                     const badge = document.createElement('span');
-                    badge.className = 'count-badge absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold';
+                    badge.className = 'count-badge absolute top-0 right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold z-50';
                     badge.textContent = window.selectedMatches.length;
                     navBtn.style.position = 'relative';
                     navBtn.appendChild(badge);
+                    console.log('[UI] Badge created:', window.selectedMatches.length);
                 } else {
                     countBadge.textContent = window.selectedMatches.length;
                 }
@@ -1141,6 +1199,7 @@
     // State
     let isOpen = false;
     let chatHistory = [];
+    let hasWelcomed = false;
 
     // Helper: Get User Name
     function getUserName() {
@@ -1334,7 +1393,12 @@ Esempio: \`[[CMD:EMAIL|Proposta Strategia 0-0|Ciao Team, vorrei proporre una str
                 });
 
                 // Update UI badge (if exposed)
-                if (window.updateMyMatchesCount) window.updateMyMatchesCount();
+                if (window.updateMyMatchesCount) {
+                    console.log("Calling global updateMyMatchesCount...");
+                    window.updateMyMatchesCount();
+                } else {
+                    console.warn("window.updateMyMatchesCount is NOT defined!");
+                }
 
                 // Show feedback in chat (system message)
                 appendMessage(`✅ <strong>Azione completata:</strong> Ho aggiunto ${addedCount} partite per "${query}" ai tuoi preferiti!`, 'ai');
@@ -1404,6 +1468,14 @@ Esempio: \`[[CMD:EMAIL|Proposta Strategia 0-0|Ciao Team, vorrei proporre una str
             chatWindow.classList.remove('hidden');
             toggleBtn.classList.add('hidden');
             setTimeout(() => input.focus(), 100);
+
+            // Welcome Message (euGENIO)
+            if (!hasWelcomed) {
+                const userName = getUserName();
+                const welcomeMsg = `Ciao ${userName}! 👋 Sono euGENIO 🧞‍♂️ l'assistente speciale di Tipster-AI. Sono a tua disposizione per capire l'APP e per tutte le tue curiosità.`;
+                appendMessage(welcomeMsg, 'ai');
+                hasWelcomed = true;
+            }
         } else {
             chatWindow.classList.add('hidden');
             toggleBtn.classList.remove('hidden');
