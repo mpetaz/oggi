@@ -430,10 +430,10 @@
         // Load Data
         async function loadData() {
             try {
-                // Load ALL strategies from strategy_results
-                const strategiesDoc = await getDoc(doc(db, "system", "strategy_results"));
+                // Load ALL strategies from client_presets (Updated by Admin)
+                const strategiesDoc = await getDoc(doc(db, "system", "client_presets"));
                 if (!strategiesDoc.exists()) {
-                    console.error('[Client] strategy_results not found!');
+                    console.error('[Client] client_presets not found!');
                     return;
                 }
 
@@ -443,26 +443,16 @@
                 // Filter: Show ONLY published strategies
                 // Presets (all, winrate_80, italia, top_eu, cups, best_05_ht) are ALWAYS shown
                 // Custom strategies need to check if they're published
+                // Note: client_presets already contains the merged list from Admin
 
                 const presetIds = ['all', 'winrate_80', 'italia', 'top_eu', 'cups', 'best_05_ht'];
                 strategiesData = {};
 
                 for (const [stratId, stratData] of Object.entries(allStrategies)) {
-                    // Skip if no name or no matches data
-                    if (!stratData.name || !stratData.matches) {
-                        console.warn(`[Client] Skipping ${stratId} - missing data`);
+                    // Skip if no name (sanity check)
+                    if (!stratData.name) {
                         continue;
                     }
-
-                    // Always include presets
-                    if (presetIds.includes(stratId)) {
-                        strategiesData[stratId] = stratData;
-                        continue;
-                    }
-
-                    // For custom strategies, check if published
-                    // (Custom strategies that are saved via Admin "Salva" button are automatically here)
-                    // We include all non-preset strategies found in strategy_results
                     strategiesData[stratId] = stratData;
                 }
 
@@ -1152,32 +1142,51 @@
     function buildSystemPrompt() {
         const userName = getUserName();
         const knowledge = window.aiKnowledge || {};
+        const strategies = window.strategiesData || {};
 
-        // Get Strategies from Global Scope
+        // Merge keys from both sources to ensure we cover everything
+        const allStrategyIds = new Set([...Object.keys(strategies), ...Object.keys(knowledge)]);
+
         let strategiesText = "";
-        if (typeof window.strategiesData !== 'undefined' && window.strategiesData) {
-            strategiesText = Object.entries(window.strategiesData)
-                .map(([id, s]) => {
-                    // Try to find metadata in Knowledge Base
+        if (allStrategyIds.size > 0) {
+            strategiesText = Array.from(allStrategyIds)
+                .map(id => {
+                    const s = strategies[id] || { name: knowledge[id]?.name || id, totalMatches: 0, matches: [] };
                     const meta = knowledge[id] || {};
 
                     // Description: Use Knowledge Base or fallback to Strategy object or default
                     const desc = meta.description || s.description || 'Strategia basata su statistiche.';
 
-                    // Leagues: Use Knowledge Base (static truth) OR Dynamic (current truth)
-                    let leagueInfo = "";
+                    // 1. Static Knowledge (Definitions)
+                    let staticInfo = "";
                     if (meta.leagues && meta.leagues.length > 0) {
                         const list = meta.leagues.slice(0, 12).join(', ');
-                        leagueInfo = `\n  *Leghe incluse:* ${list}${meta.leagues.length > 12 ? ', ecc.' : '.'}`;
-                    } else {
-                        // Fallback to dynamic extraction
-                        const uniqueLeagues = [...new Set(s.matches.map(m => m.lega))];
-                        const list = uniqueLeagues.slice(0, 8).join(', ');
-                        const more = uniqueLeagues.length > 8 ? ', ecc.' : '';
-                        leagueInfo = `\n  *Leghe attive oggi:* ${list}${more}`;
+                        staticInfo = `\n  *Definizione Leghe:* ${list}${meta.leagues.length > 12 ? ', ecc.' : '.'}`;
                     }
 
-                    return `- **${s.name}**: ${desc} (${s.totalMatches} partite attive).${leagueInfo}`;
+                    // 2. Dynamic Status (Active Matches Breakdown)
+                    let dynamicInfo = "";
+                    if (s.matches && s.matches.length > 0) {
+                        // Count matches per league
+                        const leagueCounts = {};
+                        s.matches.forEach(m => {
+                            const cleanLega = m.lega.replace(/^(EU-|AS-|AF-|NA-|SA-)/, ''); // Remove geo prefix for readability
+                            leagueCounts[cleanLega] = (leagueCounts[cleanLega] || 0) + 1;
+                        });
+
+                        // Format: "Eredivisie (3), Premier League (2)"
+                        const activeList = Object.entries(leagueCounts)
+                            .sort((a, b) => b[1] - a[1]) // Sort by count desc
+                            .slice(0, 8) // Top 8 active leagues
+                            .map(([name, count]) => `${name} (${count})`)
+                            .join(', ');
+
+                        dynamicInfo = `\n  *🔥 PARTITE ATTIVE OGGI:* ${activeList}`;
+                    } else {
+                        dynamicInfo = "\n  *Nessuna partita attiva oggi.*";
+                    }
+
+                    return `- **${s.name}**: ${desc} (${s.totalMatches || 0} partite totali).${staticInfo}${dynamicInfo}`;
                 })
                 .join('\n');
         } else {
@@ -1225,7 +1234,73 @@ ${strategiesText}
 - Professionale ma amichevole ed entusiasta.
 - Usa emoji calcistiche e "magic" (⚽, 🪄, 🔥, 📊).
 - Risposte concise (max 3-4 righe) ma complete.
+
+**SUPER POTERI (AZIONI):**
+Se l'utente ti chiede di aggiungere partite ai preferiti (es. "Metti le partite olandesi nei preferiti"), TU PUOI FARLO!
+Usa questo comando speciale alla fine della frase:
+\`[[CMD:ADD_LEAGUE|NomeLega]]\`
+
+Esempio:
+Utente: "Aggiungi le partite di Eredivisie ai miei preferiti"
+Tu: "Certamente! Aggiungo subito le partite di Eredivisie alla tua lista. 🌟 [[CMD:ADD_LEAGUE|Eredivisie]]"
+
+IMPORTANTE: Il nome della lega nel comando deve essere il più preciso possibile (es. "Eredivisie", "Premier League", "Serie A").
 `;
+    }
+
+    // ACTION: Add Matches by League
+    async function addMatchesByLeague(leagueName) {
+        if (!window.strategiesData) return;
+
+        const targetLeague = leagueName.toLowerCase().trim();
+        let addedCount = 0;
+        let matchesToAdd = [];
+
+        // Search in all strategies
+        Object.values(window.strategiesData).forEach(strat => {
+            if (strat.matches) {
+                strat.matches.forEach(m => {
+                    // Fuzzy check: "eredivisie" matches "EU-NLD Eredivisie"
+                    if (m.lega.toLowerCase().includes(targetLeague)) {
+                        // Check if not already selected
+                        const matchId = `${m.data}_${m.partita}`;
+                        if (!selectedMatches.some(sm => sm.id === matchId)) {
+                            // Avoid duplicates in this batch
+                            if (!matchesToAdd.some(nm => nm.id === matchId)) {
+                                matchesToAdd.push({
+                                    id: matchId,
+                                    strategy: strat.name,
+                                    ...m
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        if (matchesToAdd.length > 0) {
+            selectedMatches.push(...matchesToAdd);
+            addedCount = matchesToAdd.length;
+
+            // Save to Firebase
+            try {
+                await setDoc(doc(db, "users", currentUser.uid, "data", "selected_matches"), {
+                    matches: selectedMatches,
+                    updated: Date.now()
+                });
+                updateMyMatchesCount();
+
+                // Show feedback in chat (system message)
+                appendMessage(`✅ <strong>Azione completata:</strong> Ho aggiunto ${addedCount} partite di "${leagueName}" ai tuoi preferiti!`, 'ai');
+
+            } catch (e) {
+                console.error("Error saving matches via AI:", e);
+                appendMessage(`⚠️ Errore durante il salvataggio: ${e.message}`, 'ai');
+            }
+        } else {
+            appendMessage(`⚠️ Non ho trovato nuove partite per "${leagueName}" da aggiungere.`, 'ai');
+        }
     }
 
     // Toggle Chat
@@ -1344,9 +1419,24 @@ ${strategiesText}
             });
 
             // Simple Markdown to HTML
-            const htmlText = markdownText
+            let htmlText = markdownText
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                 .replace(/\n/g, '<br>');
+
+            // COMMAND PARSING
+            const cmdRegex = /\[\[CMD:ADD_LEAGUE\|(.*?)\]\]/;
+            const match = htmlText.match(cmdRegex);
+
+            if (match) {
+                const leagueName = match[1];
+                console.log("AI Command detected: ADD_LEAGUE", leagueName);
+
+                // Remove command from display text
+                htmlText = htmlText.replace(match[0], '');
+
+                // Execute Command
+                await addMatchesByLeague(leagueName);
+            }
 
             removeLoading();
             appendMessage(htmlText, 'ai');
