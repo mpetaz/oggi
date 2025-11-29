@@ -510,14 +510,27 @@
                 globalStats = { total, wins, losses, winrate };
                 window.globalStats = globalStats; // Update global reference
 
-                // Calculate next day for "new predictions"
-                const nextDay = getNextDay(lastDate);
+                // Calculate date from ACTIVE predictions (strategiesData)
+                let activeDate = '';
+                if (window.strategiesData) {
+                    // Find the most recent date in the loaded strategies
+                    Object.values(window.strategiesData).forEach(strat => {
+                        if (strat.matches && strat.matches.length > 0) {
+                            strat.matches.forEach(m => {
+                                if (m.data > activeDate) activeDate = m.data;
+                            });
+                        }
+                    });
+                }
+
+                // Fallback to next day of last result if no active matches found
+                const displayDate = activeDate ? activeDate : getNextDay(lastDate);
 
                 document.getElementById('stat-total').textContent = total;
                 document.getElementById('stat-wins').textContent = wins;
                 document.getElementById('stat-losses').textContent = losses;
                 document.getElementById('stat-winrate').textContent = winrate + '%';
-                document.getElementById('last-update').textContent = formatDateLong(nextDay);
+                document.getElementById('last-update').textContent = formatDateLong(displayDate);
             } catch (e) {
                 console.error('Error calculating stats:', e);
             }
@@ -1144,7 +1157,10 @@
 Sei **TipsterAI**, l'intelligenza artificiale ufficiale dell'app.
 Parla al plurale o in terza persona come se fossi il team di esperti (es. "Noi di TipsterAI", "Gli esperti di TipsterAI", "La magia di TipsterAI").
 Il tuo interlocutore si chiama **${userName}**.
-Usa il suo nome ogni tanto, ma non iniziare ogni frase con "Ciao". Sii vario e naturale.
+
+**REGOLA D'ORO SUI SALUTI:**
+- Saluta l'utente (es. "Ciao ${userName}!") **SOLO** nel primissimo messaggio della conversazione.
+- In tutte le risposte successive, **NON SALUTARE**. Vai dritto al punto. Sii scorrevole e diretto.
 
 **I NOSTRI NUMERI STRAORDINARI:**
 Abbiamo analizzato **${stats.total}** partite totali.
@@ -1244,25 +1260,34 @@ ${strategiesText}
         showLoading();
 
         try {
-            // Generate Dynamic Prompt
-            const currentSystemPrompt = buildSystemPrompt();
-
-            // Prepare History
-            const contents = [
-                {
+            // Initialize History if empty
+            if (chatHistory.length === 0) {
+                const currentSystemPrompt = buildSystemPrompt();
+                chatHistory.push({
                     role: "user",
-                    parts: [{ text: currentSystemPrompt + "\n\nDomanda Utente: " + text }]
-                }
-            ];
+                    parts: [{ text: currentSystemPrompt }]
+                });
+                // Add a dummy model response to acknowledge system prompt (optional, but helps set context)
+                chatHistory.push({
+                    role: "model",
+                    parts: [{ text: "Ok, ho capito la mia missione. Sono pronto!" }]
+                });
+            }
 
-            // Call Gemini API (REST)
+            // Add User Question to History
+            chatHistory.push({
+                role: "user",
+                parts: [{ text: text }]
+            });
+
+            // Call Gemini API (REST) with FULL HISTORY
             const response = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    contents: contents
+                    contents: chatHistory
                 })
             });
 
@@ -1277,6 +1302,12 @@ ${strategiesText}
             }
 
             const markdownText = data.candidates[0].content.parts[0].text;
+
+            // Add Model Response to History
+            chatHistory.push({
+                role: "model",
+                parts: [{ text: markdownText }]
+            });
 
             // Simple Markdown to HTML
             const htmlText = markdownText
