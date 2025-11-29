@@ -1093,13 +1093,7 @@
 
         <!-- Messages Area -->
         <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-3 text-sm">
-            <!-- Welcome Message -->
-            <div class="flex justify-start">
-                <div class="bg-white border border-gray-200 rounded-2xl rounded-tl-none p-3 shadow-sm max-w-[85%]">
-                    <p class="text-gray-800">Ciao! 👋 Sono l'assistente AI di Antigravity. Chiedimi pure come funzionano
-                        le strategie o come gestire le tue partite!</p>
-                </div>
-            </div>
+            <!-- Welcome Message (Dynamically added by JS) -->
         </div>
 
         <!-- Input Area -->
@@ -1142,7 +1136,7 @@
     const chatHeaderTitle = chatWindow.querySelector('.font-bold');
 
     // Update Name
-    chatHeaderTitle.textContent = "Aiuto Online di TipsterAI";
+    chatHeaderTitle.textContent = "euGENIO 🧞‍♂️ - TipsterAI";
 
     // State
     let isOpen = false;
@@ -1225,7 +1219,7 @@
         const stats = window.globalStats || { total: 0, wins: 0, losses: 0, winrate: 0 };
 
         return `
-Sei **TipsterAI**, l'intelligenza artificiale ufficiale dell'app.
+Sei **euGENIO 🧞‍♂️**, l'assistente speciale di Tipster-AI.
 Parla al plurale o in terza persona come se fossi il team di esperti (es. "Noi di TipsterAI", "Gli esperti di TipsterAI", "La magia di TipsterAI").
 Il tuo interlocutore si chiama **${userName}**.
 
