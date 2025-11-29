@@ -1590,22 +1590,21 @@ Esempio: \`[[CMD:EMAIL|Proposta Strategia 0-0|Ciao Team, vorrei proporre una str
                 .replace(/\n/g, '<br>');
 
             // COMMAND PARSING
-            // 1. ADD_MATCHES
+            // COMMAND PARSING
+            // 1. ADD_MATCHES (Loop to handle multiple commands)
             const cmdMatchesRegex = /\[\[CMD:ADD_MATCHES\|(.*?)\]\]/;
-            const matchMatches = htmlText.match(cmdMatchesRegex);
-
-            if (matchMatches) {
+            let matchMatches;
+            while ((matchMatches = htmlText.match(cmdMatchesRegex)) !== null) {
                 const query = matchMatches[1];
                 console.log("AI Command detected: ADD_MATCHES", query);
                 htmlText = htmlText.replace(matchMatches[0], '');
                 await addMatches(query);
             }
 
-            // 2. EMAIL
+            // 2. EMAIL (Loop to handle multiple commands)
             const cmdEmailRegex = /\[\[CMD:EMAIL\|(.*?)\|(.*?)\]\]/;
-            const matchEmail = htmlText.match(cmdEmailRegex);
-
-            if (matchEmail) {
+            let matchEmail;
+            while ((matchEmail = htmlText.match(cmdEmailRegex)) !== null) {
                 const subject = matchEmail[1];
                 const body = matchEmail[2];
                 console.log("AI Command detected: EMAIL", subject);
