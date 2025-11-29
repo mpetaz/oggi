@@ -306,6 +306,7 @@
         let currentStrategyId = null;  // Track current strategy for re-sorting
         let currentSortMode = 'score';  // 'score' or 'time'
         let isRegisterMode = false;  // Track if user is in registration mode
+        let globalStats = { total: 0, wins: 0, losses: 0, winrate: 0 }; // Global stats for AI
 
         // Date formatting
         function formatDateIT(dateString) {
@@ -498,6 +499,9 @@
                 });
 
                 const winrate = total > 0 ? ((wins / total) * 100).toFixed(1) : 0;
+
+                // Update Global Stats for AI
+                globalStats = { total, wins, losses, winrate };
 
                 // Calculate next day for "new predictions"
                 const nextDay = getNextDay(lastDate);
@@ -1079,43 +1083,87 @@
 <!-- AI Chatbot Logic -->
 <script>
     // CONFIGURATION
-    const GEMINI_API_KEY = "AIzaSyD-LIUEzitcMVddDaHNqrl8OY_DcLgl8UE"; // ⚠️ Replace with User's Key
-    // Using Gemini 2.5 Flash as requested
+    const GEMINI_API_KEY = "AIzaSyCmwIWnqiPa7g28LqmbfwhQwVkFIgOorJE"; // ⚠️ Replace with User's Key
     const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
-
-    const SYSTEM_PROMPT = `
-Sei l'assistente virtuale di Antigravity, un'app per analisi e pronostici calcistici.
-Il tuo obiettivo è aiutare gli utenti a navigare l'app e capire le funzionalità.
-Rispondi in italiano, in modo conciso (max 2-3 frasi), amichevole e professionale. Usa emoji.
-
-INFO SULL'APP:
-1. **Mie Partite**: Salva le partite con la stella ⭐. Le partite >24h vengono cancellate automaticamente al login. Puoi anche usare "Cancella Tutte".
-2. **Strategie**:
-   - **Magia AI 🪄**: Una selezione speciale dell'Intelligenza Artificiale che individua pattern nascosti e opportunità ad alto valore. È la strategia più misteriosa e potente!
-   - **Winrate 80% 🔥**: Solo partite da campionati con una percentuale di vittoria storica superiore all'80%.
-   - **Top EU 🌍**: I 5 principali campionati europei (Serie A, Premier, Liga, Bundesliga, Ligue 1).
-   - **Italia 🇮🇹**: Focus esclusivo su Serie A e Serie B.
-   - **Coppe 🏆**: Champions, Europa e Conference League.
-   - **Over 0.5 HT ⚡**: Partite con alta probabilità di gol nel primo tempo.
-3. **Badge**: I numeri rossi indicano quante partite corrispondono ai filtri.
-4. **Registrazione**: Serve per salvare le tue partite personali.
-5. **Disclaimer**: Forniamo statistiche, non consigli finanziari. Gioca responsabilmente.
-
-Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnologia Google Gemini".
-`;
 
     // UI Elements
     const widget = document.getElementById('ai-chat-widget');
-    const chatWindow = document.getElementById('ai-chat-window'); // Renamed from window
+    const chatWindow = document.getElementById('ai-chat-window');
     const toggleBtn = document.getElementById('toggle-chat-btn');
     const closeBtn = document.getElementById('close-chat-btn');
     const form = document.getElementById('chat-form');
     const input = document.getElementById('chat-input');
     const messagesContainer = document.getElementById('chat-messages');
+    const chatHeaderTitle = chatWindow.querySelector('.font-bold');
+
+    // Update Name
+    chatHeaderTitle.textContent = "Aiuto Online di TipsterAI";
 
     // State
     let isOpen = false;
-    let chatHistory = []; // Stores conversation history
+    let chatHistory = [];
+
+    // Helper: Get User Name
+    function getUserName() {
+        if (currentUser && currentUser.email) {
+            // Extract name from email (e.g., "mario" from "mario@gmail.com")
+            const name = currentUser.email.split('@')[0];
+            return name.charAt(0).toUpperCase() + name.slice(1);
+        }
+        return "Amico";
+    }
+
+    // Helper: Build Dynamic System Prompt
+    function buildSystemPrompt() {
+        const userName = getUserName();
+
+        // Get Strategies from Global Scope
+        let strategiesText = "";
+        if (typeof strategiesData !== 'undefined' && strategiesData) {
+            strategiesText = Object.values(strategiesData)
+                .map(s => `- **${s.name}**: ${s.description || 'Strategia automatica basata su statistiche.'} (${s.totalMatches || 0} partite attive)`)
+                .join('\n');
+        } else {
+            strategiesText = "- Nessuna strategia caricata al momento.";
+        }
+
+        return `
+Sei **TipsterAI**, l'intelligenza artificiale ufficiale dell'app.
+Parla al plurale o in terza persona come se fossi il team di esperti (es. "Noi di TipsterAI", "Gli esperti di TipsterAI", "La magia di TipsterAI").
+Il tuo interlocutore si chiama **${userName}**.
+Usa il suo nome ogni tanto, ma non iniziare ogni frase con "Ciao". Sii vario e naturale.
+
+**I NOSTRI NUMERI STRAORDINARI:**
+Abbiamo analizzato **${globalStats.total}** partite totali.
+Vittorie: **${globalStats.wins}** 🏆
+Sconfitte: **${globalStats.losses}**
+Winrate Attuale: **${globalStats.winrate}%** 🔥
+Usa questi numeri per vantarti dei risultati quando opportuno!
+
+**LA TUA MISSIONE:**
+Il nostro compito è aiutare l'utente a selezionare, tra tutte le partite che si giocano oggi, quelle con la più alta percentuale di successo.
+Analizziamo migliaia di partite per offrire le migliori opportunità.
+L'utente deve scegliere quale strategia utilizzare tra quelle proposte, e noi forniamo le partite pronte con tutte le informazioni per giocare nel bookmaker preferito.
+Ricorda sempre di promuovere il **gioco responsabile**: il betting deve essere un divertimento, non una fonte di reddito garantita.
+
+**COME RISPONDERE A "COME FUNZIONA?":**
+Se l'utente chiede come funziona, rispondi con enfasi:
+"Il nostro compito è analizzare migliaia di partite ogni giorno per trovare quelle con la più alta probabilità di successo. Tu devi solo scegliere una delle nostre strategie vincenti (come Magia AI o Winrate 80%) e noi ti mostriamo le migliori opportunità pronte da giocare. Semplice, veloce e basato sui dati!"
+
+**STRATEGIE ATTIVE OGGI:**
+${strategiesText}
+
+**ELEMENTI APP:**
+1. **Mie Partite**: L'utente può salvare le partite preferite (stella ⭐).
+2. **Badge Rossi**: Indicano le "Partite Calde" o le opportunità attive per quella strategia. Più alto è il numero, più occasioni ci sono!
+3. **Filtri**: Si possono ordinare le partite per Ranking 📊 (migliori prima) o Orario 🕐.
+
+**TONO DI VOCE:**
+- Professionale ma amichevole ed entusiasta.
+- Usa emoji calcistiche e "magic" (⚽, 🪄, 🔥, 📊).
+- Risposte concise (max 3-4 righe) ma complete.
+`;
+    }
 
     // Toggle Chat
     function toggleChat() {
@@ -1183,14 +1231,15 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
         showLoading();
 
         try {
-            // Prepare History (System Prompt + User Message)
+            // Generate Dynamic Prompt
+            const currentSystemPrompt = buildSystemPrompt();
+
+            // Prepare History
             const contents = [
                 {
                     role: "user",
-                    parts: [{ text: SYSTEM_PROMPT + "\n\nUser Question: " + text }]
+                    parts: [{ text: currentSystemPrompt + "\n\nDomanda Utente: " + text }]
                 }
-                // Note: For simplicity in this REST version, we send the system prompt context each time 
-                // or we could maintain a full history array here.
             ];
 
             // Call Gemini API (REST)
@@ -1207,7 +1256,11 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error?.message || "API Error");
+                // Handle specific error for leaked key
+                if (data.error && data.error.message && data.error.message.includes("API key not valid")) {
+                    throw new Error("API Key non valida o revocata da Google.");
+                }
+                throw new Error(data.error?.message || "Errore API");
             }
 
             const markdownText = data.candidates[0].content.parts[0].text;
@@ -1223,11 +1276,10 @@ Se ti chiedono chi ti ha creato, rispondi "Il team di Antigravity con la tecnolo
         } catch (error) {
             console.error("AI Error Details:", error);
             removeLoading();
-            appendMessage(`⚠️ Errore: ${error.message}`, 'ai');
+            appendMessage(`⚠️ <strong>Errore Tecnico:</strong> ${error.message}<br><br>Se vedi "API Key leaked", devi rigenerare la chiave su Google AI Studio.`, 'ai');
         }
     });
 </script>
 </body>
 
 </html>
-```
