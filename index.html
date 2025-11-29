@@ -308,6 +308,11 @@
         let isRegisterMode = false;  // Track if user is in registration mode
         let globalStats = { total: 0, wins: 0, losses: 0, winrate: 0 }; // Global stats for AI
 
+        // Expose to window for Chatbot
+        window.globalStats = globalStats;
+        window.strategiesData = null; // Will be updated
+        window.currentUser = null; // Will be updated
+
         // Date formatting
         function formatDateIT(dateString) {
             if (!dateString) return '';
@@ -367,6 +372,7 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
+                window.currentUser = user; // Update global reference
 
                 // Auto-cleanup old matches
                 await cleanupOldMatches(user.uid);
@@ -502,6 +508,7 @@
 
                 // Update Global Stats for AI
                 globalStats = { total, wins, losses, winrate };
+                window.globalStats = globalStats; // Update global reference
 
                 // Calculate next day for "new predictions"
                 const nextDay = getNextDay(lastDate);
@@ -802,7 +809,7 @@
                 // Add
                 selectedMatches.push({
                     id: matchId,
-                    strategy: strategiesData[stratId].name,
+                    strategy: strategiesData[stratId].name, // Save to state
                     ...match
                 });
                 btn.classList.add('flagged');
@@ -1108,9 +1115,9 @@
 
     // Helper: Get User Name
     function getUserName() {
-        if (currentUser && currentUser.email) {
+        if (window.currentUser && window.currentUser.email) {
             // Extract name from email (e.g., "mario" from "mario@gmail.com")
-            const name = currentUser.email.split('@')[0];
+            const name = window.currentUser.email.split('@')[0];
             return name.charAt(0).toUpperCase() + name.slice(1);
         }
         return "Amico";
@@ -1122,13 +1129,16 @@
 
         // Get Strategies from Global Scope
         let strategiesText = "";
-        if (typeof strategiesData !== 'undefined' && strategiesData) {
-            strategiesText = Object.values(strategiesData)
+        if (typeof window.strategiesData !== 'undefined' && window.strategiesData) {
+            strategiesText = Object.values(window.strategiesData)
                 .map(s => `- **${s.name}**: ${s.description || 'Strategia automatica basata su statistiche.'} (${s.totalMatches || 0} partite attive)`)
                 .join('\n');
         } else {
             strategiesText = "- Nessuna strategia caricata al momento.";
         }
+
+        // Get Global Stats safely
+        const stats = window.globalStats || { total: 0, wins: 0, losses: 0, winrate: 0 };
 
         return `
 Sei **TipsterAI**, l'intelligenza artificiale ufficiale dell'app.
@@ -1137,10 +1147,10 @@ Il tuo interlocutore si chiama **${userName}**.
 Usa il suo nome ogni tanto, ma non iniziare ogni frase con "Ciao". Sii vario e naturale.
 
 **I NOSTRI NUMERI STRAORDINARI:**
-Abbiamo analizzato **${globalStats.total}** partite totali.
-Vittorie: **${globalStats.wins}** 🏆
-Sconfitte: **${globalStats.losses}**
-Winrate Attuale: **${globalStats.winrate}%** 🔥
+Abbiamo analizzato **${stats.total}** partite totali.
+Vittorie: **${stats.wins}** 🏆
+Sconfitte: **${stats.losses}**
+Winrate Attuale: **${stats.winrate}%** 🔥
 Usa questi numeri per vantarti dei risultati quando opportuno!
 
 **LA TUA MISSIONE:**
