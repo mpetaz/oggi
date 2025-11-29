@@ -430,10 +430,10 @@
         // Load Data
         async function loadData() {
             try {
-                // Load ALL strategies from client_presets (Updated by Admin)
-                const strategiesDoc = await getDoc(doc(db, "system", "client_presets"));
+                // Load ALL strategies from strategy_results (Calculated by Admin)
+                const strategiesDoc = await getDoc(doc(db, "system", "strategy_results"));
                 if (!strategiesDoc.exists()) {
-                    console.error('[Client] client_presets not found!');
+                    console.error('[Client] strategy_results not found!');
                     return;
                 }
 
@@ -443,16 +443,26 @@
                 // Filter: Show ONLY published strategies
                 // Presets (all, winrate_80, italia, top_eu, cups, best_05_ht) are ALWAYS shown
                 // Custom strategies need to check if they're published
-                // Note: client_presets already contains the merged list from Admin
 
                 const presetIds = ['all', 'winrate_80', 'italia', 'top_eu', 'cups', 'best_05_ht'];
                 strategiesData = {};
 
                 for (const [stratId, stratData] of Object.entries(allStrategies)) {
-                    // Skip if no name (sanity check)
-                    if (!stratData.name) {
+                    // Skip if no name or no matches data
+                    if (!stratData.name || !stratData.matches) {
+                        console.warn(`[Client] Skipping ${stratId} - missing data`);
                         continue;
                     }
+
+                    // Always include presets
+                    if (presetIds.includes(stratId)) {
+                        strategiesData[stratId] = stratData;
+                        continue;
+                    }
+
+                    // For custom strategies, check if published
+                    // (Custom strategies that are saved via Admin "Salva" button are automatically here)
+                    // We include all non-preset strategies found in strategy_results
                     strategiesData[stratId] = stratData;
                 }
 
