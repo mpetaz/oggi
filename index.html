@@ -312,6 +312,7 @@
         window.globalStats = globalStats;
         window.strategiesData = null; // Will be updated
         window.currentUser = null; // Will be updated
+        window.aiKnowledge = null; // AI Knowledge Base
 
         // Date formatting
         function formatDateIT(dateString) {
@@ -478,6 +479,17 @@
                     updateMyMatchesCount(); // Initialize badge
                 } else {
                     console.log('[Client] No selected matches found');
+                }
+
+                // Load AI Knowledge Base
+                try {
+                    const knowledgeDoc = await getDoc(doc(db, "strategies_metadata", "definitions"));
+                    if (knowledgeDoc.exists()) {
+                        window.aiKnowledge = knowledgeDoc.data();
+                        console.log('[Client] AI Knowledge loaded:', Object.keys(window.aiKnowledge));
+                    }
+                } catch (e) {
+                    console.warn('[Client] Could not load AI knowledge:', e);
                 }
             } catch (e) {
                 console.error('[Client] Critical error loading data:', e);
@@ -1139,12 +1151,34 @@
     // Helper: Build Dynamic System Prompt
     function buildSystemPrompt() {
         const userName = getUserName();
+        const knowledge = window.aiKnowledge || {};
 
         // Get Strategies from Global Scope
         let strategiesText = "";
         if (typeof window.strategiesData !== 'undefined' && window.strategiesData) {
-            strategiesText = Object.values(window.strategiesData)
-                .map(s => `- **${s.name}**: ${s.description || 'Strategia automatica basata su statistiche.'} (${s.totalMatches || 0} partite attive)`)
+            strategiesText = Object.entries(window.strategiesData)
+                .map(([id, s]) => {
+                    // Try to find metadata in Knowledge Base
+                    const meta = knowledge[id] || {};
+
+                    // Description: Use Knowledge Base or fallback to Strategy object or default
+                    const desc = meta.description || s.description || 'Strategia basata su statistiche.';
+
+                    // Leagues: Use Knowledge Base (static truth) OR Dynamic (current truth)
+                    let leagueInfo = "";
+                    if (meta.leagues && meta.leagues.length > 0) {
+                        const list = meta.leagues.slice(0, 12).join(', ');
+                        leagueInfo = `\n  *Leghe incluse:* ${list}${meta.leagues.length > 12 ? ', ecc.' : '.'}`;
+                    } else {
+                        // Fallback to dynamic extraction
+                        const uniqueLeagues = [...new Set(s.matches.map(m => m.lega))];
+                        const list = uniqueLeagues.slice(0, 8).join(', ');
+                        const more = uniqueLeagues.length > 8 ? ', ecc.' : '';
+                        leagueInfo = `\n  *Leghe attive oggi:* ${list}${more}`;
+                    }
+
+                    return `- **${s.name}**: ${desc} (${s.totalMatches} partite attive).${leagueInfo}`;
+                })
                 .join('\n');
         } else {
             strategiesText = "- Nessuna strategia caricata al momento.";
