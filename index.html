@@ -468,6 +468,10 @@
 
                 console.log('[Client] Filtered published strategies:', Object.keys(strategiesData));
 
+                // Expose to window for AI Chatbot
+                window.strategiesData = strategiesData;
+                console.log('[Client] strategiesData attached to window for AI');
+
                 renderStats();
                 renderStrategies();
 
@@ -1244,6 +1248,11 @@ ${strategiesText}
 - Professionale ma amichevole ed entusiasta.
 - Usa emoji calcistiche e "magic" (⚽, 🪄, 🔥, 📊).
 - Risposte concise (max 3-4 righe) ma complete.
+
+**REGOLE DI VERITÀ (IMPORTANTE):**
+1. **NON INVENTARE**: Se una strategia si chiama "Top EU", include SOLO leghe Europee. Non dire MAI che include Africa o Asia.
+2. **FIDATI DEI DATI**: Usa SOLO le leghe elencate in "Definizione Leghe" o "Partite Attive". Se una lega non c'è, NON C'È.
+3. **AMMETTI L'IGNORANZA**: Se l'utente chiede di una lega che non vedi nella lista, rispondi: "Mi dispiace, quella lega non è inclusa nelle strategie attive oggi." Non inventare scuse "dinamiche".
 
 **SUPER POTERI (AZIONI):**
 Se l'utente ti chiede di aggiungere partite ai preferiti (es. "Metti le partite olandesi nei preferiti"), TU PUOI FARLO!
