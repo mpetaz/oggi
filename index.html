@@ -1195,11 +1195,19 @@
                         });
 
                         // Format: "Eredivisie (3), Premier League (2)"
-                        const activeList = Object.entries(leagueCounts)
-                            .sort((a, b) => b[1] - a[1]) // Sort by count desc
-                            .slice(0, 8) // Top 8 active leagues
-                            .map(([name, count]) => `${name} (${count})`)
-                            .join(', ');
+                        let activeList = "";
+
+                        // Special handling for "ALL" or huge strategies
+                        if (id === 'all' || Object.keys(leagueCounts).length > 15) {
+                            const totalActive = Object.values(leagueCounts).reduce((a, b) => a + b, 0);
+                            activeList = `TUTTE le leghe attive (${Object.keys(leagueCounts).length} campionati, ${totalActive} partite). Include Serie A, Premier, Liga, ecc.`;
+                        } else {
+                            activeList = Object.entries(leagueCounts)
+                                .sort((a, b) => b[1] - a[1]) // Sort by count desc
+                                .slice(0, 8) // Top 8 active leagues
+                                .map(([name, count]) => `${name} (${count})`)
+                                .join(', ');
+                        }
 
                         dynamicInfo = `\n  *🔥 PARTITE ATTIVE OGGI:* ${activeList}`;
                     } else {
@@ -1270,6 +1278,17 @@ Utente: "Aggiungi le partite di Eredivisie" -> Tu: "Fatto! 🌟 [[CMD:ADD_MATCHE
 Utente: "Salva la partita della Juve" -> Tu: "Aggiunta! ⚽ [[CMD:ADD_MATCHES|Juventus]]"
 
 IMPORTANTE: La Query può essere il nome di una lega o di una squadra.
+
+**GESTIONE PROPOSTE STRATEGIE:**
+Se l'utente propone una NUOVA strategia (es. "Voglio una strategia sugli 0-0"), rispondi così:
+1. Fai i complimenti per l'idea ("Interessante dal punto di vista statistico!").
+2. Spiega che al momento usiamo solo le nostre strategie ottimizzate (Magia AI, Winrate 80%).
+3. Invita a scrivere a: **proposte@tipster-ai.it**.
+4. Offriti di preparare la bozza della mail: "Se vuoi, posso preparare io la bozza della mail per te. Dimmi solo 'Sì' o 'Prepara mail'".
+
+Se l'utente dice SÌ (o "prepara mail"):
+Usa il comando: \`[[CMD:EMAIL|Oggetto|Corpo]]\`
+Esempio: \`[[CMD:EMAIL|Proposta Strategia 0-0|Ciao Team, vorrei proporre una strategia basata sui pareggi 0-0...]]\`
 `;
     }
 
@@ -1335,6 +1354,55 @@ IMPORTANTE: La Query può essere il nome di una lega o di una squadra.
         }
     }
 
+    // ACTION: Open Email Draft
+    function openEmailDraft(subject, body) {
+        const email = "proposte@tipster-ai.it";
+        const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+        // Open in new tab/window (triggers default email client)
+        window.open(mailtoLink, '_blank');
+
+        appendMessage(`✅ <strong>Azione completata:</strong> Ho aperto il tuo client di posta con la bozza pronta!`, 'ai');
+    }
+
+    // Helper: Find Team Context (RAG-lite)
+    function findTeamContext(userMessage) {
+        if (!window.strategiesData) return "";
+
+        const msg = userMessage.toLowerCase();
+        // Ignore short words to avoid noise
+        const words = msg.split(' ').filter(w => w.length > 3);
+
+        let hints = [];
+
+        Object.values(window.strategiesData).forEach(strat => {
+            if (strat.matches) {
+                strat.matches.forEach(m => {
+                    const matchTitle = m.partita.toLowerCase();
+                    // Check if any significant word from user message is in the match title
+                    // e.g. "juve" in "juventus - cagliari"
+                    words.forEach(w => {
+                        if (matchTitle.includes(w)) {
+                            hints.push({
+                                team: w, // e.g. "juve"
+                                match: m.partita,
+                                strategy: strat.name
+                            });
+                        }
+                    });
+                });
+            }
+        });
+
+        if (hints.length > 0) {
+            // Group by strategy
+            // "Found 'juve' in: ALL, Italia"
+            const uniqueStrategies = [...new Set(hints.map(h => h.strategy))];
+            return `\n[SYSTEM HINT: Ho trovato corrispondenze per la tua ricerca nelle strategie: ${uniqueStrategies.join(', ')}. Usa queste info per rispondere.]`;
+        }
+        return "";
+    }
+
     // Toggle Chat
     function toggleChat() {
         isOpen = !isOpen;
@@ -1367,7 +1435,7 @@ IMPORTANTE: La Query può essere il nome di una lega o di una squadra.
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    // Show Loading
+    // Show Loading (old version, will be replaced by new loading in submit handler)
     function showLoading() {
         const div = document.createElement('div');
         div.id = 'ai-loading';
@@ -1384,8 +1452,8 @@ IMPORTANTE: La Query può essere il nome di una lega o di una squadra.
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    function removeLoading() {
-        const loading = document.getElementById('ai-loading');
+    function removeLoading(loadingId) { // Modified to accept loadingId
+        const loading = document.getElementById(loadingId);
         if (loading) loading.remove();
     }
 
@@ -1456,18 +1524,27 @@ IMPORTANTE: La Query può essere il nome di una lega o di una squadra.
                 .replace(/\n/g, '<br>');
 
             // COMMAND PARSING
-            const cmdRegex = /\[\[CMD:ADD_MATCHES\|(.*?)\]\]/;
-            const match = htmlText.match(cmdRegex);
+            // 1. ADD_MATCHES
+            const cmdMatchesRegex = /\[\[CMD:ADD_MATCHES\|(.*?)\]\]/;
+            const matchMatches = htmlText.match(cmdMatchesRegex);
 
-            if (match) {
-                const query = match[1];
+            if (matchMatches) {
+                const query = matchMatches[1];
                 console.log("AI Command detected: ADD_MATCHES", query);
-
-                // Remove command from display text
-                htmlText = htmlText.replace(match[0], '');
-
-                // Execute Command
+                htmlText = htmlText.replace(matchMatches[0], '');
                 await addMatches(query);
+            }
+
+            // 2. EMAIL
+            const cmdEmailRegex = /\[\[CMD:EMAIL\|(.*?)\|(.*?)\]\]/;
+            const matchEmail = htmlText.match(cmdEmailRegex);
+
+            if (matchEmail) {
+                const subject = matchEmail[1];
+                const body = matchEmail[2];
+                console.log("AI Command detected: EMAIL", subject);
+                htmlText = htmlText.replace(matchEmail[0], '');
+                openEmailDraft(subject, body);
             }
 
             removeLoading();
