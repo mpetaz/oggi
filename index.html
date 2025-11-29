@@ -479,11 +479,17 @@
                 const userMatchesDoc = await getDoc(doc(db, "users", currentUser.uid, "data", "selected_matches"));
                 if (userMatchesDoc.exists()) {
                     selectedMatches = userMatchesDoc.data().matches || [];
+                    window.selectedMatches = selectedMatches; // Update global reference
                     console.log('[Client] Loaded selected matches:', selectedMatches.length);
                     updateMyMatchesCount(); // Initialize badge
                 } else {
                     console.log('[Client] No selected matches found');
                 }
+
+                // Expose to window for AI Chatbot
+                window.updateMyMatchesCount = updateMyMatchesCount; // Also expose this function
+                console.log('[Client] selectedMatches attached to window for AI');
+
 
                 // Load AI Knowledge Base
                 try {
@@ -704,7 +710,7 @@
         // Create Match Card
         function createMatchCard(match, index, stratId, showTimeInCard = true) {
             const matchId = `${match.data}_${match.partita}`;
-            const isFlagged = selectedMatches.some(sm => sm.id === matchId);
+            const isFlagged = window.selectedMatches.some(sm => sm.id === matchId);
 
             const card = document.createElement('div');
             card.className = 'match-card rounded-xl p-5 shadow-lg fade-in';
@@ -827,16 +833,16 @@
 
         // Toggle Flag
         async function toggleFlag(matchId, match, stratId, btn) {
-            const index = selectedMatches.findIndex(sm => sm.id === matchId);
+            const index = window.selectedMatches.findIndex(sm => sm.id === matchId);
 
             if (index >= 0) {
                 // Remove
-                selectedMatches.splice(index, 1);
+                window.selectedMatches.splice(index, 1);
                 btn.classList.remove('flagged');
                 btn.innerHTML = '<i class="fa-regular fa-star"></i>';
             } else {
                 // Add
-                selectedMatches.push({
+                window.selectedMatches.push({
                     id: matchId,
                     strategy: strategiesData[stratId].name, // Save to state
                     ...match
@@ -848,7 +854,7 @@
             // Save to Firebase
             try {
                 await setDoc(doc(db, "users", currentUser.uid, "data", "selected_matches"), {
-                    matches: selectedMatches,
+                    matches: window.selectedMatches,
                     updated: Date.now()
                 });
             } catch (e) {
@@ -864,14 +870,14 @@
             const container = document.getElementById('my-matches-container');
             container.innerHTML = '';
 
-            if (selectedMatches.length === 0) {
+            if (window.selectedMatches.length === 0) {
                 container.innerHTML = '<div class="text-center text-gray-300 py-12">Nessuna partita selezionata</div>';
                 console.log('[Client] No matches to show');
             } else {
-                console.log('[Client] Rendering', selectedMatches.length, 'matches');
+                console.log('[Client] Rendering', window.selectedMatches.length, 'matches');
 
                 // Clone and sort
-                let sortedMatches = [...selectedMatches];
+                let sortedMatches = [...window.selectedMatches];
 
                 if (sortMode === 'time') {
                     // Sort by time
@@ -951,15 +957,15 @@
             const navBtn = document.querySelector('[data-page="my-matches"]');
             const countBadge = navBtn.querySelector('.count-badge');
 
-            if (selectedMatches.length > 0) {
+            if (window.selectedMatches.length > 0) {
                 if (!countBadge) {
                     const badge = document.createElement('span');
                     badge.className = 'count-badge absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold';
-                    badge.textContent = selectedMatches.length;
+                    badge.textContent = window.selectedMatches.length;
                     navBtn.style.position = 'relative';
                     navBtn.appendChild(badge);
                 } else {
-                    countBadge.textContent = selectedMatches.length;
+                    countBadge.textContent = window.selectedMatches.length;
                 }
             } else if (countBadge) {
                 countBadge.remove();
@@ -1013,18 +1019,18 @@
 
         // Delete all matches button
         document.getElementById('delete-all-matches-btn').addEventListener('click', async () => {
-            if (selectedMatches.length === 0) {
+            if (window.selectedMatches.length === 0) {
                 alert('Nessuna partita da cancellare');
                 return;
             }
 
-            if (!confirm(`Vuoi cancellare tutte le ${selectedMatches.length} partite salvate?\n\nQuesta azione è irreversibile.`)) {
+            if (!confirm(`Vuoi cancellare tutte le ${window.selectedMatches.length} partite salvate?\n\nQuesta azione è irreversibile.`)) {
                 return;
             }
 
             try {
                 // Clear all matches
-                selectedMatches = [];
+                window.selectedMatches = [];
 
                 // Save to Firebase
                 await setDoc(doc(db, "users", currentUser.uid, "data", "selected_matches"), {
@@ -1255,23 +1261,23 @@ ${strategiesText}
 3. **AMMETTI L'IGNORANZA**: Se l'utente chiede di una lega che non vedi nella lista, rispondi: "Mi dispiace, quella lega non è inclusa nelle strategie attive oggi." Non inventare scuse "dinamiche".
 
 **SUPER POTERI (AZIONI):**
-Se l'utente ti chiede di aggiungere partite ai preferiti (es. "Metti le partite olandesi nei preferiti"), TU PUOI FARLO!
+Se l'utente ti chiede di aggiungere partite ai preferiti (es. "Metti la Juve nei preferiti" o "Aggiungi Eredivisie"), TU PUOI FARLO!
 Usa questo comando speciale alla fine della frase:
-\`[[CMD:ADD_LEAGUE|NomeLega]]\`
+\`[[CMD:ADD_MATCHES|Query]]\`
 
 Esempio:
-Utente: "Aggiungi le partite di Eredivisie ai miei preferiti"
-Tu: "Certamente! Aggiungo subito le partite di Eredivisie alla tua lista. 🌟 [[CMD:ADD_LEAGUE|Eredivisie]]"
+Utente: "Aggiungi le partite di Eredivisie" -> Tu: "Fatto! 🌟 [[CMD:ADD_MATCHES|Eredivisie]]"
+Utente: "Salva la partita della Juve" -> Tu: "Aggiunta! ⚽ [[CMD:ADD_MATCHES|Juventus]]"
 
-IMPORTANTE: Il nome della lega nel comando deve essere il più preciso possibile (es. "Eredivisie", "Premier League", "Serie A").
+IMPORTANTE: La Query può essere il nome di una lega o di una squadra.
 `;
     }
 
-    // ACTION: Add Matches by League
-    async function addMatchesByLeague(leagueName) {
+    // ACTION: Add Matches by Query (League or Team)
+    async function addMatches(query) {
         if (!window.strategiesData) return;
 
-        const targetLeague = leagueName.toLowerCase().trim();
+        const target = query.toLowerCase().trim();
         let addedCount = 0;
         let matchesToAdd = [];
 
@@ -1279,11 +1285,13 @@ IMPORTANTE: Il nome della lega nel comando deve essere il più preciso possibile
         Object.values(window.strategiesData).forEach(strat => {
             if (strat.matches) {
                 strat.matches.forEach(m => {
-                    // Fuzzy check: "eredivisie" matches "EU-NLD Eredivisie"
-                    if (m.lega.toLowerCase().includes(targetLeague)) {
-                        // Check if not already selected
+                    // Search in League OR Match Title (Home/Away)
+                    if (m.lega.toLowerCase().includes(target) || m.partita.toLowerCase().includes(target)) {
+                        // Check if not already selected (use window.selectedMatches)
+                        const currentMatches = window.selectedMatches || [];
                         const matchId = `${m.data}_${m.partita}`;
-                        if (!selectedMatches.some(sm => sm.id === matchId)) {
+
+                        if (!currentMatches.some(sm => sm.id === matchId)) {
                             // Avoid duplicates in this batch
                             if (!matchesToAdd.some(nm => nm.id === matchId)) {
                                 matchesToAdd.push({
@@ -1299,26 +1307,31 @@ IMPORTANTE: Il nome della lega nel comando deve essere il più preciso possibile
         });
 
         if (matchesToAdd.length > 0) {
-            selectedMatches.push(...matchesToAdd);
+            // Update global array
+            if (!window.selectedMatches) window.selectedMatches = [];
+            window.selectedMatches.push(...matchesToAdd);
+
             addedCount = matchesToAdd.length;
 
             // Save to Firebase
             try {
                 await setDoc(doc(db, "users", currentUser.uid, "data", "selected_matches"), {
-                    matches: selectedMatches,
+                    matches: window.selectedMatches,
                     updated: Date.now()
                 });
-                updateMyMatchesCount();
+
+                // Update UI badge (if exposed)
+                if (window.updateMyMatchesCount) window.updateMyMatchesCount();
 
                 // Show feedback in chat (system message)
-                appendMessage(`✅ <strong>Azione completata:</strong> Ho aggiunto ${addedCount} partite di "${leagueName}" ai tuoi preferiti!`, 'ai');
+                appendMessage(`✅ <strong>Azione completata:</strong> Ho aggiunto ${addedCount} partite per "${query}" ai tuoi preferiti!`, 'ai');
 
             } catch (e) {
                 console.error("Error saving matches via AI:", e);
                 appendMessage(`⚠️ Errore durante il salvataggio: ${e.message}`, 'ai');
             }
         } else {
-            appendMessage(`⚠️ Non ho trovato nuove partite per "${leagueName}" da aggiungere.`, 'ai');
+            appendMessage(`⚠️ Non ho trovato nuove partite per "${query}" da aggiungere.`, 'ai');
         }
     }
 
@@ -1443,18 +1456,18 @@ IMPORTANTE: Il nome della lega nel comando deve essere il più preciso possibile
                 .replace(/\n/g, '<br>');
 
             // COMMAND PARSING
-            const cmdRegex = /\[\[CMD:ADD_LEAGUE\|(.*?)\]\]/;
+            const cmdRegex = /\[\[CMD:ADD_MATCHES\|(.*?)\]\]/;
             const match = htmlText.match(cmdRegex);
 
             if (match) {
-                const leagueName = match[1];
-                console.log("AI Command detected: ADD_LEAGUE", leagueName);
+                const query = match[1];
+                console.log("AI Command detected: ADD_MATCHES", query);
 
                 // Remove command from display text
                 htmlText = htmlText.replace(match[0], '');
 
                 // Execute Command
-                await addMatchesByLeague(leagueName);
+                await addMatches(query);
             }
 
             removeLoading();
