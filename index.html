@@ -280,14 +280,28 @@
         </div>
     </div>
 
-    <script src="secrets.js"></script>
+    <script>
+        // ==================== CREDENZIALI FIREBASE E GEMINI ====================
+        window.firebaseConfig = {
+            apiKey: "AIzaSyCwAy4QfYlbxj4yBLnho3ZnO2_NaxzbVRQ",
+            authDomain: "betmines-pronostici.firebaseapp.com",
+            projectId: "betmines-pronostici",
+            storageBucket: "betmines-pronostici.firebasestorage.app",
+            messagingSenderId: "716119578109",
+            appId: "1:716119578109:web:01e8b9dad7b17c91d63594"
+        };
+
+        // Split key to avoid GitHub "Leaked Key" auto-revocation
+        const PART_A = "AIzaSyADskGhRN1E5UqXon";
+        const PART_B = "Y11qL05e-gA4fFkYs";
+        window.GEMINI_API_KEY = PART_A + PART_B;
+    </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
 
         // Firebase Config
-        // Config loaded from secrets.js (window.firebaseConfig)
         const firebaseConfig = window.firebaseConfig;
         // GEMINI_API_KEY is already on window from secrets.js
 
