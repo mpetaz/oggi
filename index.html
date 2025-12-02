@@ -402,6 +402,7 @@
                 await cleanupOldMatches(user.uid);
 
                 document.getElementById('loading-overlay').classList.add('hidden');
+                document.getElementById('login-container').classList.add('hidden'); // Fix: Hide login screen
                 document.getElementById('app-container').classList.remove('hidden');
                 await loadData();
             } else {
@@ -758,7 +759,7 @@
         // Create Match Card
         function createMatchCard(match, index, stratId, showTimeInCard = true) {
             const matchId = `${match.data}_${match.partita}`;
-            const isFlagged = window.selectedMatches.some(sm => sm.id === matchId);
+            const isFlagged = (window.selectedMatches || []).some(sm => sm.id === matchId);
 
             const card = document.createElement('div');
             card.className = 'match-card rounded-xl p-5 shadow-lg fade-in';
