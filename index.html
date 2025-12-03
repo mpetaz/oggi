@@ -1427,27 +1427,85 @@
             const detailsContainer = card.querySelector(`#details-${date}`);
 
             if (detailsContainer.classList.contains('hidden')) {
-                // Show details
+                // Show strategies list with stats
                 detailsContainer.innerHTML = Object.entries(strategies).map(([stratId, strat]) => {
                     const matches = strat.matches || [];
                     const matchesWithResults = matches.filter(m => m.risultato);
 
                     if (matchesWithResults.length === 0) return '';
 
+                    // Calculate strategy stats
+                    let wins = 0, losses = 0;
+                    matchesWithResults.forEach(m => {
+                        if (m.esito === 'Vinto') wins++;
+                        else if (m.esito === 'Perso') losses++;
+                    });
+
+                    const total = wins + losses;
+                    const winrate = total > 0 ? Math.round((wins / total) * 100) : 0;
+
+                    let winrateColor = 'text-gray-400';
+                    if (winrate >= 70) winrateColor = 'text-green-400';
+                    else if (winrate >= 50) winrateColor = 'text-yellow-400';
+                    else winrateColor = 'text-red-400';
+
                     return `
-                        <div class="mb-4">
-                            <div class="text-sm font-bold text-purple-300 mb-2">${strat.name || stratId}</div>
-                            <div class="space-y-2">
-                                ${matchesWithResults.map(match => createCompactMatchCard(match)).join('')}
+                        <div class="strategy-card bg-white/10 rounded-lg p-3 mb-2 cursor-pointer hover:bg-white/20 transition" 
+                             data-strategy="${stratId}" data-date="${date}">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="font-bold text-purple-300">${strat.name || stratId}</div>
+                                    <div class="flex items-center gap-3 text-xs mt-1">
+                                        <span class="text-green-400">✓ ${wins}V</span>
+                                        <span class="text-red-400">✗ ${losses}P</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xl font-black ${winrateColor}">${winrate}%</div>
+                                    <div class="text-xs text-gray-400">${total} partite</div>
+                                </div>
+                            </div>
+                            <div id="matches-${stratId}-${date}" class="matches-container hidden mt-3 pt-3 border-t border-white/20">
+                                <!-- Matches populated on click -->
                             </div>
                         </div>
                     `;
                 }).join('');
 
                 detailsContainer.classList.remove('hidden');
+
+                // Add click listeners for strategies
+                detailsContainer.querySelectorAll('.strategy-card').forEach(stratCard => {
+                    stratCard.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const stratId = stratCard.dataset.strategy;
+                        const dateId = stratCard.dataset.date;
+                        toggleStrategyMatches(stratId, dateId, strategies[stratId], stratCard);
+                    });
+                });
             } else {
                 // Hide details
                 detailsContainer.classList.add('hidden');
+            }
+        }
+
+        function toggleStrategyMatches(stratId, date, strat, card) {
+            const matchesContainer = card.querySelector(`#matches-${stratId}-${date}`);
+
+            if (matchesContainer.classList.contains('hidden')) {
+                // Show matches
+                const matches = strat.matches || [];
+                const matchesWithResults = matches.filter(m => m.risultato);
+
+                matchesContainer.innerHTML = `
+                    <div class="space-y-2">
+                        ${matchesWithResults.map(match => createCompactMatchCard(match)).join('')}
+                    </div>
+                `;
+                matchesContainer.classList.remove('hidden');
+            } else {
+                // Hide matches
+                matchesContainer.classList.add('hidden');
             }
         }
 
