@@ -207,6 +207,25 @@
 
         <!-- Strategies Page -->
         <div id="page-strategies" class="page active container mx-auto px-4 pb-24">
+            <!-- Date Selector (7-Day History) -->
+            <div class="bg-white/10 rounded-xl p-4 mb-4">
+                <div class="flex items-center justify-between">
+                    <button id="date-prev"
+                        class="text-3xl hover:scale-110 transition transform disabled:opacity-30 disabled:cursor-not-allowed">
+                        ◀
+                    </button>
+                    <div class="text-center flex-1">
+                        <div class="text-xs text-gray-300 mb-1">Strategie del</div>
+                        <div id="selected-date-display" class="text-xl font-bold">...</div>
+                        <div id="date-indicator" class="text-xs text-gray-400 mt-1">Caricamento...</div>
+                    </div>
+                    <button id="date-next"
+                        class="text-3xl hover:scale-110 transition transform disabled:opacity-30 disabled:cursor-not-allowed">
+                        ▶
+                    </button>
+                </div>
+            </div>
+
             <h2 class="text-2xl font-bold mb-4 text-center">📊 Seleziona una Strategia</h2>
             <div id="strategies-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <!-- Populated dynamically -->
@@ -451,82 +470,175 @@
         // Logout
         document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
+        // Global variable for selected date
+        let selectedDateGlobal = new Date().toISOString().split('T')[0]; // Default: today
+
         // Load Data
-        async function loadData() {
+        async function loadData(dateToLoad = null) {
             try {
-                // Load ALL strategies from strategy_results (Calculated by Admin)
-                const strategiesDoc = await getDoc(doc(db, "system", "strategy_results"));
-                if (!strategiesDoc.exists()) {
-                    console.error('[Client] strategy_results not found!');
-                    return;
-                }
+                // Use provided date or default to global selected date
+                const targetDate = dateToLoad || selectedDateGlobal;
 
-                const allStrategies = strategiesDoc.data();
-                console.log('[Client] Raw strategies from DB:', Object.keys(allStrategies));
+                console.log(`[Client] Loading strategies for ${targetDate}...`);
 
-                // Filter: Show ONLY published strategies
-                // Presets (all, winrate_80, italia, top_eu, cups, best_05_ht) are ALWAYS shown
-                // Custom strategies need to check if they're published
+                // Try NEW date-based structure first
+                let strategiesDoc = await getDoc(doc(db, "daily_strategies", targetDate));
 
-                const presetIds = ['all', 'winrate_80', 'italia', 'top_eu', 'cups', 'best_05_ht'];
-                strategiesData = {};
+                if (strategiesDoc.exists()) {
+                    // NEW structure found
+                    console.log('[Client] ✅ Found strategies in new date-based structure');
+                    const strategiesContainer = strategiesDoc.data().strategies || {};
 
-                for (const [stratId, stratData] of Object.entries(allStrategies)) {
-                    // Skip if no name or no matches data
-                    if (!stratData.name || !stratData.matches) {
-                        console.warn(`[Client] Skipping ${stratId} - missing data`);
-                        continue;
+                    // Load ALL strategies from the container
+                    const allStrategies = await getDoc(doc(db, "system", "strategy_results"));
+                    if (allStrategies.exists()) {
+                        const allStrategiesData = allStrategies.data();
+
+                        // Merge: Use strategy details from strategy_results, but matches from date-specific doc
+                        const merged = {};
+                        for (const [stratId, stratData] of Object.entries(strategiesContainer)) {
+                            if (allStrategiesData[stratId]) {
+                                merged[stratId] = {
+                                    ...allStrategiesData[stratId],
+                                    matches: stratData.matches || allStrategiesData[stratId].matches || []
+                                };
+                            } else {
+                                merged[stratId] = stratData;
+                            }
+                        }
+
+                        processStrategiesData(merged);
+                        updateDateDisplay(targetDate, true);
+                    } else {
+                        processStrategiesData(strategiesContainer);
+                        updateDateDisplay(targetDate, true);
                     }
-
-                    // Always include presets
-                    if (presetIds.includes(stratId)) {
-                        strategiesData[stratId] = stratData;
-                        continue;
-                    }
-
-                    // For custom strategies, check if published
-                    // (Custom strategies that are saved via Admin "Salva" button are automatically here)
-                    // We include all non-preset strategies found in strategy_results
-                    strategiesData[stratId] = stratData;
-                }
-
-                console.log('[Client] Filtered published strategies:', Object.keys(strategiesData));
-
-                // Expose to window for AI Chatbot
-                window.strategiesData = strategiesData;
-                console.log('[Client] strategiesData attached to window for AI');
-
-                renderStats();
-                renderStrategies();
-
-                // Load user selected matches
-                const userMatchesDoc = await getDoc(doc(db, "users", currentUser.uid, "data", "selected_matches"));
-                if (userMatchesDoc.exists()) {
-                    selectedMatches = userMatchesDoc.data().matches || [];
-                    window.selectedMatches = selectedMatches; // Update global reference
-                    console.log('[Client] Loaded selected matches:', selectedMatches.length);
-                    updateMyMatchesCount(); // Initialize badge
                 } else {
-                    console.log('[Client] No selected matches found');
+                    // Fallback to OLD structure
+                    console.log('[Client] Date-based structure not found, falling back to old system/strategy_results');
+                    strategiesDoc = await getDoc(doc(db, "system", "strategy_results"));
+
+                    if (!strategiesDoc.exists()) {
+                        console.error('[Client] No strategies found!');
+                        updateDateDisplay(targetDate, false);
+                        clearStrategiesUI();
+                        return;
+                    }
+
+                    const allStrategies = strategiesDoc.data();
+                    processStrategiesData(allStrategies);
+                    updateDateDisplay(targetDate, true);
                 }
 
-                // Expose to window for AI Chatbot
-                window.updateMyMatchesCount = updateMyMatchesCount; // Also expose this function
-                console.log('[Client] selectedMatches attached to window for AI');
-
-
-                // Load AI Knowledge Base
-                try {
-                    const knowledgeDoc = await getDoc(doc(db, "strategies_metadata", "definitions"));
-                    if (knowledgeDoc.exists()) {
-                        window.aiKnowledge = knowledgeDoc.data();
-                        console.log('[Client] AI Knowledge loaded:', Object.keys(window.aiKnowledge));
+                // Load user selected matches (only first time)
+                if (dateToLoad === null) {
+                    const userMatchesDoc = await getDoc(doc(db, "users", currentUser.uid, "data", "selected_matches"));
+                    if (userMatchesDoc.exists()) {
+                        selectedMatches = userMatchesDoc.data().matches || [];
+                        window.selectedMatches = selectedMatches;
+                        console.log('[Client] Loaded selected matches:', selectedMatches.length);
+                        updateMyMatchesCount();
+                    } else {
+                        console.log('[Client] No selected matches found');
                     }
-                } catch (e) {
-                    console.warn('[Client] Could not load AI knowledge:', e);
+
+                    // Load AI Knowledge Base (only first time)
+                    try {
+                        const knowledgeDoc = await getDoc(doc(db, "strategies_metadata", "definitions"));
+                        if (knowledgeDoc.exists()) {
+                            window.aiKnowledge = knowledgeDoc.data();
+                            console.log('[Client] AI Knowledge loaded:', Object.keys(window.aiKnowledge));
+                        }
+                    } catch (e) {
+                        console.warn('[Client] Could not load AI knowledge:', e);
+                    }
                 }
             } catch (e) {
                 console.error('[Client] Critical error loading data:', e);
+                updateDateDisplay(selectedDateGlobal, false);
+            }
+        }
+
+        // Helper: Process strategies data (filter and expose)
+        function processStrategiesData(allStrategies) {
+            console.log('[Client] Raw strategies from DB:', Object.keys(allStrategies));
+
+            const presetIds = ['all', 'winrate_80', 'italia', 'top_eu', 'cups', 'best_05_ht'];
+            strategiesData = {};
+
+            for (const [stratId, stratData] of Object.entries(allStrategies)) {
+                if (!stratData.name || !stratData.matches) {
+                    console.warn(`[Client] Skipping ${stratId} - missing data`);
+                    continue;
+                }
+
+                // Include presets always
+                if (presetIds.includes(stratId)) {
+                    strategiesData[stratId] = stratData;
+                    continue;
+                }
+
+                // Include all custom strategies
+                strategiesData[stratId] = stratData;
+            }
+
+            console.log('[Client] Filtered published strategies:', Object.keys(strategiesData));
+            window.strategiesData = strategiesData;
+            console.log('[Client] strategiesData attached to window for AI');
+            window.updateMyMatchesCount = updateMyMatchesCount;
+            console.log('[Client] selectedMatches attached to window for AI');
+
+            renderStats();
+            renderStrategies();
+        }
+
+        // Helper: Clear strategies UI when no data
+        function clearStrategiesUI() {
+            const grid = document.getElementById('strategies-grid');
+            if (grid) {
+                grid.innerHTML = '<div class="col-span-full text-center text-gray-300 py-8">Nessuna strategia disponibile per questa data</div>';
+            }
+        }
+
+        // Helper: Update date display
+        function updateDateDisplay(date, hasData) {
+            const displayEl = document.getElementById('selected-date-display');
+            const indicatorEl = document.getElementById('date-indicator');
+
+            if (displayEl) {
+                displayEl.textContent = formatDateLong(date);
+            }
+
+            if (indicatorEl) {
+                if (hasData) {
+                    const matchCount = Object.values(strategiesData).reduce((sum, strat) =>
+                        sum + (strat.matches?.length || 0), 0);
+                    indicatorEl.textContent = `${matchCount} partite totali`;
+                    indicatorEl.className = 'text-xs text-green-400 mt-1';
+                } else {
+                    indicatorEl.textContent = 'Nessuna strategia disponibile';
+                    indicatorEl.className = 'text-xs text-red-400 mt-1';
+                }
+            }
+
+            // Update button states
+            updateDateNavButtons();
+        }
+
+        // Helper: Update date nav button states
+        function updateDateNavButtons() {
+            const prevBtn = document.getElementById('date-prev');
+            const nextBtn = document.getElementById('date-next');
+            const today = new Date().toISOString().split('T')[0];
+
+            // Disable next if we're at today
+            if (nextBtn) {
+                nextBtn.disabled = (selectedDateGlobal >= today);
+            }
+
+            // Always enable prev (can go back 7+ days, just won't find data)
+            if (prevBtn) {
+                prevBtn.disabled = false;
             }
         }
 
@@ -1116,6 +1228,25 @@
 
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => showPage(btn.dataset.page));
+        });
+
+        // Date navigation buttons
+        document.getElementById('date-prev').addEventListener('click', async () => {
+            const currentDate = new Date(selectedDateGlobal);
+            currentDate.setDate(currentDate.getDate() - 1);
+            selectedDateGlobal = currentDate.toISOString().split('T')[0];
+            await loadData(selectedDateGlobal);
+        });
+
+        document.getElementById('date-next').addEventListener('click', async () => {
+            const currentDate = new Date(selectedDateGlobal);
+            currentDate.setDate(currentDate.getDate() + 1);
+            const today = new Date().toISOString().split('T')[0];
+
+            if (currentDate.toISOString().split('T')[0] <= today) {
+                selectedDateGlobal = currentDate.toISOString().split('T')[0];
+                await loadData(selectedDateGlobal);
+            }
         });
 
         // Delete all matches button
