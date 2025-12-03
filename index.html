@@ -63,7 +63,7 @@
         }
 
         .match-card {
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
             transition: all 0.3s ease;
         }
 
@@ -207,25 +207,6 @@
 
         <!-- Strategies Page -->
         <div id="page-strategies" class="page active container mx-auto px-4 pb-24">
-            <!-- Date Selector (7-Day History) -->
-            <div class="bg-white/10 rounded-xl p-4 mb-4">
-                <div class="flex items-center justify-between">
-                    <button id="date-prev"
-                        class="text-3xl hover:scale-110 transition transform disabled:opacity-30 disabled:cursor-not-allowed">
-                        ◀
-                    </button>
-                    <div class="text-center flex-1">
-                        <div class="text-xs text-gray-300 mb-1">Strategie del</div>
-                        <div id="selected-date-display" class="text-xl font-bold">...</div>
-                        <div id="date-indicator" class="text-xs text-gray-400 mt-1">Caricamento...</div>
-                    </div>
-                    <button id="date-next"
-                        class="text-3xl hover:scale-110 transition transform disabled:opacity-30 disabled:cursor-not-allowed">
-                        ▶
-                    </button>
-                </div>
-            </div>
-
             <h2 class="text-2xl font-bold mb-4 text-center">📊 Seleziona una Strategia</h2>
             <div id="strategies-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <!-- Populated dynamically -->
@@ -255,6 +236,19 @@
 
             <div id="matches-container" class="space-y-4">
                 <!-- Populated dynamically -->
+            </div>
+        </div>
+
+
+        <!-- History Page (7-Day Track Record) -->
+        <div id="page-history" class="page hidden container mx-auto px-4 pb-24">
+            <div class="mb-6">
+                <h2 class="text-3xl font-bold mb-2">📅 Ultimi 7 Giorni</h2>
+                <p class="text-gray-400 text-sm">Track record completo delle performance</p>
+            </div>
+
+            <div id="history-list" class="space-y-3">
+                <!-- Populated dynamically with date cards -->
             </div>
         </div>
 
@@ -290,6 +284,11 @@
             <button data-page="strategies" class="nav-btn flex flex-col items-center text-purple-400 transition">
                 <i class="fa-solid fa-list text-2xl mb-1"></i>
                 <span class="text-xs font-semibold">Strategie</span>
+            </button>
+            <button data-page="history"
+                class="nav-btn flex flex-col items-center text-gray-400 hover:text-green-400 transition">
+                <i class="fa-solid fa-calendar-days text-2xl mb-1"></i>
+                <span class="text-xs font-semibold">Ultimi 7 Giorni</span>
             </button>
             <button data-page="my-matches"
                 class="nav-btn flex flex-col items-center text-gray-400 hover:text-yellow-400 transition">
