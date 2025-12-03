@@ -1193,6 +1193,9 @@
                 document.getElementById('page-strategies').classList.add('active');
             } else if (pageName === 'ranking') {
                 document.getElementById('page-ranking').classList.add('active');
+            } else if (pageName === 'history') {
+                document.getElementById('page-history').classList.add('active');
+                loadHistory(); // Load 7-day history
             } else if (pageName === 'my-matches') {
                 showMyMatches();
                 document.getElementById('page-my-matches').classList.add('active');
@@ -1228,25 +1231,6 @@
 
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => showPage(btn.dataset.page));
-        });
-
-        // Date navigation buttons
-        document.getElementById('date-prev').addEventListener('click', async () => {
-            const currentDate = new Date(selectedDateGlobal);
-            currentDate.setDate(currentDate.getDate() - 1);
-            selectedDateGlobal = currentDate.toISOString().split('T')[0];
-            await loadData(selectedDateGlobal);
-        });
-
-        document.getElementById('date-next').addEventListener('click', async () => {
-            const currentDate = new Date(selectedDateGlobal);
-            currentDate.setDate(currentDate.getDate() + 1);
-            const today = new Date().toISOString().split('T')[0];
-
-            if (currentDate.toISOString().split('T')[0] <= today) {
-                selectedDateGlobal = currentDate.toISOString().split('T')[0];
-                await loadData(selectedDateGlobal);
-            }
         });
 
         // Delete all matches button
@@ -1289,6 +1273,201 @@
         document.getElementById('my-matches-sort-time').addEventListener('click', () => {
             showMyMatches('time');
         });
+
+        // ==================== HISTORY PAGE (7-DAY TRACK RECORD) ====================
+
+        async function loadHistory() {
+            const container = document.getElementById('history-list');
+            container.innerHTML = '<div class="text-center text-gray-400 py-8">Caricamento storico...</div>';
+
+            try {
+                const today = new Date();
+                const dates = [];
+
+                // Generate last 7 days
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    dates.push(date.toISOString().split('T')[0]);
+                }
+
+                // Load data for each date
+                const dateData = [];
+                for (const date of dates) {
+                    try {
+                        const docRef = doc(db, "daily_strategies", date);
+                        const docSnap = await getDoc(docRef);
+
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            const strategies = data.strategies || {};
+
+                            // Calculate total stats across all strategies
+                            let totalWins = 0, totalLosses = 0, totalPending = 0;
+
+                            Object.values(strategies).forEach(strat => {
+                                const matches = strat.matches || [];
+                                matches.forEach(m => {
+                                    if (m.esito === 'Vinto') totalWins++;
+                                    else if (m.esito === 'Perso') totalLosses++;
+                                    else totalPending++;
+                                });
+                            });
+
+                            dateData.push({
+                                date,
+                                strategies,
+                                totalWins,
+                                totalLosses,
+                                totalPending,
+                                hasData: true
+                            });
+                        } else {
+                            dateData.push({ date, hasData: false });
+                        }
+                    } catch (e) {
+                        console.error(`Error loading ${date}:`, e);
+                        dateData.push({ date, hasData: false });
+                    }
+                }
+
+                // Render date cards
+                if (dateData.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-400 py-8">Nessuno storico disponibile</div>';
+                    return;
+                }
+
+                container.innerHTML = dateData.map((data, index) => createHistoryDateCard(data, index)).join('');
+
+                // Add click listeners for expand/collapse
+                dateData.forEach((data, index) => {
+                    if (data.hasData) {
+                        const card = container.querySelector(`[data-date="${data.date}"]`);
+                        card.addEventListener('click', () => toggleDateDetails(data.date, data.strategies, card));
+                    }
+                });
+
+            } catch (e) {
+                console.error('[History] Error:', e);
+                container.innerHTML = '<div class="text-center text-red-400 py-8">Errore caricamento storico</div>';
+            }
+        }
+
+        function createHistoryDateCard(data, index) {
+            const { date, totalWins, totalLosses, totalPending, hasData } = data;
+
+            // Format date
+            const dateObj = new Date(date + 'T12:00:00');
+            const dayName = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'][dateObj.getDay()];
+            const dayNum = dateObj.getDate();
+            const monthName = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'][dateObj.getMonth()];
+
+            const isToday = index === 0;
+
+            if (!hasData) {
+                return `
+                    <div class="bg-gray-800/50 rounded-xl p-4 opacity-50">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm text-gray-500">${dayName}, ${dayNum} ${monthName}</div>
+                                ${isToday ? '<div class="text-xs text-purple-400 font-bold">OGGI</div>' : ''}
+                            </div>
+                            <div class="text-sm text-gray-500">Nessun dato</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const totalMatches = totalWins + totalLosses;
+            const winrate = totalMatches > 0 ? Math.round((totalWins / totalMatches) * 100) : 0;
+
+            let winrateColor = 'text-gray-400';
+            if (winrate >= 70) winrateColor = 'text-green-400';
+            else if (winrate >= 50) winrateColor = 'text-yellow-400';
+            else if (totalMatches > 0) winrateColor = 'text-red-400';
+
+            return `
+                <div data-date="${date}" class="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-xl p-4 cursor-pointer hover:scale-[1.02] transition-transform">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <div class="text-lg font-bold">${dayName}, ${dayNum} ${monthName}</div>
+                            ${isToday ? '<div class="text-xs text-purple-400 font-bold">● OGGI</div>' : ''}
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-black ${winrateColor}">${winrate}%</div>
+                            <div class="text-xs text-gray-400">winrate</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 text-sm">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                            <span class="font-bold text-green-400">${totalWins}V</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <span class="font-bold text-red-400">${totalLosses}P</span>
+                        </div>
+                        ${totalPending > 0 ? `
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-gray-500"></div>
+                                <span class="font-bold text-gray-400">${totalPending}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div id="details-${date}" class="details-container hidden mt-4 pt-4 border-t border-white/20">
+                        <!-- Details populated on click -->
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleDateDetails(date, strategies, card) {
+            const detailsContainer = card.querySelector(`#details-${date}`);
+
+            if (detailsContainer.classList.contains('hidden')) {
+                // Show details
+                detailsContainer.innerHTML = Object.entries(strategies).map(([stratId, strat]) => {
+                    const matches = strat.matches || [];
+                    const matchesWithResults = matches.filter(m => m.risultato);
+
+                    if (matchesWithResults.length === 0) return '';
+
+                    return `
+                        <div class="mb-4">
+                            <div class="text-sm font-bold text-purple-300 mb-2">${strat.name || stratId}</div>
+                            <div class="space-y-2">
+                                ${matchesWithResults.map(match => createCompactMatchCard(match)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                detailsContainer.classList.remove('hidden');
+            } else {
+                // Hide details
+                detailsContainer.classList.add('hidden');
+            }
+        }
+
+        function createCompactMatchCard(match) {
+            const isWin = match.esito === 'Vinto';
+            const bgColor = isWin ? 'bg-gradient-to-r from-green-600 to-green-700' : 'bg-gradient-to-r from-red-600 to-red-700';
+
+            return `
+                <div class="${bgColor} rounded-lg p-3 text-white">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-sm font-bold">${match.partita}</div>
+                        <div class="text-xl font-black">${isWin ? '✅' : '❌'}</div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <div><span class="opacity-80">Tip:</span> <span class="font-bold">${match.tip}</span></div>
+                        <div><span class="opacity-80">Risultato:</span> <span class="font-bold">${match.risultato}</span></div>
+                    </div>
+                </div>
+            `;
+        }
 
         // Strategy Icons
         function getStrategyIcon(stratId, isMagicAI = false) {
