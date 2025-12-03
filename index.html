@@ -858,27 +858,8 @@
 
             const card = document.createElement('div');
 
-            // Determine card background based on result (admin-style)
-            let cardBgClass = 'match-card'; // Default blue gradient
-            let textColorClass = '';
-
-            if (match.esito === 'Vinto') {
-                // Green gradient for wins
-                cardBgClass = 'rounded-xl p-5 shadow-lg fade-in';
-                card.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
-                textColorClass = 'text-white';
-            } else if (match.esito === 'Perso') {
-                // Red gradient for losses
-                cardBgClass = 'rounded-xl p-5 shadow-lg fade-in';
-                card.style.background = 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)';
-                textColorClass = 'text-white';
-            } else {
-                // Default blue for no result
-                cardBgClass = 'match-card rounded-xl p-5 shadow-lg fade-in';
-                textColorClass = '';
-            }
-
-            card.className = cardBgClass + (textColorClass ? ' ' + textColorClass : '');
+            // Keep card blue always, only color the result box
+            card.className = 'match-card rounded-xl p-5 shadow-lg fade-in';
 
             const indicationHTML = match.indication ? `
                 <div class="${match.indication.bg} ${match.indication.color} px-4 py-2 rounded-xl text-center font-bold text-sm mb-3">
@@ -968,17 +949,15 @@
                 <div class="text-sm opacity-80 mb-3">${match.lega}</div>
                 
                 ${match.risultato && match.esito ? `
-                    <div class="mb-4 p-4 bg-white/10 rounded-xl border-2 ${match.esito === 'Vinto' ? 'border-green-300' : 'border-red-300'}">
-                        <div class="flex items-center justify-between gap-4">
+                    <div class="mb-4 p-4 rounded-xl ${match.esito === 'Vinto' ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-red-500 to-red-600'}">
+                        <div class="flex items-center justify-between gap-4 text-white">
                             <div class="flex-1 text-center">
-                                <div class="text-xs opacity-80 mb-1">RISULTATO FINALE</div>
-                                <div class="text-3xl font-black">${match.risultato}</div>
+                                <div class="text-xs font-bold opacity-90 mb-1">RISULTATO FINALE</div>
+                                <div class="text-4xl font-black">${match.risultato}</div>
                             </div>
-                            <div class="flex-1">
-                                <div class="text-center py-3 px-4 rounded-lg ${match.esito === 'Vinto' ? 'bg-green-400/30' : 'bg-red-400/30'}">
-                                    <div class="text-2xl font-black">
-                                        ${match.esito === 'Vinto' ? '✅ VINTO' : '❌ PERSO'}
-                                    </div>
+                            <div class="flex-1 text-center">
+                                <div class="text-3xl font-black">
+                                    ${match.esito === 'Vinto' ? '✅ VINTO' : '❌ PERSO'}
                                 </div>
                             </div>
                         </div>
@@ -998,10 +977,10 @@
                     </div>
                 </div>
                 
-                ${indicationHTML}
-                ${htHTML}
-                ${betfairHTML}
-                ${statsHTML}
+                ${!match.risultato ? indicationHTML : ''}
+                ${!match.risultato ? htHTML : ''}
+                ${!match.risultato ? betfairHTML : ''}
+                ${!match.risultato ? statsHTML : ''}
             `;
 
             // Flag button logic
