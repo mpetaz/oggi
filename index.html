@@ -1457,11 +1457,14 @@
 
             return `
                 <div class="${bgColor} rounded-lg p-3 text-white">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="text-sm font-bold">${match.partita}</div>
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex-1">
+                            <div class="text-sm font-bold">${match.partita}</div>
+                            <div class="text-xs opacity-75">${match.lega || ''}</div>
+                        </div>
                         <div class="text-xl font-black">${isWin ? '✅' : '❌'}</div>
                     </div>
-                    <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center justify-between text-xs mt-2">
                         <div><span class="opacity-80">Tip:</span> <span class="font-bold">${match.tip}</span></div>
                         <div><span class="opacity-80">Risultato:</span> <span class="font-bold">${match.risultato}</span></div>
                     </div>
@@ -1487,7 +1490,7 @@
 </body>
 
 <!-- AI CHATBOT WIDGET -->
-<div id="ai-chat-widget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
+<div id="ai-chat-widget" class="fixed bottom-20 right-6 z-50 flex flex-col items-end font-sans">
     <!-- Chat Window -->
     <div id="ai-chat-window"
         class="hidden bg-white w-80 h-96 rounded-2xl shadow-2xl border border-gray-200 flex flex-col mb-4 overflow-hidden transition-all transform origin-bottom-right">
@@ -1657,9 +1660,15 @@ Se l'utente chiede come funziona, rispondi con enfasi:
 ${strategiesText}
 
 **ELEMENTI APP:**
-1. **Mie Partite**: L'utente può salvare le partite preferite (stella ⭐).
-2. **Badge Rossi**: Indicano le "Partite Calde" o le opportunità attive per quella strategia. Più alto è il numero, più occasioni ci sono!
-3. **Filtri**: Si possono ordinare le partite per Ranking 📊 (migliori prima) o Orario 🕐.
+1. **Strategie**: Pagina principale dove l'utente sceglie una strategia vincente per vedere le partite di oggi.
+2. **Ultimi 7 Giorni** 📅: Nuovo tab dove l'utente vede lo STORICO completo delle performance! 
+   - Lista delle ultime 7 date con statistiche (Vittorie/Perdite/Winrate %)
+   - Winrate colorato: 🟢 Verde ≥70%, 🟡 Giallo ≥50%, 🔴 Rosso <50%
+   - Cliccando su una data si espandono le partite con risultati reali (card verdi per VINTO, rosse per PERSO)
+   - Questo mostra la TRASPARENZA TOTALE: tutte le vittorie E le sconfitte sono visibili!
+3. **Mie Partite** ⭐: L'utente può salvare le partite preferite (stella ⭐).
+4. **Badge Rossi**: Indicano le "Partite Calde" o le opportunità attive per quella strategia. Più alto è il numero, più occasioni ci sono!
+5. **Filtri**: Si possono ordinare le partite per Ranking 📊 (migliori prima) o Orario 🕐.
 
 **TONO DI VOCE:**
 - Professionale ma amichevole ed entusiasta.
