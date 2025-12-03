@@ -487,32 +487,15 @@
                 if (strategiesDoc.exists()) {
                     // NEW structure found
                     console.log('[Client] ✅ Found strategies in new date-based structure');
-                    const strategiesContainer = strategiesDoc.data().strategies || {};
+                    const docData = strategiesDoc.data();
+                    const strategiesContainer = docData.strategies || {};
 
-                    // Load ALL strategies from the container
-                    const allStrategies = await getDoc(doc(db, "system", "strategy_results"));
-                    if (allStrategies.exists()) {
-                        const allStrategiesData = allStrategies.data();
+                    console.log('[Client] Date:', docData.date, 'Strategies:', Object.keys(strategiesContainer));
 
-                        // Merge: Use strategy details from strategy_results, but matches from date-specific doc
-                        const merged = {};
-                        for (const [stratId, stratData] of Object.entries(strategiesContainer)) {
-                            if (allStrategiesData[stratId]) {
-                                merged[stratId] = {
-                                    ...allStrategiesData[stratId],
-                                    matches: stratData.matches || allStrategiesData[stratId].matches || []
-                                };
-                            } else {
-                                merged[stratId] = stratData;
-                            }
-                        }
-
-                        processStrategiesData(merged);
-                        updateDateDisplay(targetDate, true);
-                    } else {
-                        processStrategiesData(strategiesContainer);
-                        updateDateDisplay(targetDate, true);
-                    }
+                    // Use strategies directly from date-specific document
+                    // (Already contains full strategy data with matches)
+                    processStrategiesData(strategiesContainer);
+                    updateDateDisplay(targetDate, true);
                 } else {
                     // Fallback to OLD structure
                     console.log('[Client] Date-based structure not found, falling back to old system/strategy_results');
@@ -874,7 +857,28 @@
             const isFlagged = (window.selectedMatches || []).some(sm => sm.id === matchId);
 
             const card = document.createElement('div');
-            card.className = 'match-card rounded-xl p-5 shadow-lg fade-in';
+
+            // Determine card background based on result (admin-style)
+            let cardBgClass = 'match-card'; // Default blue gradient
+            let textColorClass = '';
+
+            if (match.esito === 'Vinto') {
+                // Green gradient for wins
+                cardBgClass = 'rounded-xl p-5 shadow-lg fade-in';
+                card.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+                textColorClass = 'text-white';
+            } else if (match.esito === 'Perso') {
+                // Red gradient for losses
+                cardBgClass = 'rounded-xl p-5 shadow-lg fade-in';
+                card.style.background = 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)';
+                textColorClass = 'text-white';
+            } else {
+                // Default blue for no result
+                cardBgClass = 'match-card rounded-xl p-5 shadow-lg fade-in';
+                textColorClass = '';
+            }
+
+            card.className = cardBgClass + (textColorClass ? ' ' + textColorClass : '');
 
             const indicationHTML = match.indication ? `
                 <div class="${match.indication.bg} ${match.indication.color} px-4 py-2 rounded-xl text-center font-bold text-sm mb-3">
@@ -962,6 +966,19 @@
                 
                 <div class="text-2xl font-bold mb-2">${match.partita}</div>
                 <div class="text-sm opacity-80 mb-3">${match.lega}</div>
+                
+                ${match.risultato && match.esito ? `
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="flex-1 bg-white/20 rounded-lg p-2 text-center">
+                            <div class="text-xs opacity-70">Risultato</div>
+                            <div class="text-lg font-black">${match.risultato}</div>
+                        </div>
+                        <div class="flex-1 bg-white/30 rounded-lg p-2 text-center">
+                            <div class="text-xs opacity-70">Esito</div>
+                            <div class="text-lg font-black">${match.esito === 'Vinto' ? '✅ VINTO' : '❌ PERSO'}</div>
+                        </div>
+                    </div>
+                ` : ''}
                 
                 <div class="bg-white/10 rounded-lg p-3 mb-3">
                     <div class="flex items-center justify-between">
