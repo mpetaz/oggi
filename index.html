@@ -968,14 +968,19 @@
                 <div class="text-sm opacity-80 mb-3">${match.lega}</div>
                 
                 ${match.risultato && match.esito ? `
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="flex-1 bg-white/20 rounded-lg p-2 text-center">
-                            <div class="text-xs opacity-70">Risultato</div>
-                            <div class="text-lg font-black">${match.risultato}</div>
-                        </div>
-                        <div class="flex-1 bg-white/30 rounded-lg p-2 text-center">
-                            <div class="text-xs opacity-70">Esito</div>
-                            <div class="text-lg font-black">${match.esito === 'Vinto' ? '✅ VINTO' : '❌ PERSO'}</div>
+                    <div class="mb-4 p-4 bg-white/10 rounded-xl border-2 ${match.esito === 'Vinto' ? 'border-green-300' : 'border-red-300'}">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex-1 text-center">
+                                <div class="text-xs opacity-80 mb-1">RISULTATO FINALE</div>
+                                <div class="text-3xl font-black">${match.risultato}</div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-center py-3 px-4 rounded-lg ${match.esito === 'Vinto' ? 'bg-green-400/30' : 'bg-red-400/30'}">
+                                    <div class="text-2xl font-black">
+                                        ${match.esito === 'Vinto' ? '✅ VINTO' : '❌ PERSO'}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ` : ''}
