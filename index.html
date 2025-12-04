@@ -651,52 +651,43 @@
         // Render Stats
         async function renderStats() {
             try {
-                // Query all matches with results
-                const matchesQuery = query(collection(db, "matches"), where("risultato", "!=", ""));
-                const snapshot = await getDocs(matchesQuery);
+                // Read pre-calculated stats from system/global_stats (populated by admin)
+                const statsDoc = await getDoc(doc(db, "system", "global_stats"));
 
-                let total = 0;
-                let wins = 0;
-                let losses = 0;
-                let lastDate = '';
+                if (statsDoc.exists()) {
+                    const stats = statsDoc.data();
 
-                snapshot.forEach(doc => {
-                    const m = doc.data();
-                    total++;
-                    if (m.esito === 'Vinto') wins++;
-                    if (m.esito === 'Perso') losses++;
-                    if (m.data > lastDate) lastDate = m.data;
-                });
+                    // Update Global Stats for AI
+                    globalStats = {
+                        total: stats.total || 0,
+                        wins: stats.wins || 0,
+                        losses: stats.losses || 0,
+                        winrate: stats.winrate || 0
+                    };
+                    window.globalStats = globalStats;
 
-                const winrate = total > 0 ? ((wins / total) * 100).toFixed(1) : 0;
-
-                // Update Global Stats for AI
-                globalStats = { total, wins, losses, winrate };
-                window.globalStats = globalStats; // Update global reference
-
-                // Calculate date from ACTIVE predictions (strategiesData)
-                let activeDate = '';
-                if (window.strategiesData) {
-                    // Find the most recent date in the loaded strategies
-                    Object.values(window.strategiesData).forEach(strat => {
-                        if (strat.matches && strat.matches.length > 0) {
-                            strat.matches.forEach(m => {
-                                if (m.data > activeDate) activeDate = m.data;
-                            });
-                        }
-                    });
+                    document.getElementById('stat-total').textContent = stats.total || 0;
+                    document.getElementById('stat-wins').textContent = stats.wins || 0;
+                    document.getElementById('stat-losses').textContent = stats.losses || 0;
+                    document.getElementById('stat-winrate').textContent = (stats.winrate || 0) + '%';
+                    document.getElementById('last-update').textContent = formatDateLong(stats.lastUpdate || getTodayDate());
+                } else {
+                    console.warn('[Stats] No global_stats found in system collection');
+                    // Set defaults
+                    document.getElementById('stat-total').textContent = '0';
+                    document.getElementById('stat-wins').textContent = '0';
+                    document.getElementById('stat-losses').textContent = '0';
+                    document.getElementById('stat-winrate').textContent = '0%';
+                    document.getElementById('last-update').textContent = formatDateLong(getTodayDate());
                 }
-
-                // Fallback to next day of last result if no active matches found
-                const displayDate = activeDate ? activeDate : getNextDay(lastDate);
-
-                document.getElementById('stat-total').textContent = total;
-                document.getElementById('stat-wins').textContent = wins;
-                document.getElementById('stat-losses').textContent = losses;
-                document.getElementById('stat-winrate').textContent = winrate + '%';
-                document.getElementById('last-update').textContent = formatDateLong(displayDate);
             } catch (e) {
-                console.error('Error calculating stats:', e);
+                console.error('Error loading stats:', e);
+                // Set defaults on error
+                document.getElementById('stat-total').textContent = '0';
+                document.getElementById('stat-wins').textContent = '0';
+                document.getElementById('stat-losses').textContent = '0';
+                document.getElementById('stat-winrate').textContent = '0%';
+                document.getElementById('last-update').textContent = formatDateLong(getTodayDate());
             }
         }
 
