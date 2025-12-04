@@ -348,6 +348,11 @@
         let currentSortMode = 'score';  // 'score' or 'time'
         let isRegisterMode = false;  // Track if user is in registration mode
         let globalStats = { total: 0, wins: 0, losses: 0, winrate: 0 }; // Global stats for AI
+        let warningStats = null; // Warning stats for volatile leagues/tips
+
+        // Strategy categories
+        const STANDARD_STRATEGIES = ['all', 'italia', 'top_eu', 'best_05_ht', 'cups'];
+        // Premium strategies (winrate_80, ___magia_ai, custom) = NO warnings
 
         // Expose to window for Chatbot
         window.globalStats = globalStats;
@@ -410,6 +415,22 @@
             }
         }
 
+        async function loadWarningStats() {
+            try {
+                const statsDoc = await getDoc(doc(db, "system", "warning_stats"));
+                if (statsDoc.exists()) {
+                    warningStats = statsDoc.data();
+                    console.log('[Warning Stats] Loaded:', warningStats);
+                } else {
+                    console.log('[Warning Stats] No data found');
+                    warningStats = { volatileLeagues: [], lowPerformingTips: [], overestimatedLeagues: [] };
+                }
+            } catch (e) {
+                console.error('[Warning Stats] Error loading:', e);
+                warningStats = { volatileLeagues: [], lowPerformingTips: [], overestimatedLeagues: [] };
+            }
+        }
+
         // Auth Check
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -418,6 +439,9 @@
 
                 // Auto-cleanup old matches
                 await cleanupOldMatches(user.uid);
+
+                // Load warning stats for Standard strategies
+                await loadWarningStats();
 
                 document.getElementById('loading-overlay').classList.add('hidden');
                 document.getElementById('login-container').classList.add('hidden'); // Fix: Hide login screen
@@ -711,38 +735,84 @@
                 magic_ai: 'La magia dell\'AI con le sue scelte misteriose 🪄'
             };
 
+            // Separate strategies into Standard and Premium
+            const standardStrats = [];
+            const premiumStrats = [];
+
             Object.keys(strategiesData).forEach(stratId => {
                 const strat = strategiesData[stratId];
+                if (!strat || !strat.name) return;
 
-                // Safety checks
-                if (!strat || !strat.name) {
-                    console.warn(`[Client] Skipping ${stratId} - invalid data`);
-                    return;
+                if (STANDARD_STRATEGIES.includes(stratId)) {
+                    standardStrats.push({ id: stratId, data: strat });
+                } else {
+                    premiumStrats.push({ id: stratId, data: strat });
                 }
-
-                const isMagicAI = stratId.toLowerCase().includes('magic') || (strat.name && strat.name.toLowerCase().includes('magic'));
-                const card = document.createElement('button');
-                card.className = `strategy-btn ${isMagicAI ? 'magic-ai' : ''} text-white rounded-xl p-6 shadow-lg transform hover:scale-105 transition`;
-
-                const description = descriptions[stratId] || descriptions['magic_ai'] || 'Strategia personalizzata';
-
-                card.innerHTML = `
-                    <div class="strategy-info">?</div>
-                    <div class="text-3xl mb-2">${getStrategyIcon(stratId, isMagicAI)}</div>
-                    <div class="font-bold text-sm mb-1">${strat.name}</div>
-                    <div class="text-xs opacity-80">${strat.totalMatches} partite</div>
-                `;
-
-                // Info button click
-                const infoBtn = card.querySelector('.strategy-info');
-                infoBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    alert(`${strat.name}\n\n${description}`);
-                });
-
-                card.addEventListener('click', () => showRanking(stratId, strat));
-                container.appendChild(card);
             });
+
+            // Render Premium strategies first (if any)
+            if (premiumStrats.length > 0) {
+                const premiumSection = document.createElement('div');
+                premiumSection.className = 'col-span-full';
+                premiumSection.innerHTML = `
+                    <div class="mb-3">
+                        <div class="text-sm font-bold text-purple-300 flex items-center gap-2">
+                            <span>🤖 STRATEGIE SELEZIONATE AI</span>
+                            <span class="text-xs bg-purple-600 px-2 py-1 rounded">PRO</span>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1">Curate dall'intelligenza artificiale</div>
+                    </div>
+                `;
+                container.appendChild(premiumSection);
+
+                premiumStrats.forEach(({ id, data }) => {
+                    container.appendChild(createStrategyCard(id, data, descriptions, true));
+                });
+            }
+
+            // Render Standard strategies
+            if (standardStrats.length > 0) {
+                const standardSection = document.createElement('div');
+                standardSection.className = 'col-span-full mt-6';
+                standardSection.innerHTML = `
+                    <div class="mb-3">
+                        <div class="text-sm font-bold text-blue-300">📂 STRATEGIE APERTE</div>
+                        <div class="text-xs text-gray-400 mt-1">Partite raw - verifica warning ⚠️ per volatilità</div>
+                    </div>
+                `;
+                container.appendChild(standardSection);
+
+                standardStrats.forEach(({ id, data }) => {
+                    container.appendChild(createStrategyCard(id, data, descriptions, false));
+                });
+            }
+        }
+
+        // Helper: Create strategy card
+        function createStrategyCard(stratId, strat, descriptions, isPremium) {
+            const isMagicAI = stratId.toLowerCase().includes('magic') || (strat.name && strat.name.toLowerCase().includes('magic'));
+            const card = document.createElement('button');
+            card.className = `strategy-btn ${isMagicAI ? 'magic-ai' : ''} ${isPremium ? 'premium-strategy' : ''} text-white rounded-xl p-6 shadow-lg transform hover:scale-105 transition`;
+
+            const description = descriptions[stratId] || descriptions['magic_ai'] || 'Strategia personalizzata';
+
+            card.innerHTML = `
+                <div class="strategy-info"></div>
+                ${isPremium ? '<div class="text-xs bg-purple-600/80 px-2 py-1 rounded mb-2 font-bold">✨ PRO</div>' : ''}
+                <div class="text-3xl mb-2">${getStrategyIcon(stratId, isMagicAI)}</div>
+                <div class="font-bold text-sm mb-1">${strat.name}</div>
+                <div class="text-xs opacity-80">${strat.totalMatches} partite</div>
+            `;
+
+            // Info button click
+            const infoBtn = card.querySelector('.strategy-info');
+            infoBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                alert(`${strat.name}\n\n${description}`);
+            });
+
+            card.addEventListener('click', () => showRanking(stratId, strat));
+            return card;
         }
 
         // Show Ranking
@@ -860,6 +930,46 @@
             // Keep card blue always, only color the result box
             card.className = 'match-card rounded-xl p-5 shadow-lg fade-in';
 
+            // Check for warnings (ONLY for Standard strategies)
+            const isStandardStrategy = STANDARD_STRATEGIES.includes(stratId);
+            let warningHTML = '';
+
+            if (isStandardStrategy && warningStats) {
+                const warnings = [];
+
+                // Check if league is volatile
+                const volatileLeague = warningStats.volatileLeagues?.find(l => l.lega === match.lega);
+                if (volatileLeague) {
+                    warnings.push(`Lega volatile (${volatileLeague.volatility} volatilità, ${volatileLeague.winrate} winrate)`);
+                }
+
+                // Check if tip is under-performing
+                const badTip = warningStats.lowPerformingTips?.find(t => t.tip === match.tip);
+                if (badTip) {
+                    warnings.push(`Tip sotto-performante (${badTip.winrate} winrate su ${badTip.total} partite)`);
+                }
+
+                // Check if league has overestimated probabilities
+                const overestimated = warningStats.overestimatedLeagues?.find(l => l.lega === match.lega);
+                if (overestimated) {
+                    warnings.push(`Probabilità sovrastimata (previsto ${overestimated.predicted}, reale ${overestimated.actual})`);
+                }
+
+                if (warnings.length > 0) {
+                    warningHTML = `
+                        <div class="bg-red-600/20 border border-red-500 rounded-lg p-3 mb-3">
+                            <div class="flex items-start gap-2">
+                                <span class="text-xl">⚠️</span>
+                                <div class="flex-1">
+                                    <div class="text-xs font-bold text-red-300 mb-1">ATTENZIONE</div>
+                                    ${warnings.map(w => `<div class="text-xs text-red-200">• ${w}</div>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
             const indicationHTML = match.indication ? `
                 <div class="${match.indication.bg} ${match.indication.color} px-4 py-2 rounded-xl text-center font-bold text-sm mb-3">
                     ${match.indication.text}
@@ -946,6 +1056,8 @@
                 
                 <div class="text-2xl font-bold mb-2">${match.partita}</div>
                 <div class="text-sm opacity-80 mb-3">${match.lega}</div>
+                
+                ${warningHTML}
                 
                 ${match.risultato && match.esito ? `
                     <div class="mb-4 p-4 rounded-xl ${match.esito === 'Vinto' ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-red-500 to-red-600'}">
@@ -1719,6 +1831,8 @@ ${strategiesText}
 
 **ELEMENTI APP:**
 1. **Strategie**: Pagina principale dove l'utente sceglie una strategia vincente per vedere le partite di oggi.
+   - **STRATEGIE PREMIUM** (✨ PRO): Winrate 80%, Magia AI, strategie custom - partite curate al top, NESSUN warning
+   - **STRATEGIE STANDARD** (📂): ALL, Italia, Top EU, Coppe, Best 0.5 HT - possono avere warning ⚠️
 2. **Ultimi 7 Giorni** 📅: Nuovo tab dove l'utente vede lo STORICO completo delle performance! 
    - Lista delle ultime 7 date con statistiche (Vittorie/Perdite/Winrate %)
    - Winrate colorato: 🟢 Verde ≥70%, 🟡 Giallo ≥50%, 🔴 Rosso <50%
@@ -1727,6 +1841,33 @@ ${strategiesText}
 3. **Mie Partite** ⭐: L'utente può salvare le partite preferite (stella ⭐).
 4. **Badge Rossi**: Indicano le "Partite Calde" o le opportunità attive per quella strategia. Più alto è il numero, più occasioni ci sono!
 5. **Filtri**: Si possono ordinare le partite per Ranking 📊 (migliori prima) o Orario 🕐.
+
+**SISTEMA WARNING (⚠️) - IMPORTANTE!**
+Alcune partite nelle **strategie STANDARD** mostrano un badge rosso ⚠️. Questo è il nostro sistema di QUALITY CONTROL:
+
+**Cosa significa il badge ⚠️?**
+- La partita è in una lega statisticamente **volatile** o **sotto-performante**
+- NON significa che la partita perderà! Può comunque vincere normalmente
+- È un ALERT di cautela: "Questa lega ha storicamente risultati più imprevedibili"
+
+**Quando appare?**
+- SOLO nelle strategie STANDARD (ALL, Italia, Top EU, Coppe, Best 0.5 HT)
+- MAI nelle strategie PREMIUM (✨ Winrate 80%, Magia AI) che sono già ultra-filtrate
+
+**Criteri Warning (Soglie):**
+- Volatilità >42% (risultati molto altalenanti)
+- Winrate <45% (performance bassa)
+- Gap sovrastima >20% (probabilità troppo ottimistiche)
+
+**Blacklist Leghe:**
+- Nel backend admin, analizziamo 400+ leghe
+- Identifichiamo le ~14 leghe MOLTO anomale (criteri severi: Vol >46%, WR <38%, Gap >27%)
+- Queste vengono ESCLUSE automaticamente dalle strategie STANDARD
+- Le strategie PREMIUM non sono influenzate (hanno già i propri filtri)
+
+**Come spiegarlo all'utente?**
+"Il badge ⚠️ non significa che la partita è sbagliata - è solo un alert che quella lega storicamente ha risultati più imprevedibili. È il nostro sistema di trasparenza: ti mostriamo TUTTO, ma ti avvisiamo dove prestare più attenzione. Le strategie Premium (✨ PRO) come Winrate 80% e Magia AI non hanno questi warning perché sono già ultra-filtrate!"
+
 
 **TONO DI VOCE:**
 - Professionale ma amichevole ed entusiasta.
