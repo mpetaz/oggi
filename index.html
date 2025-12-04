@@ -670,7 +670,7 @@
                     document.getElementById('stat-wins').textContent = stats.wins || 0;
                     document.getElementById('stat-losses').textContent = stats.losses || 0;
                     document.getElementById('stat-winrate').textContent = (stats.winrate || 0) + '%';
-                    document.getElementById('last-update').textContent = formatDateLong(stats.lastUpdate || getTodayDate());
+                    document.getElementById('last-update').textContent = formatDateLong(stats.lastUpdate || formatToday());
                 } else {
                     console.warn('[Stats] No global_stats found in system collection');
                     // Set defaults
@@ -678,7 +678,7 @@
                     document.getElementById('stat-wins').textContent = '0';
                     document.getElementById('stat-losses').textContent = '0';
                     document.getElementById('stat-winrate').textContent = '0%';
-                    document.getElementById('last-update').textContent = formatDateLong(getTodayDate());
+                    document.getElementById('last-update').textContent = formatDateLong(formatToday());
                 }
             } catch (e) {
                 console.error('Error loading stats:', e);
@@ -687,7 +687,7 @@
                 document.getElementById('stat-wins').textContent = '0';
                 document.getElementById('stat-losses').textContent = '0';
                 document.getElementById('stat-winrate').textContent = '0%';
-                document.getElementById('last-update').textContent = formatDateLong(getTodayDate());
+                document.getElementById('last-update').textContent = formatDateLong(formatToday());
             }
         }
 
