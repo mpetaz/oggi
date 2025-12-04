@@ -1396,8 +1396,9 @@
                 const today = new Date();
                 const dates = [];
 
-                // Generate last 7 days
-                for (let i = 0; i < 7; i++) {
+                // Generate last 8 days but skip today (index 0)
+                // This shows 7 COMPLETE days of results (yesterday to 7 days ago)
+                for (let i = 1; i <= 8; i++) {  // Start from 1, not 0
                     const date = new Date(today);
                     date.setDate(date.getDate() - i);
                     dates.push(date.toISOString().split('T')[0]);
@@ -1474,15 +1475,12 @@
             const dayNum = dateObj.getDate();
             const monthName = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'][dateObj.getMonth()];
 
-            const isToday = index === 0;
-
             if (!hasData) {
                 return `
                     <div class="bg-gray-800/50 rounded-xl p-4 opacity-50">
                         <div class="flex items-center justify-between">
                             <div>
                                 <div class="text-sm text-gray-500">${dayName}, ${dayNum} ${monthName}</div>
-                                ${isToday ? '<div class="text-xs text-purple-400 font-bold">OGGI</div>' : ''}
                             </div>
                             <div class="text-sm text-gray-500">Nessun dato</div>
                         </div>
@@ -1503,7 +1501,6 @@
                     <div class="flex items-center justify-between mb-2">
                         <div>
                             <div class="text-lg font-bold">${dayName}, ${dayNum} ${monthName}</div>
-                            ${isToday ? '<div class="text-xs text-purple-400 font-bold">● OGGI</div>' : ''}
                         </div>
                         <div class="text-right">
                             <div class="text-2xl font-black ${winrateColor}">${winrate}%</div>
