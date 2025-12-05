@@ -138,6 +138,13 @@
             </div>
 
             <form id="auth-form" class="space-y-4">
+                <!-- Name field - only visible during registration -->
+                <div id="name-field" class="hidden">
+                    <label class="block text-sm font-medium mb-1">Nome Completo</label>
+                    <input type="text" id="user-name"
+                        class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                        placeholder="Mario Rossi">
+                </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Email</label>
                     <input type="email" id="email" required
@@ -318,6 +325,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         // Firebase Config
         const firebaseConfig = window.firebaseConfig;
@@ -367,21 +375,30 @@
             return `${day}/${month}/${year}`;
         }
 
-        // Toggle between Login and Register
+        // Toggle Login/Register Mode
         document.getElementById('toggle-login').addEventListener('click', () => {
             isRegisterMode = false;
             document.getElementById('auth-title').textContent = 'Accedi a TipsterAI';
             document.getElementById('auth-submit-btn').textContent = 'Accedi';
-            document.getElementById('toggle-login').className = 'flex-1 py-2 rounded-lg font-semibold bg-purple-600 text-white transition';
-            document.getElementById('toggle-register').className = 'flex-1 py-2 rounded-lg font-semibold text-gray-600 transition';
+            document.getElementById('toggle-login').classList.add('bg-purple-600', 'text-white');
+            document.getElementById('toggle-login').classList.remove('text-gray-600');
+            document.getElementById('toggle-register').classList.remove('bg-purple-600', 'text-white');
+            document.getElementById('toggle-register').classList.add('text-gray-600');
+            // Hide name field for login
+            document.getElementById('name-field').classList.add('hidden');
+            document.getElementById('user-name').removeAttribute('required');
         });
-
         document.getElementById('toggle-register').addEventListener('click', () => {
             isRegisterMode = true;
             document.getElementById('auth-title').textContent = 'Registrati a TipsterAI';
             document.getElementById('auth-submit-btn').textContent = 'Registrati';
-            document.getElementById('toggle-login').className = 'flex-1 py-2 rounded-lg font-semibold text-gray-600 transition';
-            document.getElementById('toggle-register').className = 'flex-1 py-2 rounded-lg font-semibold bg-purple-600 text-white transition';
+            document.getElementById('toggle-register').classList.add('bg-purple-600', 'text-white');
+            document.getElementById('toggle-register').classList.remove('text-gray-600');
+            document.getElementById('toggle-login').classList.remove('bg-purple-600', 'text-white');
+            document.getElementById('toggle-login').classList.add('text-gray-600');
+            // Show name field for registration
+            document.getElementById('name-field').classList.remove('hidden');
+            document.getElementById('user-name').setAttribute('required', '');
         });
 
         // Clean up old matches (> 24h)
@@ -463,8 +480,26 @@
             try {
                 if (isRegisterMode) {
                     // REGISTER
-                    await createUserWithEmailAndPassword(auth, email, password);
-                    console.log('[Auth] User registered successfully');
+                    const userName = document.getElementById('user-name').value.trim();
+                    if (!userName) {
+                        errorDiv.textContent = 'Inserisci il tuo nome completo';
+                        errorDiv.classList.remove('hidden');
+                        return;
+                    }
+
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+
+                    // Create user profile in Firestore
+                    await setDoc(doc(db, "users", user.uid), {
+                        name: userName,
+                        email: user.email,
+                        createdAt: new Date().toISOString(),
+                        subscription: "free",
+                        favoriteMatches: []
+                    });
+
+                    console.log('[Auth] User registered and profile created');
                 } else {
                     // LOGIN
                     await signInWithEmailAndPassword(auth, email, password);
@@ -2170,7 +2205,22 @@ Esempio: \`[[CMD:EMAIL|Proposta Strategia 0-0|Ciao Team, vorrei proporre una str
         } catch (error) {
             console.error("AI Error Details:", error);
             removeLoading();
-            appendMessage(`⚠️ <strong>Errore Tecnico:</strong> ${error.message}<br><br>Se vedi "API Key leaked", devi rigenerare la chiave su Google AI Studio.`, 'ai');
+
+            // User-friendly error message (hide technical details)
+            let userMessage = '⚠️ <strong>Errore Tecnico:</strong> Al momento non riesco a rispondere. ';
+
+            // Check for specific known errors
+            if (error.message && error.message.includes('blocked')) {
+                userMessage += 'Il servizio AI è temporaneamente non disponibile.';
+            } else if (error.message && error.message.includes('API key')) {
+                userMessage += 'Problema di configurazione del servizio.';
+            } else {
+                userMessage += 'Riprova tra qualche minuto.';
+            }
+
+            userMessage += '<br><br>Se il problema persiste, contatta il supporto.';
+
+            appendMessage(userMessage, 'ai');
         }
     });
 </script>
