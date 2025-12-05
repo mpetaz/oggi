@@ -138,12 +138,13 @@
             </div>
 
             <form id="auth-form" class="space-y-4">
-                <!-- Name field - only visible during registration -->
+                <!-- Nickname field - only visible during registration -->
                 <div id="name-field" class="hidden">
-                    <label class="block text-sm font-medium mb-1">Nome Completo</label>
+                    <label class="block text-sm font-medium mb-1">Nickname</label>
                     <input type="text" id="user-name"
                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
-                        placeholder="Mario Rossi">
+                        placeholder="Mario">
+                    <div class="text-xs text-gray-500 mt-1">euGENIO ti chiamerà così!</div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Email</label>
@@ -172,7 +173,10 @@
             <div class="container mx-auto px-4 py-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <img src="logo.png" alt="TipsterAI" class="h-10 w-10 rounded-lg">
-                    <h1 class="text-2xl font-black">TipsterAI</h1>
+                    <div>
+                        <h1 class="text-2xl font-black">TipsterAI</h1>
+                        <p id="user-nickname-header" class="text-xs text-purple-200"></p>
+                    </div>
                 </div>
                 <button id="logout-btn" class="text-sm hover:text-yellow-300 transition">
                     <i class="fa-solid fa-right-from-bracket mr-1"></i> Esci
@@ -286,6 +290,53 @@
             </div>
         </div>
 
+        <!-- Account Page -->
+        <div id="account-page" class="hidden container mx-auto px-4 py-6 pb-24">
+            <h2 class="text-2xl font-bold mb-6">Il Mio Account</h2>
+
+            <!-- Profile Card -->
+            <div class="stat-card rounded-xl p-6 mb-4">
+                <div class="flex items-center gap-4 mb-6">
+                    <div id="account-avatar"
+                        class="bg-gradient-to-br from-purple-600 to-blue-600 w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-black">
+                        ?
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold" id="account-name">-</h3>
+                        <p class="text-gray-600 text-sm" id="account-email">-</p>
+                    </div>
+                </div>
+
+                <!-- Edit Nickname Form -->
+                <form id="edit-nickname-form" class="mb-4">
+                    <label class="block font-semibold mb-2 text-sm">Cambia Nickname</label>
+                    <input type="text" id="edit-nickname-input"
+                        class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                        placeholder="Nuovo nickname" />
+                    <button type="submit"
+                        class="mt-3 bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700 transition">
+                        Salva Nickname
+                    </button>
+                </form>
+            </div>
+
+            <!-- Subscription Card -->
+            <div class="stat-card rounded-xl p-6">
+                <h3 class="font-bold mb-3 text-lg">Abbonamento</h3>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-gray-700">Piano: <strong id="subscription-plan"
+                                class="text-purple-600">Free</strong></div>
+                        <p class="text-xs text-gray-500 mt-1">Registrato il <span id="account-created">-</span></p>
+                    </div>
+                    <button
+                        class="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90 transition">
+                        ⭐ Passa a PRO
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Bottom Nav -->
         <div class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 flex justify-around py-3 z-50">
             <button data-page="strategies" class="nav-btn flex flex-col items-center text-purple-400 transition">
@@ -301,6 +352,11 @@
                 class="nav-btn flex flex-col items-center text-gray-400 hover:text-yellow-400 transition">
                 <i class="fa-solid fa-star text-2xl mb-1"></i>
                 <span class="text-xs font-semibold">Mie Partite</span>
+            </button>
+            <button data-page="account"
+                class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-400 transition">
+                <i class="fa-solid fa-user text-2xl mb-1"></i>
+                <span class="text-xs font-semibold">Account</span>
             </button>
         </div>
     </div>
@@ -354,6 +410,7 @@
         let currentStrategyId = null;  // Track current strategy for re-sorting
         let currentSortMode = 'score';  // 'score' or 'time'
         let isRegisterMode = false;  // Track if user is in registration mode
+        let currentUserProfile = null; // Store user profile data
         let globalStats = { total: 0, wins: 0, losses: 0, winrate: 0 }; // Global stats for AI
         let warningStats = null; // Warning stats for volatile leagues/tips
 
@@ -365,6 +422,7 @@
         window.globalStats = globalStats;
         window.strategiesData = null; // Will be updated
         window.currentUser = null; // Will be updated
+        window.currentUserProfile = null; // User profile data
         window.aiKnowledge = null; // AI Knowledge Base
 
         // Date formatting
@@ -453,6 +511,9 @@
                 currentUser = user;
                 window.currentUser = user; // Update global reference
 
+                // Load user profile
+                await loadUserProfile(user.uid);
+
                 // Auto-cleanup old matches
                 await cleanupOldMatches(user.uid);
 
@@ -469,6 +530,30 @@
             }
         });
 
+        // Load User Profile from Firestore
+        async function loadUserProfile(uid) {
+            try {
+                const profileDoc = await getDoc(doc(db, "users", uid));
+                if (profileDoc.exists()) {
+                    currentUserProfile = profileDoc.data();
+                    window.currentUserProfile = currentUserProfile; // Expose to window
+
+                    // Display nickname in header
+                    const nickname = currentUserProfile.name || 'Utente';
+                    document.getElementById('user-nickname-header').textContent = `Ciao, ${nickname}! 👋`;
+
+                    console.log('[Profile] Loaded:', currentUserProfile);
+                } else {
+                    console.warn('[Profile] No profile found for user');
+                    currentUserProfile = { name: 'Utente', email: currentUser.email };
+                }
+            } catch (e) {
+                console.error('[Profile] Error loading profile:', e);
+                currentUserProfile = { name: 'Utente', email: currentUser.email };
+            }
+        }
+
+
         // Login/Register
         document.getElementById('auth-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -481,7 +566,7 @@
                     // REGISTER
                     const userName = document.getElementById('user-name').value.trim();
                     if (!userName) {
-                        errorDiv.textContent = 'Inserisci il tuo nome completo';
+                        errorDiv.textContent = 'Inserisci un nickname';
                         errorDiv.classList.remove('hidden');
                         return;
                     }
@@ -1336,6 +1421,9 @@
             } else if (pageName === 'my-matches') {
                 showMyMatches();
                 document.getElementById('page-my-matches').classList.add('active');
+            } else if (pageName === 'account') {
+                populateAccountPage();
+                document.getElementById('account-page').classList.remove('hidden');
             }
 
             // Update nav buttons
@@ -1349,6 +1437,64 @@
                 }
             });
         }
+
+        // Populate Account Page
+        function populateAccountPage() {
+            if (!currentUserProfile) return;
+
+            const nickname = currentUserProfile.name || 'Utente';
+            const email = currentUserProfile.email || currentUser.email;
+            const createdAt = currentUserProfile.createdAt || '-';
+            const subscription = currentUserProfile.subscription || 'free';
+
+            // Set avatar (first letter)
+            document.getElementById('account-avatar').textContent = nickname.charAt(0).toUpperCase();
+
+            // Set profile info
+            document.getElementById('account-name').textContent = nickname;
+            document.getElementById('account-email').textContent = email;
+            document.getElementById('subscription-plan').textContent = subscription === 'free' ? 'Free' : 'PRO ⭐';
+            document.getElementById('edit-nickname-input').value = nickname;
+
+            // Format created date
+            if (createdAt !== '-') {
+                const date = new Date(createdAt);
+                const formatted = date.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+                document.getElementById('account-created').textContent = formatted;
+            }
+        }
+
+        // Edit Nickname Form
+        document.getElementById('edit-nickname-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newNickname = document.getElementById('edit-nickname-input').value.trim();
+
+            if (!newNickname) {
+                alert('Inserisci un nickname valido');
+                return;
+            }
+
+            try {
+                // Update Firestore
+                await setDoc(doc(db, "users", currentUser.uid), {
+                    ...currentUserProfile,
+                    name: newNickname
+                });
+
+                // Update local profile
+                currentUserProfile.name = newNickname;
+
+                // Update UI
+                document.getElementById('user-nickname-header').textContent = `Ciao, ${newNickname}! 👋`;
+                populateAccountPage();
+
+                alert('✅ Nickname aggiornato!');
+                console.log('[Profile] Nickname updated:', newNickname);
+            } catch (e) {
+                console.error('[Profile] Error updating nickname:', e);
+                alert('❌ Errore durante l\'aggiornamento');
+            }
+        });
 
         // Event Listeners
         document.getElementById('back-to-strategies').addEventListener('click', () => showPage('strategies'));
@@ -1748,8 +1894,12 @@
 
     // Helper: Get User Name
     function getUserName() {
+        // Use nickname from user profile if available
+        if (window.currentUserProfile && window.currentUserProfile.name) {
+            return window.currentUserProfile.name;
+        }
+        // Fallback to email-based name
         if (window.currentUser && window.currentUser.email) {
-            // Extract name from email (e.g., "mario" from "mario@gmail.com")
             const name = window.currentUser.email.split('@')[0];
             return name.charAt(0).toUpperCase() + name.slice(1);
         }
