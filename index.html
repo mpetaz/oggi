@@ -292,7 +292,7 @@
 
         <!-- Account Page -->
         <div id="account-page" class="hidden container mx-auto px-4 py-6 pb-24">
-            <h2 class="text-2xl font-bold mb-6">Il Mio Account</h2>
+            <h2 class="text-2xl font-bold mb-6 text-white">Il Mio Account</h2>
 
             <!-- Profile Card -->
             <div class="stat-card rounded-xl p-6 mb-4">
@@ -302,16 +302,16 @@
                         ?
                     </div>
                     <div>
-                        <h3 class="text-xl font-bold" id="account-name">-</h3>
+                        <h3 class="text-xl font-bold text-gray-800" id="account-name">-</h3>
                         <p class="text-gray-600 text-sm" id="account-email">-</p>
                     </div>
                 </div>
 
                 <!-- Edit Nickname Form -->
                 <form id="edit-nickname-form" class="mb-4">
-                    <label class="block font-semibold mb-2 text-sm">Cambia Nickname</label>
+                    <label class="block font-semibold mb-2 text-sm text-gray-800">Cambia Nickname</label>
                     <input type="text" id="edit-nickname-input"
-                        class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                        class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-800"
                         placeholder="Nuovo nickname" />
                     <button type="submit"
                         class="mt-3 bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700 transition">
@@ -322,7 +322,7 @@
 
             <!-- Subscription Card -->
             <div class="stat-card rounded-xl p-6">
-                <h3 class="font-bold mb-3 text-lg">Abbonamento</h3>
+                <h3 class="font-bold mb-3 text-lg text-gray-800">Abbonamento</h3>
                 <div class="flex items-center justify-between">
                     <div>
                         <div class="text-gray-700">Piano: <strong id="subscription-plan"
@@ -337,11 +337,51 @@
             </div>
         </div>
 
+        <!-- Trading Sportivo Page -->
+        <div id="page-trading-sportivo" class="page container mx-auto px-4 pb-24">
+            <!-- Header & Date Nav -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold mb-2">🎯 Trading Sportivo</h2>
+                <p class="text-sm text-gray-400 mb-4">Le migliori partite selezionate per trading sportivo</p>
+
+                <!-- Date Navigation -->
+                <div class="flex items-center justify-between bg-gray-800 rounded-lg p-3">
+                    <button id="trading-date-prev" class="text-gray-400 hover:text-white transition">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <div class="text-center">
+                        <div id="trading-selected-date-display" class="font-bold text-white">Oggi</div>
+                        <div id="trading-date-indicator" class="text-xs text-gray-400 mt-1">-</div>
+                    </div>
+                    <button id="trading-date-next" class="text-gray-400 hover:text-white transition">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Trading Cards Container -->
+            <div id="trading-cards-container" class="space-y-4">
+                <!-- Populated dynamically -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="trading-empty" class="hidden text-center py-12">
+                <i class="fa-solid fa-chart-line text-6xl text-gray-600 mb-4"></i>
+                <p class="text-gray-400">Nessuna trading pick per questa data</p>
+                <p class="text-sm text-gray-500 mt-2">Le picks vengono generate dall'admin per ogni giornata</p>
+            </div>
+        </div>
+
         <!-- Bottom Nav -->
         <div class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 flex justify-around py-3 z-50">
             <button data-page="strategies" class="nav-btn flex flex-col items-center text-purple-400 transition">
                 <i class="fa-solid fa-list text-2xl mb-1"></i>
                 <span class="text-xs font-semibold">Strategie</span>
+            </button>
+            <button data-page="trading-sportivo"
+                class="nav-btn flex flex-col items-center text-gray-400 hover:text-orange-400 transition">
+                <i class="fa-solid fa-chart-line text-2xl mb-1"></i>
+                <span class="text-xs font-semibold">Trading</span>
             </button>
             <button data-page="history"
                 class="nav-btn flex flex-col items-center text-gray-400 hover:text-green-400 transition">
@@ -357,6 +397,13 @@
                 class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-400 transition">
                 <i class="fa-solid fa-user text-2xl mb-1"></i>
                 <span class="text-xs font-semibold">Account</span>
+            </button>
+            <button data-page="trading"
+                class="nav-btn flex flex-col items-center text-gray-400 hover:text-orange-400 transition relative">
+                <i class="fa-solid fa-chart-line text-2xl mb-1"></i>
+                <span class="text-xs font-semibold">Trading</span>
+                <span
+                    class="absolute -top-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[8px] px-1 py-0.5 rounded-full font-bold animate-pulse">PRO</span>
             </button>
         </div>
     </div>
@@ -1424,18 +1471,38 @@
             } else if (pageName === 'account') {
                 populateAccountPage();
                 document.getElementById('account-page').classList.remove('hidden');
+            } else if (pageName === 'trading-sportivo') {
+                document.getElementById('page-trading-sportivo').classList.add('active');
+                loadTradingPicks(); // Load trading picks for selected date
+            } else if (pageName === 'trading') {
+                // Check if PRO user
+                const subscription = currentUserProfile?.subscription || 'free';
+                if (subscription === 'pro') {
+                    loadTradingPicks();
+                    document.getElementById('trading-page').classList.remove('hidden');
+                } else {
+                    // Show upgrade prompt for FREE users
+                    showTradingLock();
+                }
             }
 
             // Update nav buttons
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 if (btn.dataset.page === pageName) {
                     btn.classList.remove('text-gray-400');
-                    btn.classList.add('text-purple-400');
+                    btn.classList.add('text-orange-400');
                 } else {
-                    btn.classList.remove('text-purple-400');
+                    btn.classList.remove('text-orange-400', 'text-purple-400');
                     btn.classList.add('text-gray-400');
                 }
             });
+
+            // Highlight strategies as purple if active
+            const strategiesBtn = [...document.querySelectorAll('.nav-btn')].find(b => b.dataset.page === 'strategies');
+            if (strategiesBtn && pageName === 'strategies') {
+                strategiesBtn.classList.remove('text-gray-400');
+                strategiesBtn.classList.add('text-purple-400');
+            }
         }
 
         // Populate Account Page
@@ -1495,6 +1562,102 @@
                 alert('❌ Errore durante l\'aggiornamento');
             }
         });
+
+        // ==================== TRADING SPORTIVO SYSTEM ====================
+
+        // Load Trading Picks from Firestore
+        async function loadTradingPicks() {
+            try {
+                const today = formatToday();
+                const tradingDoc = await getDoc(doc(db, "daily_trading_picks", today));
+
+                const container = document.getElementById('trading-cards-container');
+                const emptyState = document.getElementById('trading-empty');
+
+                if (tradingDoc.exists()) {
+                    const picks = tradingDoc.data().picks || [];
+
+                    if (picks.length > 0) {
+                        container.innerHTML = picks.map(pick => renderTradingCard(pick)).join('');
+                        container.classList.remove('hidden');
+                        emptyState.classList.add('hidden');
+                    } else {
+                        container.classList.add('hidden');
+                        emptyState.classList.remove('hidden');
+                    }
+                } else {
+                    container.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                }
+
+                console.log('[Trading] Picks loaded for', today);
+            } catch (e) {
+                console.error('[Trading] Error loading picks:', e);
+            }
+        }
+
+        // Render Trading Card
+        function renderTradingCard(pick) {
+            const strategyColors = {
+                'Over 2.5 Poisson': 'from-purple-600 to-blue-600',
+                'Lay The Draw': 'from-orange-500 to-red-500',
+                'Under 3.5 Safety': 'from-green-600 to-teal-600'
+            };
+
+            const strategyIcons = {
+                'Over 2.5 Poisson': '📊',
+                'Lay The Draw': '🎯',
+                'Under 3.5 Safety': '🛡️'
+            };
+
+            const gradient = strategyColors[pick.tradingStrategy] || 'from-gray-600 to-gray-800';
+            const icon = strategyIcons[pick.tradingStrategy] || '💹';
+            const oddsDisplay = pick.tradingOdds > 0 ? `@ ${pick.tradingOdds.toFixed(2)}` : '(live)';
+            const whyBullets = (pick.whyItWorks || []).map(r =>
+                `<li class="flex items-start gap-2 text-sm text-gray-700"><span class="text-green-500">•</span><span>${r}</span></li>`
+            ).join('');
+
+            return `
+                <div class="stat-card rounded-xl p-0 overflow-hidden">
+                    <div class="bg-gradient-to-r ${gradient} text-white p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl">${icon}</span>
+                                <span class="font-bold text-lg">${pick.tradingStrategy}</span>
+                            </div>
+                            <div class="text-xs bg-white/20 px-2 py-1 rounded-full">${pick.lega || ''}</div>
+                        </div>
+                        <div class="text-sm opacity-90">${pick.ora ? `⏰ ${pick.ora}` : ''} • ${pick.partita}</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 border-b">
+                        <div class="flex justify-around text-center text-sm">
+                            <div><div class="text-xs text-gray-600">Casa</div><div class="font-bold">${pick.quota_casa || '-'}</div></div>
+                            <div><div class="text-xs text-gray-600">X</div><div class="font-bold">${pick.quota_pareggio || pick.quota_x || '-'}</div></div>
+                            <div><div class="text-xs text-gray-600">Trasferta</div><div class="font-bold">${pick.quota_trasferta || '-'}</div></div>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-gradient-to-br from-yellow-50 to-orange-50 border-l-4 border-orange-500">
+                        <div class="grid grid-cols-2 gap-3 mb-2 text-sm">
+                            <div><div class="text-xs text-gray-600">📊 Target</div><div class="font-bold text-gray-800">${pick.tip || pick.mercato} ${oddsDisplay}</div></div>
+                            <div><div class="text-xs text-gray-600">💰 Profit</div><div class="font-bold text-green-600">+${pick.profitTarget || 0}%</div></div>
+                            <div><div class="text-xs text-gray-600">⏱️ Entry</div><div class="font-semibold text-gray-700">${pick.entryTiming || 'PRE-MATCH'}</div></div>
+                            <div><div class="text-xs text-gray-600">🎯 Exit</div><div class="font-semibold text-gray-700">${(pick.exitCondition || '').substring(0, 15)}...</div></div>
+                        </div>
+                        <div class="bg-white/60 rounded p-2"><div class="text-xs text-gray-600 font-semibold">⚡ ${pick.safetyNet || '-'}</div></div>
+                    </div>
+                    <div class="p-4"><div class="font-bold text-sm text-gray-800 mb-2">📋 Perché:</div><ul class="space-y-1">${whyBullets}</ul></div>
+                    <div class="p-4 bg-gray-50 flex gap-2">
+                        <a href="https://www.oddsportal.com" target="_blank" class="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-center text-sm font-semibold">📊 Odds</a>
+                        <a href="https://www.flashscore.it" target="_blank" class="flex-1 bg-green-600 text-white py-2 px-3 rounded text-center text-sm font-semibold">⚽ Live</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show lock for FREE users
+        function showTradingLock() {
+            alert('🔒 Trading Sportivo solo PRO!\n\n💎 5 picks giornalieri\n✅ Algoritmo Poisson\n✅ Entry/Exit precisi\n\n⭐ Passa a PRO!');
+        }
 
         // Event Listeners
         document.getElementById('back-to-strategies').addEventListener('click', () => showPage('strategies'));
@@ -2372,6 +2535,158 @@ Esempio: \`[[CMD:EMAIL|Proposta Strategia 0-0|Ciao Team, vorrei proporre una str
             appendMessage(userMessage, 'ai');
         }
     });
+
+    // ==================== TRADING SPORTIVO ====================
+    let tradingSelectedDate = formatToday();
+
+    async function loadTradingPicks(date = null) {
+        const dateToLoad = date || tradingSelectedDate;
+        console.log(`[Trading] Loading picks for ${dateToLoad}`);
+
+        try {
+            const picksDoc = await getDoc(doc(db, "daily_trading_picks", dateToLoad));
+
+            if (!picksDoc.exists() || !picksDoc.data().picks || picksDoc.data().picks.length === 0) {
+                console.log(`[Trading] No picks found for ${dateToLoad}`);
+                document.getElementById('trading-cards-container').innerHTML = '';
+                document.getElementById('trading-empty').classList.remove('hidden');
+                updateTradingDateDisplay(dateToLoad, false);
+                return;
+            }
+
+            const picks = picksDoc.data().picks;
+            console.log(`[Trading] Loaded ${picks.length} picks for ${dateToLoad}`);
+
+            document.getElementById('trading-empty').classList.add('hidden');
+            renderTradingPicks(picks);
+            updateTradingDateDisplay(dateToLoad, true);
+
+        } catch (e) {
+            console.error('[Trading] Error loading picks:', e);
+            document.getElementById('trading-cards-container').innerHTML = '';
+            document.getElementById('trading-empty').classList.remove('hidden');
+            updateTradingDateDisplay(dateToLoad, false);
+        }
+    }
+
+    function renderTradingPicks(picks) {
+        const container = document.getElementById('trading-cards-container');
+        container.innerHTML = '';
+
+        picks.forEach((pick, index) => {
+            const card = document.createElement('div');
+            card.className = 'bg-gray-800 rounded-lg p-3 border border-purple-500 shadow-md';
+
+            const liquidityColor = pick.liquidityLevel === 'Alta' ? 'bg-green-500' : 'bg-yellow-500';
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start gap-2 mb-2">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-xs text-gray-400 font-medium truncate">${pick.lega}</div>
+                        <div class="text-base font-bold text-white mt-0.5 leading-tight">${pick.partita}</div>
+                        <div class="text-xs text-gray-500 mt-0.5">${pick.data}${pick.ora ? ' • ' + pick.ora : ''}</div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <div class="text-xl font-bold text-purple-400">${pick.confidence || pick.score}</div>
+                        <div class="text-xs text-gray-400">Confidence</div>
+                    </div>
+                </div>
+
+                ${pick.tradingBadge ? `
+                    <div class="px-2 py-1.5 rounded ${pick.tradingBadge.color} text-xs font-bold text-center mb-2">
+                        🎯 ${pick.tradingBadge.text}
+                    </div>
+                ` : ''}
+                
+                <div class="bg-gradient-to-r from-blue-900 to-purple-900 bg-opacity-40 p-3 rounded-lg mb-2 border border-blue-500">
+                    <div class="text-xs font-bold text-blue-200 mb-2">📋 Istruzioni Trading</div>
+                    <div class="space-y-1.5 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-gray-300">Azione:</span>
+                            <span class="font-bold text-white">${pick.tradingInstruction?.action || pick.tip}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-300">Range Ingresso:</span>
+                            <span class="font-bold text-green-400">${pick.tradingInstruction?.entryRange ? pick.tradingInstruction.entryRange.join(' - ') : pick.quota}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-300">Target Uscita:</span>
+                            <span class="font-bold text-orange-400">${pick.tradingInstruction?.exitTarget || 'Live'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-300">Timing:</span>
+                            <span class="font-bold text-purple-400">${pick.tradingInstruction?.timing || 'Pre-match'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-1.5 text-xs mb-2">
+                    <div class="${liquidityColor} bg-opacity-20 border border-current px-2 py-1.5 rounded">
+                        <div class="text-xs opacity-75 leading-tight">Liquidità</div>
+                        <div class="font-bold text-sm">${pick.liquidityLevel}</div>
+                    </div>
+                    <div class="bg-gray-700 px-2 py-1.5 rounded">
+                        <div class="text-gray-400 text-xs leading-tight">Strategia</div>
+                        <div class="font-bold text-white text-sm">${pick.strategy || 'Standard'}</div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-900 bg-opacity-30 px-2 py-1.5 rounded border border-blue-500">
+                    <div class="text-xs text-blue-300 font-semibold">${pick.reasoning || pick.whyTradable}</div>
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    function updateTradingDateDisplay(date, hasData) {
+        const displayEl = document.getElementById('trading-selected-date-display');
+        const indicatorEl = document.getElementById('trading-date-indicator');
+
+        if (displayEl) {
+            displayEl.textContent = formatDateLong(date);
+        }
+
+        if (indicatorEl) {
+            if (hasData) {
+                indicatorEl.textContent = 'Picks disponibili';
+                indicatorEl.className = 'text-xs text-green-400 mt-1';
+            } else {
+                indicatorEl.textContent = 'Nessuna pick';
+                indicatorEl.className = 'text-xs text-red-400 mt-1';
+            }
+        }
+
+        updateTradingDateNavButtons();
+    }
+
+    function updateTradingDateNavButtons() {
+        const nextBtn = document.getElementById('trading-date-next');
+        const today = new Date().toISOString().split('T')[0];
+
+        if (nextBtn) {
+            nextBtn.disabled = (tradingSelectedDate >= today);
+            nextBtn.style.opacity = (tradingSelectedDate >= today) ? '0.3' : '1';
+        }
+    }
+
+    // Date navigation event listeners
+    document.getElementById('trading-date-prev')?.addEventListener('click', () => {
+        const prevDate = getPreviousDay(tradingSelectedDate);
+        tradingSelectedDate = prevDate;
+        loadTradingPicks(tradingSelectedDate);
+    });
+
+    document.getElementById('trading-date-next')?.addEventListener('click', () => {
+        const today = new Date().toISOString().split('T')[0];
+        if (tradingSelectedDate < today) {
+            const nextDate = getNextDay(tradingSelectedDate);
+            tradingSelectedDate = nextDate;
+            loadTradingPicks(tradingSelectedDate);
+        }
+    });
+
 </script>
 </body>
 
