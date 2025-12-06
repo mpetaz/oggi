@@ -1593,59 +1593,44 @@
             }
         }
 
-        // Render Trading Card
+        // Render Trading Card (v2.0 - compact mobile)
         function renderTradingCard(pick) {
-            const strategyColors = {
-                'Over 2.5 Poisson': 'from-purple-600 to-blue-600',
-                'Lay The Draw': 'from-orange-500 to-red-500',
-                'Under 3.5 Safety': 'from-green-600 to-teal-600'
-            };
-
-            const strategyIcons = {
-                'Over 2.5 Poisson': '📊',
-                'Lay The Draw': '🎯',
-                'Under 3.5 Safety': '🛡️'
-            };
-
-            const gradient = strategyColors[pick.tradingStrategy] || 'from-gray-600 to-gray-800';
-            const icon = strategyIcons[pick.tradingStrategy] || '💹';
-            const oddsDisplay = pick.tradingOdds > 0 ? `@ ${pick.tradingOdds.toFixed(2)}` : '(live)';
-            const whyBullets = (pick.whyItWorks || []).map(r =>
-                `<li class="flex items-start gap-2 text-sm text-gray-700"><span class="text-green-500">•</span><span>${r}</span></li>`
-            ).join('');
+            const strategyColor = pick.strategy === 'BACK_OVER_25' ? 'from-purple-600 to-blue-600' : 'from-orange-500 to-red-500';
+            const strategyLabel = pick.strategy === 'BACK_OVER_25' ? 'BACK O2.5' : 'LAY Draw';
+            const icon = pick.strategy === 'BACK_OVER_25' ? '📊' : '🎯';
 
             return `
-                <div class="stat-card rounded-xl p-0 overflow-hidden">
-                    <div class="bg-gradient-to-r ${gradient} text-white p-4">
-                        <div class="flex items-center justify-between mb-2">
+                <div class="stat-card rounded-xl overflow-hidden mb-3">
+                    <div class="bg-gradient-to-r ${strategyColor} text-white p-3">
+                        <div class="flex items-center justify-between mb-1">
                             <div class="flex items-center gap-2">
-                                <span class="text-2xl">${icon}</span>
-                                <span class="font-bold text-lg">${pick.tradingStrategy}</span>
+                                <span class="text-lg">${icon}</span>
+                                <span class="font-bold text-sm">${strategyLabel}</span>
                             </div>
-                            <div class="text-xs bg-white/20 px-2 py-1 rounded-full">${pick.lega || ''}</div>
+                            <div class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">${pick.lega || ''}</div>
                         </div>
-                        <div class="text-sm opacity-90">${pick.ora ? `⏰ ${pick.ora}` : ''} • ${pick.partita}</div>
+                        <div class="text-xs opacity-90">${pick.ora || ''} • ${pick.partita || ''}</div>
                     </div>
-                    <div class="p-4 bg-gray-50 border-b">
-                        <div class="flex justify-around text-center text-sm">
-                            <div><div class="text-xs text-gray-600">Casa</div><div class="font-bold">${pick.quota_casa || '-'}</div></div>
-                            <div><div class="text-xs text-gray-600">X</div><div class="font-bold">${pick.quota_pareggio || pick.quota_x || '-'}</div></div>
-                            <div><div class="text-xs text-gray-600">Trasferta</div><div class="font-bold">${pick.quota_trasferta || '-'}</div></div>
+                    <div class="p-3 bg-gray-50">
+                        <div class="grid grid-cols-2 gap-2 text-xs mb-2">
+                            <div class="bg-white p-2 rounded border">
+                                <div class="text-gray-500 text-[10px]">Azione</div>
+                                <div class="font-bold text-gray-800">${pick.tradingInstruction?.action || pick.tip || '-'}</div>
+                            </div>
+                            <div class="bg-white p-2 rounded border">
+                                <div class="text-gray-500 text-[10px]">Confidence</div>
+                                <div class="font-bold text-purple-600">${pick.confidence || '-'}%</div>
+                            </div>
+                            <div class="bg-white p-2 rounded border">
+                                <div class="text-gray-500 text-[10px]">Entry Range</div>
+                                <div class="font-bold text-green-600">${pick.tradingInstruction?.entryRange ? pick.tradingInstruction.entryRange.join(' - ') : '-'}</div>
+                            </div>
+                            <div class="bg-white p-2 rounded border">
+                                <div class="text-gray-500 text-[10px]">Exit</div>
+                                <div class="font-bold text-orange-600">${pick.tradingInstruction?.exitTarget || 'Dopo 1° gol'}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="p-4 bg-gradient-to-br from-yellow-50 to-orange-50 border-l-4 border-orange-500">
-                        <div class="grid grid-cols-2 gap-3 mb-2 text-sm">
-                            <div><div class="text-xs text-gray-600">📊 Target</div><div class="font-bold text-gray-800">${pick.tip || pick.mercato} ${oddsDisplay}</div></div>
-                            <div><div class="text-xs text-gray-600">💰 Profit</div><div class="font-bold text-green-600">+${pick.profitTarget || 0}%</div></div>
-                            <div><div class="text-xs text-gray-600">⏱️ Entry</div><div class="font-semibold text-gray-700">${pick.entryTiming || 'PRE-MATCH'}</div></div>
-                            <div><div class="text-xs text-gray-600">🎯 Exit</div><div class="font-semibold text-gray-700">${(pick.exitCondition || '').substring(0, 15)}...</div></div>
-                        </div>
-                        <div class="bg-white/60 rounded p-2"><div class="text-xs text-gray-600 font-semibold">⚡ ${pick.safetyNet || '-'}</div></div>
-                    </div>
-                    <div class="p-4"><div class="font-bold text-sm text-gray-800 mb-2">📋 Perché:</div><ul class="space-y-1">${whyBullets}</ul></div>
-                    <div class="p-4 bg-gray-50 flex gap-2">
-                        <a href="https://www.oddsportal.com" target="_blank" class="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-center text-sm font-semibold">📊 Odds</a>
-                        <a href="https://www.flashscore.it" target="_blank" class="flex-1 bg-green-600 text-white py-2 px-3 rounded text-center text-sm font-semibold">⚽ Live</a>
+                        ${pick.reasoning ? `<div class="text-[10px] text-blue-700 bg-blue-50 p-2 rounded">${pick.reasoning}</div>` : ''}
                     </div>
                 </div>
             `;
