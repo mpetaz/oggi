@@ -2576,65 +2576,46 @@ Esempio: \`[[CMD:EMAIL|Proposta Strategia 0-0|Ciao Team, vorrei proporre una str
 
         picks.forEach((pick, index) => {
             const card = document.createElement('div');
-            card.className = 'bg-gray-800 rounded-lg p-3 border border-purple-500 shadow-md';
+            card.className = 'bg-gray-800 rounded-lg p-2 border border-purple-500 shadow-md';
 
-            const liquidityColor = pick.liquidityLevel === 'Alta' ? 'bg-green-500' : 'bg-yellow-500';
+            // Strategy badge color
+            const strategyColor = pick.strategy === 'BACK_OVER_25' ? 'bg-purple-600' : 'bg-blue-600';
+            const strategyLabel = pick.strategy === 'BACK_OVER_25' ? 'BACK O2.5' : 'LAY Draw';
 
             card.innerHTML = `
-                <div class="flex justify-between items-start gap-2 mb-2">
+                <div class="flex justify-between items-center gap-2 mb-1">
                     <div class="flex-1 min-w-0">
-                        <div class="text-xs text-gray-400 font-medium truncate">${pick.lega}</div>
-                        <div class="text-base font-bold text-white mt-0.5 leading-tight">${pick.partita}</div>
-                        <div class="text-xs text-gray-500 mt-0.5">${pick.data}${pick.ora ? ' • ' + pick.ora : ''}</div>
+                        <div class="text-[10px] text-gray-400 truncate">${pick.lega || ''}</div>
+                        <div class="text-sm font-bold text-white leading-tight">${pick.partita || ''}</div>
                     </div>
-                    <div class="text-right flex-shrink-0">
-                        <div class="text-xl font-bold text-purple-400">${pick.confidence || pick.score}</div>
-                        <div class="text-xs text-gray-400">Confidence</div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="px-1.5 py-0.5 rounded ${strategyColor} text-[10px] font-bold text-white">${strategyLabel}</span>
+                        <span class="text-lg font-bold text-purple-400">${pick.confidence || pick.score || '-'}</span>
                     </div>
                 </div>
 
-                ${pick.tradingBadge ? `
-                    <div class="px-2 py-1.5 rounded ${pick.tradingBadge.color} text-xs font-bold text-center mb-2">
-                        🎯 ${pick.tradingBadge.text}
-                    </div>
-                ` : ''}
-                
-                <div class="bg-gradient-to-r from-blue-900 to-purple-900 bg-opacity-40 p-3 rounded-lg mb-2 border border-blue-500">
-                    <div class="text-xs font-bold text-blue-200 mb-2">📋 Istruzioni Trading</div>
-                    <div class="space-y-1.5 text-xs">
+                <div class="bg-blue-900/40 p-2 rounded border border-blue-500/50 mb-1">
+                    <div class="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">
                         <div class="flex justify-between">
-                            <span class="text-gray-300">Azione:</span>
-                            <span class="font-bold text-white">${pick.tradingInstruction?.action || pick.tip}</span>
+                            <span class="text-gray-400">Azione:</span>
+                            <span class="font-semibold text-white">${pick.tradingInstruction?.action || pick.tip || '-'}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-300">Range Ingresso:</span>
-                            <span class="font-bold text-green-400">${pick.tradingInstruction?.entryRange ? pick.tradingInstruction.entryRange.join(' - ') : pick.quota}</span>
+                            <span class="text-gray-400">Entry:</span>
+                            <span class="font-semibold text-green-400">${pick.tradingInstruction?.entryRange ? pick.tradingInstruction.entryRange.join('-') : (pick.quota || '-')}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-300">Target Uscita:</span>
-                            <span class="font-bold text-orange-400">${pick.tradingInstruction?.exitTarget || 'Live'}</span>
+                            <span class="text-gray-400">Exit:</span>
+                            <span class="font-semibold text-orange-400">${pick.tradingInstruction?.exitTarget || '1° gol'}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-300">Timing:</span>
-                            <span class="font-bold text-purple-400">${pick.tradingInstruction?.timing || 'Pre-match'}</span>
+                            <span class="text-gray-400">When:</span>
+                            <span class="font-semibold text-purple-400">${pick.tradingInstruction?.timing || 'Pre-match'}</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-1.5 text-xs mb-2">
-                    <div class="${liquidityColor} bg-opacity-20 border border-current px-2 py-1.5 rounded">
-                        <div class="text-xs opacity-75 leading-tight">Liquidità</div>
-                        <div class="font-bold text-sm">${pick.liquidityLevel}</div>
-                    </div>
-                    <div class="bg-gray-700 px-2 py-1.5 rounded">
-                        <div class="text-gray-400 text-xs leading-tight">Strategia</div>
-                        <div class="font-bold text-white text-sm">${pick.strategy || 'Standard'}</div>
-                    </div>
-                </div>
-
-                <div class="bg-blue-900 bg-opacity-30 px-2 py-1.5 rounded border border-blue-500">
-                    <div class="text-xs text-blue-300 font-semibold">${pick.reasoning || pick.whyTradable}</div>
-                </div>
+                <div class="text-[10px] text-blue-300 leading-tight">${pick.reasoning || ''}</div>
             `;
 
             container.appendChild(card);
